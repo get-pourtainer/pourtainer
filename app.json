@@ -1,0 +1,69 @@
+{
+    "expo": {
+        "name": "Pourtainer",
+        "slug": "pourtainer",
+        "owner": "ffglobal",
+        "version": "1.1.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "scheme": "pourtainer",
+        "userInterfaceStyle": "automatic",
+        "newArchEnabled": true,
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.pourtainer.mobile",
+            "infoPlist": {
+                "NSAppTransportSecurity": {
+                    "NSAllowsArbitraryLoads": true
+                }
+            }
+        },
+        "android": {
+            "package": "com.pourtainer.mobile"
+        },
+        "plugins": [
+            "expo-router",
+            [
+                "expo-splash-screen",
+                {
+                    "backgroundColor": "#1a98ff",
+                    "image": "./assets/splash/light.png",
+                    "dark": {
+                        "image": "./assets/splash/dark.png",
+                        "backgroundColor": "#0f172a"
+                    },
+                    "imageWidth": 300
+                }
+            ],
+            "react-native-edge-to-edge",
+            [
+                "expo-build-properties",
+                {
+                    "ios": {
+                        "networkInspector": false
+                    }
+                }
+            ],
+            "expo-asset",
+            [
+                "@sentry/react-native/expo",
+                {
+                    "organization": "ff-global",
+                    "project": "react-native",
+                    "url": "https://sentry.io/"
+                }
+            ]
+        ],
+        "experiments": {
+            "typedRoutes": true
+        },
+        "extra": {
+            "router": {
+                "origin": false
+            },
+            "eas": {
+                "projectId": "ce35e70d-cc47-4ebe-ad3d-59cd4dc00da5"
+            }
+        }
+    }
+}
