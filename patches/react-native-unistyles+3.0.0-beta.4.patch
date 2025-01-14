@@ -1,0 +1,93 @@
+diff --git a/node_modules/react-native-unistyles/lib/commonjs/core/createUnistylesElement.js b/node_modules/react-native-unistyles/lib/commonjs/core/createUnistylesElement.js
+index f5f7626..5f158ae 100644
+--- a/node_modules/react-native-unistyles/lib/commonjs/core/createUnistylesElement.js
++++ b/node_modules/react-native-unistyles/lib/commonjs/core/createUnistylesElement.js
+@@ -6,11 +6,21 @@ Object.defineProperty(exports, "__esModule", {
+ exports.createUnistylesElement = void 0;
+ var _react = _interopRequireDefault(require("react"));
+ var _passForwardRef = require("./passForwardRef");
++var _ShadowRegistry = require("../specs/ShadowRegistry");
+ var _jsxRuntime = require("react/jsx-runtime");
+ function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+-const createUnistylesElement = Component => /*#__PURE__*/_react.default.forwardRef((props, forwardedRef) => /*#__PURE__*/(0, _jsxRuntime.jsx)(Component, {
+-  ...props,
+-  ref: ref => (0, _passForwardRef.passForwardedRef)(props, ref, forwardedRef)
+-}));
++const createUnistylesElement = Component => /*#__PURE__*/_react.default.forwardRef((props, forwardedRef) => {
++    let storedRef = null;
++    return /*#__PURE__*/(0, _jsxRuntime.jsx)(Component, {
++      ...props,
++      ref: ref => {
++        if (ref === null && storedRef) {
++          _ShadowRegistry.UnistylesShadowRegistry.remove(storedRef);
++        }
++        storedRef = ref;
++        (0, _passForwardRef.passForwardedRef)(props, ref, forwardedRef);
++      }
++    });
++  });
+ exports.createUnistylesElement = createUnistylesElement;
+ //# sourceMappingURL=createUnistylesElement.js.map
+\ No newline at end of file
+diff --git a/node_modules/react-native-unistyles/lib/commonjs/core/createUnistylesImageBackground.js b/node_modules/react-native-unistyles/lib/commonjs/core/createUnistylesImageBackground.js
+index 4e33338..7f33966 100644
+--- a/node_modules/react-native-unistyles/lib/commonjs/core/createUnistylesImageBackground.js
++++ b/node_modules/react-native-unistyles/lib/commonjs/core/createUnistylesImageBackground.js
+@@ -9,19 +9,31 @@ var _specs = require("../specs");
+ var _passForwardRef = require("./passForwardRef");
+ var _jsxRuntime = require("react/jsx-runtime");
+ function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+-const createUnistylesImageBackground = Component => /*#__PURE__*/_react.default.forwardRef((props, forwardedRef) => /*#__PURE__*/(0, _jsxRuntime.jsx)(Component, {
+-  ...props,
+-  ref: ref => (0, _passForwardRef.passForwardedRef)(props, ref, forwardedRef),
+-  imageRef: ref => {
+-    const style = Array.isArray(props.imageStyle) ? props.imageStyle : [props.imageStyle];
++const createUnistylesImageBackground = Component => /*#__PURE__*/_react.default.forwardRef((props, forwardedRef) => {
++    let storedRef = null;
++    let storedImageRef = null;
++    return /*#__PURE__*/(0, _jsxRuntime.jsx)(Component, {
++      ...props,
++      ref: ref => {
++        if (ref === null && storedRef) {
++          // @ts-ignore
++          _specs.UnistylesShadowRegistry.remove(storedRef);
++        }
++        storedRef = ref;
++        (0, _passForwardRef.passForwardedRef)(props, ref, forwardedRef);
++      },
++      imageRef: ref => {
++        if (ref === null && storedImageRef) {
++          // @ts-ignore
++          _specs.UnistylesShadowRegistry.remove(storedImageRef);
++        }
++        storedImageRef = ref;
++        const style = Array.isArray(props.imageStyle) ? props.imageStyle : [props.imageStyle];
+   
+-    // @ts-expect-error - This is hidden from TS
+-    _specs.UnistylesShadowRegistry.add(ref, style);
+-    return () => {
+-      // @ts-expect-error - This is hidden from TS
+-      _specs.UnistylesShadowRegistry.remove(ref);
+-    };
+-  }
+-}));
++        // @ts-expect-error web types are not compatible with RN styles
++        _specs.UnistylesShadowRegistry.add(ref, style);
++      }
++    });
++  });
+ exports.createUnistylesImageBackground = createUnistylesImageBackground;
+ //# sourceMappingURL=createUnistylesImageBackground.js.map
+\ No newline at end of file
+diff --git a/node_modules/react-native-unistyles/lib/commonjs/core/passForwardRef.js b/node_modules/react-native-unistyles/lib/commonjs/core/passForwardRef.js
+index aaa023a..a049fca 100644
+--- a/node_modules/react-native-unistyles/lib/commonjs/core/passForwardRef.js
++++ b/node_modules/react-native-unistyles/lib/commonjs/core/passForwardRef.js
+@@ -19,7 +19,6 @@ const passForwardedRef = (props, ref, forwardedRef) => {
+   _specs.UnistylesShadowRegistry.add(ref, props.style);
+   return () => {
+     // @ts-expect-error - This is hidden from TS
+-    _specs.UnistylesShadowRegistry.remove(ref);
+     forwardedRefReturnFn?.();
+   };
+ };
