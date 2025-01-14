@@ -11,7 +11,8 @@
         "lint": "expo lint",
         "build:android": "eas build --platform android --profile preview --local",
         "prebuild:ios": "expo prebuild --platform ios",
-        "prebuild:android": "expo prebuild --platform android"
+        "prebuild:android": "expo prebuild --platform android",
+        "postinstall": "patch-package"
     },
     "dependencies": {
         "@expo/vector-icons": "^14.0.4",
@@ -72,7 +73,8 @@
         "@types/lodash": "^4.17.13",
         "@types/ms": "^0.7.34",
         "@types/react": "~18.3.12",
-        "typescript": "^5.7.2"
+        "typescript": "^5.7.2",
+        "patch-package": "8.0.0"
     },
     "private": true
 }
