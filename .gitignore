@@ -42,3 +42,4 @@ ios/
 *.env
 !env.example
 v1.44.yaml
+.idea
