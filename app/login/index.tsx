@@ -2,21 +2,20 @@ import { guestClient } from '@/lib/guest-client'
 import { useAuthStore } from '@/stores/auth'
 import type { Endpoint } from '@/types/endpoint'
 import { router } from 'expo-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
+import Animated, { KeyboardState, useAnimatedKeyboard, useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
+import { StyleSheet } from 'react-native-unistyles'
 import {
     Alert,
     Button,
     Image,
-    Keyboard,
-    KeyboardAvoidingView,
     Linking,
-    Platform,
     Pressable,
     Text,
     TextInput,
     View,
 } from 'react-native'
-import { StyleSheet } from 'react-native-unistyles'
 
 const sanitizeUrl = (url: string) => {
     return url.replace(/\/+$/, '')
@@ -25,30 +24,20 @@ const sanitizeUrl = (url: string) => {
 export default function LoginScreen() {
     const { setCurrentEndpointId, addInstance } = useAuthStore()
     const [isLoading, setIsLoading] = useState(false)
-    const [isKeyboardVisible, setKeyboardVisible] = useState(false)
 
     const baseUrlRef = useRef<string>('')
     const apiTokenRef = useRef<string>('')
+    const keyboard = useAnimatedKeyboard()
+    const helpBoxAnimatedStyles = useAnimatedStyle(() => {
+        const isKeyboardVisible = [KeyboardState.OPEN, KeyboardState.OPENING]
+            .some(state => keyboard.state.value === state)
 
-    useEffect(() => {
-        const keyboardWillShow = Keyboard.addListener(
-            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-            () => {
-                setKeyboardVisible(true)
-            }
-        )
-        const keyboardWillHide = Keyboard.addListener(
-            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-            () => {
-                setKeyboardVisible(false)
-            }
-        )
-
-        return () => {
-            keyboardWillShow.remove()
-            keyboardWillHide.remove()
+        return {
+            opacity: withTiming(isKeyboardVisible ? 0 : 1),
+            transform: [{ translateY: withTiming(isKeyboardVisible ? 200 : 0) }]
         }
-    }, [])
+    })
+
 
     const validateInstance = useCallback(async (sanitizedUrl: string, apiToken: string) => {
         try {
@@ -94,6 +83,7 @@ export default function LoginScreen() {
 
         const sanitizedUrl = sanitizeUrl(baseUrl)
         const instanceId = await validateInstance(sanitizedUrl, apiToken)
+
         if (instanceId) {
             const endpointsResponse = await guestClient(
                 sanitizedUrl,
@@ -118,10 +108,10 @@ export default function LoginScreen() {
             setCurrentEndpointId(firstId.toString())
             addInstance({ id: instanceId, apiToken, baseUrl: sanitizedUrl })
 
-            setIsLoading(false)
-
             router.replace('/')
         }
+
+        setIsLoading(false)
     }, [addInstance, setCurrentEndpointId, validateInstance])
 
     const openApiDocs = () => {
@@ -130,7 +120,8 @@ export default function LoginScreen() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior="height"
+            keyboardVerticalOffset={100}
             style={styles.container}
         >
             <View style={styles.content}>
@@ -154,7 +145,6 @@ export default function LoginScreen() {
                             baseUrlRef.current = text
                         }}
                     />
-
                     <Text style={styles.label}>API Token</Text>
                     <TextInput
                         style={styles.input}
@@ -167,7 +157,6 @@ export default function LoginScreen() {
                             apiTokenRef.current = text
                         }}
                     />
-
                     <View style={styles.buttonContainer}>
                         <Button
                             title={isLoading ? 'Connecting...' : 'Connect'}
@@ -178,15 +167,14 @@ export default function LoginScreen() {
                     </View>
                 </View>
             </View>
-
-            {!isKeyboardVisible && (
+            <Animated.View style={[helpBoxAnimatedStyles]}>
                 <Pressable style={styles.helpBox} onPress={openApiDocs}>
                     <Text style={styles.helpTitle}>Need help finding your API key?</Text>
                     <Text style={styles.helpText}>
                         Tap to learn how to generate a Portainer API key.
                     </Text>
                 </Pressable>
-            )}
+            </Animated.View>
         </KeyboardAvoidingView>
     )
 }
