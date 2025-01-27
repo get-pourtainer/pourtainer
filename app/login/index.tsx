@@ -121,7 +121,6 @@ export default function LoginScreen() {
     return (
         <KeyboardAvoidingView
             behavior="height"
-            keyboardVerticalOffset={100}
             style={styles.container}
         >
             <View style={styles.content}>
