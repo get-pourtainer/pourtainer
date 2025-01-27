@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 import type { Endpoint } from '@/types/endpoint'
 import { router } from 'expo-router'
 import { useCallback, useRef, useState } from 'react'
-import Animated, { KeyboardState, useAnimatedKeyboard, useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import Animated, { interpolate, useAnimatedKeyboard, useAnimatedStyle, withTiming } from 'react-native-reanimated'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { StyleSheet } from 'react-native-unistyles'
 import {
@@ -27,10 +27,13 @@ export default function LoginScreen() {
 
     const baseUrlRef = useRef<string>('')
     const apiTokenRef = useRef<string>('')
-    const keyboard = useAnimatedKeyboard()
+    const keyboard = useAnimatedKeyboard({
+        isStatusBarTranslucentAndroid: true,
+        isNavigationBarTranslucentAndroid: true
+    })
+
     const helpBoxAnimatedStyles = useAnimatedStyle(() => {
-        const isKeyboardVisible = [KeyboardState.OPEN, KeyboardState.OPENING]
-            .some(state => keyboard.state.value === state)
+        const isKeyboardVisible = interpolate(keyboard.height.value, [0, 1], [0, 1], 'clamp')
 
         return {
             opacity: withTiming(isKeyboardVisible ? 0 : 1),
@@ -178,7 +181,7 @@ export default function LoginScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme, rt) => ({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background.app,
@@ -249,18 +252,16 @@ const styles = StyleSheet.create((theme) => ({
     button: {
         color: theme.colors.primary,
     },
-    helpBox: StyleSheet.flatten([
-        theme.shadows.small,
-        {
-            backgroundColor: theme.colors.searchBar.background,
-            padding: theme.spacing.lg,
-            marginHorizontal: theme.spacing.lg,
-            marginBottom: theme.spacing.lg,
-            borderRadius: theme.borderRadius.lg,
-            borderWidth: 1,
-            borderColor: theme.colors.form.input.border,
-        },
-    ]),
+    helpBox: {
+        ...theme.shadows.small,
+        backgroundColor: theme.colors.searchBar.background,
+        padding: theme.spacing.lg,
+        marginHorizontal: theme.spacing.lg,
+        marginBottom: rt.insets.bottom,
+        borderRadius: theme.borderRadius.lg,
+        borderWidth: 1,
+        borderColor: theme.colors.form.input.border
+    },
     helpTitle: StyleSheet.flatten([
         theme.typography.subtitle,
         {

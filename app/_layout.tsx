@@ -11,12 +11,6 @@ import { Slot, useNavigationContainerRef } from 'expo-router'
 import React, { useEffect } from 'react'
 import * as SplashScreen from 'expo-splash-screen'
 
-SplashScreen.preventAutoHideAsync()
-SplashScreen.setOptions({
-    duration: 1000,
-    fade: true,
-})
-
 const navigationIntegration = Sentry.reactNavigationIntegration({
     enableTimeToInitialDisplay: !isRunningInExpoGo(),
 })
