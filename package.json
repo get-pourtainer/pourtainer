@@ -60,7 +60,7 @@
         "react-native-safe-area-context": "5.0.0",
         "react-native-screens": "~4.4.0",
         "react-native-svg": "15.10.1",
-        "react-native-unistyles": "3.0.0-nightly-20250121",
+        "react-native-unistyles": "3.0.0-nightly-20250127",
         "react-native-web": "~0.19.13",
         "react-native-websocket-self-signed": "^0.3.0",
         "use-async-effect": "^2.2.7",
