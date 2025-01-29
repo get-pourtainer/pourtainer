@@ -205,7 +205,7 @@ export default function ImagesScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create(theme => ({
     imageRow: {
         padding: theme.spacing.md,
     },

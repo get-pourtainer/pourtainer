@@ -151,7 +151,7 @@ export default function ContainersScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create(theme => ({
     containerBox: StyleSheet.flatten([
         {
             width: 160,

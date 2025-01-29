@@ -201,7 +201,7 @@ export default function VolumesScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create(theme => ({
     volumeRow: {
         padding: theme.spacing.md,
     },

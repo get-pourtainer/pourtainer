@@ -140,7 +140,8 @@ export default function ContainerDetailScreen() {
                 }}
             />
             <ScrollView
-                style={{ flex: 1, backgroundColor: theme.colors.background.list }}
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
                 contentInsetAdjustmentBehavior="automatic"
             >
                 <View style={{ padding: 16, gap: 12 }}>
@@ -475,7 +476,14 @@ export default function ContainerDetailScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme, rt) => ({
+    scrollView: {
+        flex: 1,
+        backgroundColor: theme.colors.background.list
+    },
+    scrollViewContent: {
+        paddingBottom: rt.insets.bottom
+    },
     card: {
         backgroundColor: theme.colors.background.card,
         padding: 16,

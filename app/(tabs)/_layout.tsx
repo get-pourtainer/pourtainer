@@ -2,11 +2,10 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import Entypo from '@expo/vector-icons/Entypo'
 import Feather from '@expo/vector-icons/Feather'
 import { Tabs } from 'expo-router'
-import { Platform } from 'react-native'
-import { UnistylesRuntime } from 'react-native-unistyles'
+import { useUnistyles } from 'react-native-unistyles'
 
 export default function TabLayout() {
-    const theme = UnistylesRuntime.getTheme()
+    const { theme, rt } = useUnistyles()
 
     return (
         <Tabs
@@ -16,9 +15,7 @@ export default function TabLayout() {
                     backgroundColor: theme.colors.background.list,
                     borderTopColor: theme.colors.primaryLight,
                     borderTopWidth: 1,
-                    paddingTop: 8,
-                    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
-                    height: Platform.OS === 'ios' ? 84 : 64,
+                    paddingBottom: rt.insets.bottom + 25
                 },
                 tabBarActiveTintColor: theme.colors.text.white,
                 tabBarInactiveTintColor: theme.colors.tabInactive,
