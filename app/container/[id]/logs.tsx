@@ -338,7 +338,7 @@ const styles = StyleSheet.create((_, rt) => ({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
-        paddingBottom: rt.insets.bottom
+        paddingBottom: Math.max(rt.insets.bottom, 25)
     },
     controlsRow: {
         flexDirection: 'row',

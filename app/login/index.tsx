@@ -267,7 +267,7 @@ const styles = StyleSheet.create((theme, rt) => ({
         backgroundColor: theme.colors.searchBar.background,
         padding: theme.spacing.lg,
         marginHorizontal: theme.spacing.lg,
-        marginBottom: rt.insets.bottom,
+        marginBottom: Math.max(rt.insets.bottom, 25),
         borderRadius: theme.borderRadius.lg,
         borderWidth: 1,
         borderColor: theme.colors.form.input.border,
