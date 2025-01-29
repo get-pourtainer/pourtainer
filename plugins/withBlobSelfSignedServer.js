@@ -2,7 +2,6 @@ const { withMainApplication } = require('@expo/config-plugins')
 const { mergeContents } = require('@expo/config-plugins/build/utils/generateCode')
 
 const withBlobSelfSignedServer = config => withMainApplication(config, config => {
-    const mainApplication = config.modResults.contents
     const importContents = `
 import com.ReactNativeBlobUtil.ReactNativeBlobUtilUtils;
 import javax.net.ssl.X509TrustManager;
@@ -19,21 +18,27 @@ ReactNativeBlobUtilUtils.sharedTrustManager = object : X509TrustManager {
 };
     `
 
-    config.modResults.contents = mergeContents({
-        src: mainApplication,
+    let newFileContents = config.modResults.contents
+
+    newFileContents = mergeContents({
+        src: newFileContents,
         newSrc: importContents,
-        anchor: /import android.app.Application/,
+        tag: 'ReactNativeBlobUtilUtilsImports',
+        anchor: /package com.pourtainer.mobile/,
         offset: 1,
         comment: '//'
     }).contents
 
-    config.modResults.contents = mergeContents({
-        src: mainApplication,
+    newFileContents = mergeContents({
+        src: newFileContents,
         newSrc: trustManagerContents,
+        tag: 'ReactNativeBlobUtilUtils',
         anchor: /ApplicationLifecycleDispatcher.onApplicationCreate\(this\)/,
         offset: 1,
         comment: '//'
     }).contents
+
+    config.modResults.contents = newFileContents
 
     return config
 })
