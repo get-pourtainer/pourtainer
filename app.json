@@ -3,7 +3,7 @@
         "name": "Pourtainer",
         "slug": "pourtainer",
         "owner": "ffglobal",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "orientation": "portrait",
         "icon": "./assets/icon.png",
         "scheme": "pourtainer",
@@ -38,10 +38,10 @@
             [
                 "react-native-edge-to-edge",
                 {
-                  "android": {
-                    "parentTheme": "Material3.Dynamic",
-                    "enforceNavigationBarContrast": false
-                  }
+                    "android": {
+                        "parentTheme": "Material3.Dynamic",
+                        "enforceNavigationBarContrast": false
+                    }
                 }
             ],
             [
