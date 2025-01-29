@@ -60,7 +60,8 @@
                     "project": "react-native",
                     "url": "https://sentry.io/"
                 }
-            ]
+            ],
+            "./plugins/withBlobSelfSignedServer"
         ],
         "experiments": {
             "typedRoutes": true
