@@ -11,10 +11,6 @@ type GroupedContainers = {
     [key: string]: Container[]
 }
 
-function zzz() {
-    return SquircleButton
-}
-
 function ContainerBox({ container }: { container: Container }) {
     const colors = UnistylesRuntime.getTheme().colors
     const status = container.State.toLowerCase()
@@ -22,8 +18,8 @@ function ContainerBox({ container }: { container: Container }) {
         status === 'running'
             ? colors.status.success
             : status === 'exited'
-              ? colors.status.error
-              : colors.status.warning
+                ? colors.status.error
+                : colors.status.warning
 
     return (
         <SquircleButton
@@ -155,7 +151,7 @@ export default function ContainersScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create(theme => ({
     containerBox: StyleSheet.flatten([
         {
             width: 160,

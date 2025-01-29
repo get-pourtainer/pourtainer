@@ -1,22 +1,22 @@
+import React from 'react'
 import { guestClient } from '@/lib/guest-client'
 import { useAuthStore } from '@/stores/auth'
 import type { Endpoint } from '@/types/endpoint'
 import { router } from 'expo-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
+import Animated, { interpolate, useAnimatedKeyboard, useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import { StyleSheet } from 'react-native-unistyles'
 import {
     Alert,
     Button,
     Image,
-    Keyboard,
-    KeyboardAvoidingView,
     Linking,
-    Platform,
     Pressable,
     Text,
     TextInput,
     View,
 } from 'react-native'
-import { StyleSheet } from 'react-native-unistyles'
 
 const sanitizeUrl = (url: string) => {
     return url.replace(/\/+$/, '')
@@ -25,30 +25,22 @@ const sanitizeUrl = (url: string) => {
 export default function LoginScreen() {
     const { setCurrentEndpointId, addInstance } = useAuthStore()
     const [isLoading, setIsLoading] = useState(false)
-    const [isKeyboardVisible, setKeyboardVisible] = useState(false)
-
     const baseUrlRef = useRef<string>('')
     const apiTokenRef = useRef<string>('')
+    const keyboard = useAnimatedKeyboard({
+        isStatusBarTranslucentAndroid: true,
+        isNavigationBarTranslucentAndroid: true
+    })
 
-    useEffect(() => {
-        const keyboardWillShow = Keyboard.addListener(
-            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-            () => {
-                setKeyboardVisible(true)
-            }
-        )
-        const keyboardWillHide = Keyboard.addListener(
-            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-            () => {
-                setKeyboardVisible(false)
-            }
-        )
+    const helpBoxAnimatedStyles = useAnimatedStyle(() => {
+        const isKeyboardVisible = interpolate(keyboard.height.value, [0, 1], [0, 1], 'clamp')
 
-        return () => {
-            keyboardWillShow.remove()
-            keyboardWillHide.remove()
+        return {
+            opacity: withTiming(isKeyboardVisible ? 0 : 1),
+            bottom: withTiming(isKeyboardVisible ? -300 : 0)
         }
-    }, [])
+    })
+
 
     const validateInstance = useCallback(async (sanitizedUrl: string, apiToken: string) => {
         try {
@@ -94,6 +86,7 @@ export default function LoginScreen() {
 
         const sanitizedUrl = sanitizeUrl(baseUrl)
         const instanceId = await validateInstance(sanitizedUrl, apiToken)
+
         if (instanceId) {
             const endpointsResponse = await guestClient(
                 sanitizedUrl,
@@ -118,10 +111,10 @@ export default function LoginScreen() {
             setCurrentEndpointId(firstId.toString())
             addInstance({ id: instanceId, apiToken, baseUrl: sanitizedUrl })
 
-            setIsLoading(false)
-
             router.replace('/')
         }
+
+        setIsLoading(false)
     }, [addInstance, setCurrentEndpointId, validateInstance])
 
     const openApiDocs = () => {
@@ -129,84 +122,91 @@ export default function LoginScreen() {
     }
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
-        >
-            <View style={styles.content}>
-                <Image
-                    source={require('../../assets/whale.png')}
-                    style={styles.logo}
-                    resizeMode="contain"
-                />
-                <Text style={styles.title}>Pourtainer</Text>
-                <Text style={styles.subtitle}>Connect to your instance</Text>
-
-                <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Server Address</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="https://192.168.1.100:9443"
-                        placeholderTextColor={styles.placeholder.color}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        onChangeText={(text) => {
-                            baseUrlRef.current = text
-                        }}
+        <>
+            <KeyboardAwareScrollView
+                bottomOffset={20}
+                keyboardShouldPersistTaps="handled"
+                style={styles.container}
+            >
+                <View style={styles.content}>
+                    <Image
+                        source={require('../../assets/whale.png')}
+                        style={styles.logo}
+                        resizeMode="contain"
                     />
+                    <Text style={styles.title}>Pourtainer</Text>
+                    <Text style={styles.subtitle}>Connect to your instance</Text>
 
-                    <Text style={styles.label}>API Token</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter your API token"
-                        placeholderTextColor={styles.placeholder.color}
-                        secureTextEntry={true}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        onChangeText={(text) => {
-                            apiTokenRef.current = text
-                        }}
-                    />
-
-                    <View style={styles.buttonContainer}>
-                        <Button
-                            title={isLoading ? 'Connecting...' : 'Connect'}
-                            onPress={handleLogin}
-                            color={styles.button.color}
-                            disabled={isLoading}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Server Address</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="https://192.168.1.100:9443"
+                            placeholderTextColor={styles.placeholder.color}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            onChangeText={(text) => {
+                                baseUrlRef.current = text
+                            }}
                         />
+                        <Text style={styles.label}>API Token</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter your API token"
+                            placeholderTextColor={styles.placeholder.color}
+                            secureTextEntry={true}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            onChangeText={(text) => {
+                                apiTokenRef.current = text
+                            }}
+                        />
+                        <View style={styles.buttonContainer}>
+                            <Button
+                                title={isLoading ? 'Connecting...' : 'Connect'}
+                                onPress={handleLogin}
+                                color={styles.button.color}
+                                disabled={isLoading}
+                            />
+                        </View>
                     </View>
                 </View>
-            </View>
-
-            {!isKeyboardVisible && (
+            </KeyboardAwareScrollView>
+            <Animated.View style={[helpBoxAnimatedStyles]}>
                 <Pressable style={styles.helpBox} onPress={openApiDocs}>
                     <Text style={styles.helpTitle}>Need help finding your API key?</Text>
                     <Text style={styles.helpText}>
                         Tap to learn how to generate a Portainer API key.
                     </Text>
                 </Pressable>
-            )}
-        </KeyboardAvoidingView>
+            </Animated.View>
+        </>
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme, rt) => ({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background.app,
+        paddingTop: rt.insets.top
     },
     content: {
         flex: 1,
         justifyContent: 'center',
-        padding: theme.spacing.lg,
+        paddingHorizontal: theme.spacing.lg,
         maxWidth: 400,
         width: '100%',
         alignSelf: 'center',
     },
     logo: {
-        width: 250,
-        height: 250,
+        width: {
+            xs: 200,
+            sm: 250
+        },
+        height: {
+            xs: 200,
+            sm: 250
+        },
         alignSelf: 'center',
         marginBottom: theme.spacing.sm,
         marginLeft: 40,
@@ -262,18 +262,21 @@ const styles = StyleSheet.create((theme) => ({
     button: {
         color: theme.colors.primary,
     },
-    helpBox: StyleSheet.flatten([
-        theme.shadows.small,
-        {
-            backgroundColor: theme.colors.searchBar.background,
-            padding: theme.spacing.lg,
-            marginHorizontal: theme.spacing.lg,
-            marginBottom: theme.spacing.lg,
-            borderRadius: theme.borderRadius.lg,
-            borderWidth: 1,
-            borderColor: theme.colors.form.input.border,
-        },
-    ]),
+    helpBox: {
+        ...theme.shadows.small,
+        backgroundColor: theme.colors.searchBar.background,
+        padding: theme.spacing.lg,
+        marginHorizontal: theme.spacing.lg,
+        marginBottom: Math.max(rt.insets.bottom, 25),
+        borderRadius: theme.borderRadius.lg,
+        borderWidth: 1,
+        borderColor: theme.colors.form.input.border,
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+
+    },
     helpTitle: StyleSheet.flatten([
         theme.typography.subtitle,
         {

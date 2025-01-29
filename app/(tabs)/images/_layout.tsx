@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router'
 import { UnistylesRuntime } from 'react-native-unistyles'
+import { Platform } from 'react-native'
 
 export default function ImagesLayout() {
     const theme = UnistylesRuntime.getTheme()
@@ -8,7 +9,7 @@ export default function ImagesLayout() {
         <Stack
             screenOptions={{
                 headerLargeTitle: true,
-                headerTransparent: true,
+                headerTransparent: Platform.OS === 'ios',
                 headerBlurEffect: 'regular',
                 headerLargeStyle: {
                     backgroundColor: theme.colors.background.list,
@@ -16,7 +17,10 @@ export default function ImagesLayout() {
                 headerLargeTitleStyle: {
                     color: theme.colors.text.white,
                 },
-                headerTintColor: theme.colors.text.white,
+                headerStyle: {
+                    backgroundColor: theme.colors.background.list
+                },
+                headerTintColor: theme.colors.text.white
             }}
         >
             <Stack.Screen
@@ -27,4 +31,4 @@ export default function ImagesLayout() {
             />
         </Stack>
     )
-} 
+}

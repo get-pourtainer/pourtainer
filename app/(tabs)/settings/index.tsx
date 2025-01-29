@@ -111,20 +111,20 @@ export default function SettingsScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create(theme => ({
     scrollView: {
         flex: 1,
-        backgroundColor: theme.colors.background.list,
+        backgroundColor: theme.colors.background.list
     },
     scrollViewContent: {
         padding: theme.spacing.md,
         gap: theme.spacing.lg,
         position: 'relative',
         borderTopWidth: 1,
-        borderTopColor: theme.colors.primaryLight,
+        borderTopColor: theme.colors.primaryLight
     },
     section: {
-        gap: theme.spacing.md,
+        gap: theme.spacing.md
     },
     sectionTitle: StyleSheet.flatten([
         theme.typography.title,

@@ -272,11 +272,20 @@ const appThemes = {
 
 type AppThemes = typeof appThemes
 
+const breakpoints = {
+    xs: 0,
+    sm: 400,
+} as const
+
+type AppBreakpoints = typeof breakpoints
+
 declare module 'react-native-unistyles' {
     export interface UnistylesThemes extends AppThemes {}
+    export interface UnistylesBreakpoints extends AppBreakpoints {}
 }
 
 StyleSheet.configure({
+    breakpoints,
     settings: {
         adaptiveThemes: true,
     },

@@ -1,3 +1,4 @@
+import React from 'react'
 import { fetchNetworks } from '@/api/queries'
 import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
 import { Badge } from '@/components/Badge'
@@ -194,7 +195,7 @@ export default function NetworksScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create(theme => ({
     networkRow: {
         padding: theme.spacing.md,
     },
@@ -242,6 +243,6 @@ const styles = StyleSheet.create((theme) => ({
         borderTopColor: theme.colors.primaryLight,
     },
     list: {
-        backgroundColor: theme.colors.background.list,
+        backgroundColor: theme.colors.background.list
     },
 }))

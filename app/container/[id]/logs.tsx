@@ -326,12 +326,11 @@ export default function ContainerLogsScreen() {
     )
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((_, rt) => ({
     // Layout containers
     controls: {
         backgroundColor: '#2a2a2a',
         padding: 12,
-        paddingBottom: 32,
         borderTopWidth: 1,
         borderTopColor: '#3a3a3a',
         shadowColor: '#000',
@@ -339,6 +338,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
+        paddingBottom: Math.max(rt.insets.bottom, 25)
     },
     controlsRow: {
         flexDirection: 'row',
@@ -398,4 +398,4 @@ const styles = StyleSheet.create({
         fontSize: 14,
         textAlign: 'center',
     },
-})
+}))
