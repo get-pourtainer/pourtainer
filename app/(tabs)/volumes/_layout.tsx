@@ -1,8 +1,8 @@
 import { Stack } from 'expo-router'
-import { UnistylesRuntime } from 'react-native-unistyles'
+import { useUnistyles } from 'react-native-unistyles'
 
 export default function VolumesLayout() {
-    const theme = UnistylesRuntime.getTheme()
+    const { theme } = useUnistyles()
 
     return (
         <Stack
@@ -40,4 +40,4 @@ export default function VolumesLayout() {
             />
         </Stack>
     )
-} 
+}

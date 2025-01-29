@@ -1,8 +1,8 @@
 import { Stack } from 'expo-router'
-import { UnistylesRuntime } from 'react-native-unistyles'
+import { useUnistyles } from 'react-native-unistyles'
 
 export default function ContainersLayout() {
-    const theme = UnistylesRuntime.getTheme()
+    const { theme } = useUnistyles()
 
     return (
         <Stack

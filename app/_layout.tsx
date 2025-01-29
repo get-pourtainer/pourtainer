@@ -7,9 +7,10 @@ import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { isRunningInExpoGo } from 'expo'
-import { Slot, useNavigationContainerRef } from 'expo-router'
+import { Stack, useNavigationContainerRef } from 'expo-router'
 import React, { useEffect } from 'react'
 import * as SplashScreen from 'expo-splash-screen'
+import { useUnistyles } from 'react-native-unistyles'
 
 const navigationIntegration = Sentry.reactNavigationIntegration({
     enableTimeToInitialDisplay: !isRunningInExpoGo(),
@@ -20,6 +21,7 @@ Sentry.init({
     dsn: 'https://e22f4e095b63a18d2908414ca1a0b146@o4508503751983104.ingest.de.sentry.io/4508503798775888',
     tracesSampleRate: 1.0,
     profilesSampleRate: 1.0,
+    environment: __DEV__ ? 'development' : 'production',
     integrations: [navigationIntegration],
     enableNativeFramesTracking: !isRunningInExpoGo(),
 })
@@ -47,6 +49,7 @@ const mmkvPersister = createSyncStoragePersister({
 function RootLayout() {
     // clearStorage()
     const ref = useNavigationContainerRef()
+    const { theme } = useUnistyles()
 
     useEffect(() => {
         if (ref?.current) {
@@ -57,6 +60,14 @@ function RootLayout() {
     useEffect(() => {
         SplashScreen.hide()
     }, [])
+
+    const commonHeaderStyle = {
+        headerStyle: {
+            backgroundColor: theme.colors.background.list,
+        },
+        headerTintColor: theme.colors.text.white,
+        headerShadowVisible: false,
+    }
 
     return (
         <GestureHandlerRootView>
@@ -71,7 +82,47 @@ function RootLayout() {
                         }
                     }}
                 >
-                    <Slot />
+                    <Stack>
+                        <Stack.Screen
+                            name="login/index"
+                            options={{
+                                headerShown: false,
+                                gestureEnabled: false,
+                                animation: 'none',
+                            }}
+                        />
+                        <Stack.Screen
+                            name="(tabs)"
+                            options={{
+                                headerShown: false,
+                            }}
+                        />
+                        <Stack.Screen
+                            name="container/[id]/index"
+                            options={commonHeaderStyle}
+                        />
+                        <Stack.Screen
+                            name="container/[id]/logs"
+                            options={{
+                                ...commonHeaderStyle,
+                                title: 'Logs',
+                            }}
+                        />
+                        <Stack.Screen
+                            name="container/[id]/terminal"
+                            options={{
+                                ...commonHeaderStyle,
+                                title: 'Terminal',
+                            }}
+                        />
+                        <Stack.Screen
+                            name="volume/[id]"
+                            options={{
+                                ...commonHeaderStyle,
+                                animation: 'none',
+                            }}
+                        />
+                    </Stack>
                 </PersistQueryClientProvider>
             </KeyboardProvider>
         </GestureHandlerRootView>

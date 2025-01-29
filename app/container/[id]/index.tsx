@@ -1,3 +1,4 @@
+import React from 'react'
 import {
     killContainer,
     pauseContainer,
@@ -515,4 +516,4 @@ const styles = StyleSheet.create((theme) => ({
         fontSize: 13,
         color: theme.colors.text.secondary,
     },
-})) 
+}))

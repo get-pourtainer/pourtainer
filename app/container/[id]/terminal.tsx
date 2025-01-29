@@ -1,3 +1,4 @@
+import React from 'react'
 import { startTerminalSession } from '@/api/mutations'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/auth'
