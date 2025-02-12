@@ -68,7 +68,16 @@
         }
       ],
       "./plugins/withBlobSelfSignedServer",
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      [
+        "./plugins/withAndroidWidget",
+        {
+          "src": "./targets/widget-android",
+          "glanceVersion": "1.1.1",
+          "kotlinExtensionVersion": "1.5.15",
+          "receiverName": "PourtainerWidgetReceiver"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
