@@ -3,6 +3,8 @@ import type { ContainerSetting } from './WidgetKit.types'
 
 declare class WidgetKitModule extends NativeModule {
     groupName: string
+    getAccessToken(): string | ''
+    getAvailableContainers(): ContainerSetting[]
     registerAccessToken(accessToken: string): void
     registerContainers(containers: ContainerSetting[]): void
 }

@@ -39,6 +39,7 @@ yarn-error.*
 android/
 ios/
 !modules/widgetkit/ios/
+!modules/widgetkit/android/
 *.apk
 *.env
 !env.example

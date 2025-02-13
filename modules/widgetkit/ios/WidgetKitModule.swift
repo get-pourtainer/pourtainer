@@ -41,6 +41,25 @@ public class WidgetKitModule: Module {
               // for now do nothing
           }
       }
+      
+      Function("getAccessToken") {
+          guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
+              return ""
+          }
+          
+          return sharedDefaults.string(forKey: "accessToken") ?? ""
+      }
+
+      Function("getAvailableContainers") {
+          guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
+              return []
+          }
+          
+          let rawContainers = sharedDefaults.string(forKey: "containers") ?? "[]"
+          let containers = try? JSONDecoder().decode([ContainerSetting].self, from: rawContainers.data(using: .utf8) ?? Data())
+          
+          return containers ?? []
+      }
   }
 }
 
