@@ -5,8 +5,8 @@ import expo.modules.kotlin.records.Record
 
 class ContainerSetting : Record {
     @Field
-    val name: String = ""
+    val name: String? = null
 
     @Field
-    val id: String = ""
+    val id: String? = null
 }

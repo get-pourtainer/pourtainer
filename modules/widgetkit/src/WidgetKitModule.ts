@@ -3,10 +3,13 @@ import type { ContainerSetting } from './WidgetKit.types'
 
 declare class WidgetKitModule extends NativeModule {
     groupName: string
-    getAccessToken(): string | ''
+    getClient(): {
+        url: string,
+        accessToken: string
+    }
     getAvailableContainers(): ContainerSetting[]
-    registerAccessToken(accessToken: string): void
+    registerClient(url: string, accessToken: string): void
     registerContainers(containers: ContainerSetting[]): void
 }
 
-export default requireNativeModule<WidgetKitModule>('WidgetKit')
+export default requireNativeModule<WidgetKitModule>('PourtainerWidgetKit')

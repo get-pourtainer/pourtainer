@@ -2,7 +2,7 @@ import ExpoModulesCore
 
 struct ContainerSetting: Record, Encodable, Decodable {
     init() {}
-
+    
     @Field
     var name: String?
 
@@ -15,7 +15,7 @@ struct ContainerSetting: Record, Encodable, Decodable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-
+        
         name = try container.decodeIfPresent(String.self, forKey: .name)
         id = try container.decodeIfPresent(String.self, forKey: .id)
     }

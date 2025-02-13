@@ -13,22 +13,23 @@ public class WidgetKitModule: Module {
           ]
       }
 
-      Function("registerAccessToken") { (accessToken: String) in
+      Function("registerClient") { (url: String, accessToken: String) in
           guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
               return
           }
 
+          sharedDefaults.set(url, forKey: "url")
           sharedDefaults.set(accessToken, forKey: "accessToken")
           sharedDefaults.synchronize()
 
           WidgetCenter.shared.reloadAllTimelines()
       }
-      
+
       Function("registerContainers") { (containers: Array<ContainerSetting>) in
           guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
               return
           }
-          
+
           do {
               let encodedData = try JSONEncoder().encode(containers)
 
@@ -41,24 +42,38 @@ public class WidgetKitModule: Module {
               // for now do nothing
           }
       }
-      
-      Function("getAccessToken") {
+
+      Function("getClient") {
           guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
-              return ""
+              return [
+                "url": "",
+                "accessToken": ""
+              ]
           }
-          
-          return sharedDefaults.string(forKey: "accessToken") ?? ""
+
+          let url = sharedDefaults.string(forKey: "url") ?? ""
+          let accessToken = sharedDefaults.string(forKey: "accessToken") ?? ""
+
+          return [
+            "url": url,
+            "accessToken": accessToken
+          ]
       }
 
       Function("getAvailableContainers") {
-          guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
+          guard let sharedDefaults = UserDefaults(suiteName: _groupName),
+                let rawData = sharedDefaults.data(forKey: "containers") else {
               return []
           }
-          
-          let rawContainers = sharedDefaults.string(forKey: "containers") ?? "[]"
-          let containers = try? JSONDecoder().decode([ContainerSetting].self, from: rawContainers.data(using: .utf8) ?? Data())
-          
-          return containers ?? []
+
+          let containers = (try? JSONDecoder().decode([ContainerSetting].self, from: rawData)) ?? []
+
+          return containers.map { container in
+              return [
+                "id": container.id,
+                "name": container.name
+              ]
+          }
       }
   }
 }

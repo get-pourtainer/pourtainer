@@ -40,6 +40,7 @@ android/
 ios/
 !modules/widgetkit/ios/
 !modules/widgetkit/android/
+modules/widgetkit/android/build
 *.apk
 *.env
 !env.example

@@ -14,21 +14,22 @@ class WidgetKitModule : Module() {
     Constants {
       return@Constants mapOf(
         // this has nothing to do with app group but acts like a key
-        "appGroup" to groupName
+        "groupName" to groupName
       )
     }
 
-    Function("registerAccessToken") { accessToken: String ->
+    Function("registerClient") { url: String, accessToken: String ->
       appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
         val editor = prefs.edit()
 
+        editor.putString("url", url)
         editor.putString("accessToken", accessToken)
 
         editor.apply()
       }
     }
 
-    Function("registerContainers") { containers: Array<ContainerSetting> ->
+    Function("registerContainers") { containers: List<ContainerSetting> ->
       appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
         val editor = prefs.edit()
         val json = Gson().toJson(containers)
@@ -39,12 +40,22 @@ class WidgetKitModule : Module() {
       }
     }
 
-    Function("getAccessToken") {
-      val maybeAccessToken = appContext.reactContext
+    Function("getClient") {
+      val prefs = appContext.reactContext
         ?.getSharedPreferences(groupName, Context.MODE_PRIVATE)
-        ?.getString("accessToken", "")
 
-      maybeAccessToken ?: ""
+      val sharedPrefs = prefs ?: return@Function mapOf(
+        "url" to "",
+        "accessToken" to ""
+      )
+
+      val maybeUrl = sharedPrefs.getString("url", "")
+      val maybeAccessToken = sharedPrefs.getString("accessToken", "")
+
+      return@Function mapOf(
+        "url" to maybeUrl,
+        "accessToken" to maybeAccessToken
+      )
     }
 
     Function("getAvailableContainers") {
