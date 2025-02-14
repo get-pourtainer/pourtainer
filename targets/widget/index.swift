@@ -2,8 +2,8 @@ import WidgetKit
 import SwiftUI
 
 @main
-struct exportWidgets: WidgetBundle {
+struct ExportWidgets: WidgetBundle {
     var body: some Widget {
-        widget()
+        PourtainerWidget()
     }
 }
