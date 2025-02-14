@@ -7,13 +7,13 @@ struct Provider: AppIntentTimelineProvider {
     // this function will be called BEFORE widget is initialized
     // we should pass here placeholder data
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), client: Client())
+      SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(container: ContainerSetting(id: "1", name: "Example container")), client: Client(), status: "running")
     }
 
     // this function will be called when user configures the widget
     // or home screen, should also display placeholder data
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: configuration, client: Client())
+      SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(container: ContainerSetting(id: "1", name: "Example container")), client: Client(), status: "running")
     }
 
     // responsible for telling iOS WHEN widget should update
@@ -27,7 +27,7 @@ struct Provider: AppIntentTimelineProvider {
         // update widget every 15 minutes
         for minuteOffset in stride(from: 0, to: 60 * 5, by: 15) {
            let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate)!
-           let entry = SimpleEntry(date: entryDate, configuration: configuration, client: Client())
+           let entry = SimpleEntry(date: entryDate, configuration: configuration, client: Client(), status: "running")
 
            entries.append(entry)
         }
@@ -51,6 +51,7 @@ struct SimpleEntry: TimelineEntry {
     let date: Date
     let configuration: ConfigurationAppIntent
     let client: Client
+    let status: String?
 }
 
 struct PourtainerWidget: Widget {
@@ -60,13 +61,13 @@ struct PourtainerWidget: Widget {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
           if (!entry.client.isValid()) {
             UnauthorizedEntryView()
-              .containerBackground(.fill.tertiary, for: .widget)
+              .containerBackground(Color("$background"), for: .widget)
           } else if (entry.configuration.container == nil) {
             EmptyEntryView()
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(Color("$background"), for: .widget)
           } else {
             WidgetEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(Color("$background"), for: .widget)
           }
         }
         .supportedFamilies([.systemSmall])
@@ -94,7 +95,9 @@ extension ConfigurationAppIntent {
 #Preview("Pourtainer Widget", as: .systemSmall) {
     PourtainerWidget()
 } timeline: {
-    SimpleEntry(date: .now, configuration: .empty, client: Client())
-    SimpleEntry(date: .now, configuration: .empty, client: Client(_url: "url", _accessToken: "accessToken"))
-    SimpleEntry(date: .now, configuration: .running, client: Client(_url: "url", _accessToken: "accessToken"))
+    SimpleEntry(date: .now, configuration: .empty, client: Client(), status: nil)
+    SimpleEntry(date: .now, configuration: .empty, client: Client(_url: "url", _accessToken: "accessToken"), status: nil)
+    SimpleEntry(date: .now, configuration: .running, client: Client(_url: "url", _accessToken: "accessToken"), status: "running")
+    SimpleEntry(date: .now, configuration: .running, client: Client(_url: "url", _accessToken: "accessToken"), status: "exited")
+    SimpleEntry(date: .now, configuration: .running, client: Client(_url: "url", _accessToken: "accessToken"), status: "unknown")
 }
