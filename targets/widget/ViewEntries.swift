@@ -19,7 +19,7 @@ struct UnauthorizedEntryView: View {
 
 struct ContainerStatusView: View {
   var status: String?
-  
+
   private func getStatusColor() -> Color {
     switch status {
       case "running": return Color("$success")
@@ -27,13 +27,13 @@ struct ContainerStatusView: View {
       default: return Color("$warning")
     }
   }
-  
+
   var body: some View {
     HStack(alignment: .center) {
       Circle()
         .frame(width: 5, height: 5)
         .foregroundColor(getStatusColor())
-      Text(status ?? "Unknown")
+      Text((status ?? "unknown").capitalized)
         .font(.system(size: 13))
         .foregroundColor(Color("$text"))
     }
@@ -71,5 +71,6 @@ struct WidgetEntryView : View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color("$background"))
+        .widgetURL(URL(string: "pourtainer://container/\(entry.configuration.container?.id ?? "")"))
     }
 }

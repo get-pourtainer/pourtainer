@@ -75,6 +75,17 @@ public class WidgetKitModule: Module {
               ]
           }
       }
+
+      Function("clear") {
+         guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
+            return
+         }
+
+         sharedDefaults.removePersistentDomain(forName: _groupName)
+         sharedDefaults.synchronize()
+
+         WidgetCenter.shared.reloadAllTimelines()
+      }
   }
 }
 

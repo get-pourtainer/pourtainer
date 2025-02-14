@@ -7,6 +7,7 @@ import type { Network } from '@/types/network'
 import type { Status } from '@/types/status'
 import type { User } from '@/types/user'
 import type { Volume, VolumeEntity } from '@/types/volume'
+import WidgetKitModule from '@/widgetkit'
 
 export async function fetchNetworks(): Promise<Network[]> {
     console.log('Fetching NETWORKS from API...')
@@ -149,11 +150,18 @@ export async function fetchContainers(): Promise<Container[]> {
         const data = await response.json()
 
         // Sort containers by their first name (removing leading slash)
-        return (data as Container[]).sort((a, b) => {
+        const sortedContainers = (data as Container[]).sort((a, b) => {
             const nameA = a.Names[0].replace(/^\//, '')
             const nameB = b.Names[0].replace(/^\//, '')
             return nameA.localeCompare(nameB)
         })
+
+        WidgetKitModule.registerContainers(sortedContainers.map(container => ({
+            id: container.Id,
+            name: container.Names.at(0) ?? "Unnamed"
+        })))
+
+        return sortedContainers
     } catch (error) {
         console.error('Error fetching applications:', error)
         console.log(JSON.stringify(error, null, 2))

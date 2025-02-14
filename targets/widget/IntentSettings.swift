@@ -5,7 +5,7 @@ struct ContainerSetting: AppEntity, Decodable {
   static var typeDisplayRepresentation: TypeDisplayRepresentation = "Select Container"
   
   var displayRepresentation: DisplayRepresentation {
-    DisplayRepresentation(title: "\(name) (\(id))")
+    DisplayRepresentation(title: "\(name)")
   }
   
   let id: String

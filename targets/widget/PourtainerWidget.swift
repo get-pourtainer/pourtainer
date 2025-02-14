@@ -27,7 +27,8 @@ struct Provider: AppIntentTimelineProvider {
         // update widget every 15 minutes
         for minuteOffset in stride(from: 0, to: 60 * 5, by: 15) {
            let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate)!
-           let entry = SimpleEntry(date: entryDate, configuration: configuration, client: Client(), status: "running")
+           // todo pass correct status
+           let entry = SimpleEntry(date: entryDate, configuration: configuration, client: getClient(), status: "running")
 
            entries.append(entry)
         }

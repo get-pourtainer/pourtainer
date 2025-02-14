@@ -10,6 +10,7 @@ declare class WidgetKitModule extends NativeModule {
     getAvailableContainers(): ContainerSetting[]
     registerClient(url: string, accessToken: string): void
     registerContainers(containers: ContainerSetting[]): void
+    clear(): void
 }
 
 export default requireNativeModule<WidgetKitModule>('PourtainerWidgetKit')

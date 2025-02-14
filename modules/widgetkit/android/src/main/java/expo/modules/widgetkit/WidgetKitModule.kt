@@ -67,5 +67,14 @@ class WidgetKitModule : Module() {
         Gson().fromJson(it, Array<ContainerSetting>::class.java)
       } ?: emptyArray<ContainerSetting>()
     }
+
+    Function("clear") {
+      appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
+        val editor = prefs.edit()
+
+        editor.clear()
+        editor.apply()
+      }
+    }
   }
 }
