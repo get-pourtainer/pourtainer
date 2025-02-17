@@ -42,8 +42,8 @@ class WidgetKitModule : Module() {
 
     Function("hasClient") {
       val rawClient = appContext.reactContext
-              ?.getSharedPreferences(groupName, Context.MODE_PRIVATE)
-              ?.getString("client", "null")
+        ?.getSharedPreferences(groupName, Context.MODE_PRIVATE)
+        ?.getString("client", "null")
 
       rawClient?.let {
         Gson().fromJson(it, Client::class.java)

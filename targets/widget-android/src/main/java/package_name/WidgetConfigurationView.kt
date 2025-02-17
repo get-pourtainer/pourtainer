@@ -13,17 +13,27 @@ import expo.modules.widgetkit.ContainerSetting
 
 @Composable
 fun WidgetConfigurationView(
+    isAuthorized: Boolean,
     containers: Array<ContainerSetting>,
     onContainerSelected: (ContainerSetting) -> Unit,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    openApp: () -> Unit
 ) {
     var selectedContainer by remember { mutableStateOf<ContainerSetting?>(null) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Select a Docker Container", style = MaterialTheme.typography.titleLarge)
+        if (!isAuthorized) {
+            UnauthorizedView(openApp)
+            return@Column
+        }
 
+        if (containers.isEmpty()) {
+            NoContainersView(openApp)
+            return@Column
+        }
+
+        Text("Select container", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
-
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(containers) { container ->
                 ContainerItem(
@@ -42,9 +52,18 @@ fun WidgetConfigurationView(
         Button(
             onClick = onDone,
             enabled = selectedContainer != null,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonColors(
+                containerColor = buttonColor,
+                contentColor = whiteColor,
+                disabledContainerColor = buttonInactiveColor,
+                disabledContentColor = whiteColor
+            )
         ) {
-            Text("Done")
+            Text(
+                text = "Done",
+                color = whiteColor
+            )
         }
     }
 }
@@ -62,13 +81,76 @@ fun ContainerItem(
             .clickable { onSelect() },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+            containerColor = if (isSelected) buttonInactiveColor else MaterialTheme.colorScheme.surface
         )
     ) {
         Text(
             text = container.name,
             modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (isSelected) whiteColor else MaterialTheme.colorScheme.onSurface
         )
+    }
+}
+
+@Composable
+fun UnauthorizedView(openApp: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text(
+            text = "Unauthorized",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Text(
+            text = "Sign in with Pourtainer app",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        Button(
+            onClick = openApp,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonColors(
+                containerColor = buttonColor,
+                contentColor = whiteColor,
+                disabledContainerColor = buttonInactiveColor,
+                disabledContentColor = whiteColor
+            )
+        ) {
+            Text(
+                text = "Open Pourtainer App",
+                color = whiteColor
+            )
+        }
+    }
+}
+
+@Composable
+fun NoContainersView(openApp: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text(
+            text = "No containers",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Text(
+            text = "Add your first container in Pourtainer app",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        Button(
+            onClick = openApp,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonColors(
+                containerColor = buttonColor,
+                contentColor = whiteColor,
+                disabledContainerColor = buttonInactiveColor,
+                disabledContentColor = whiteColor
+            )
+        ) {
+            Text(
+                text = "Open Pourtainer App",
+                color = whiteColor
+            )
+        }
     }
 }
