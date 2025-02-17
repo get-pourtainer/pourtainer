@@ -33,7 +33,7 @@ class PourtainerAppWidgetConfigurationActivity : AppCompatActivity() {
         val client = Gson().fromJson(rawClient, Client::class.java)
 
         setContent {
-            PourtainerTheme {
+            PourtainerMaterialTheme {
                 WidgetConfigurationView (
                     isAuthorized = client != null,
                     containers = containerList,

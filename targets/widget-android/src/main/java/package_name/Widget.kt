@@ -71,7 +71,8 @@ fun WidgetContent() {
             return@Column
         }
 
-        ContainerView(context)
+        // todo pass id
+        ContainerView(context, "todo")
     }
 }
 
@@ -103,5 +104,5 @@ fun ContentPreview2() {
 fun ContentPreview3() {
     val context = LocalContext.current
 
-    ContainerView(context)
+    ContainerView(context, "id")
 }

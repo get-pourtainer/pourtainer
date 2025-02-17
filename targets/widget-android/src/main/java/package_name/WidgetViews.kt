@@ -2,6 +2,7 @@ package com.pourtainer.mobile
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,12 +66,15 @@ fun NoContainersView(context: Context) {
 }
 
 @Composable
-fun ContainerView(context: Context) {
+fun ContainerView(context: Context, containerId: String?) {
+    val customUri = "pourtainer://container/${containerId ?: ""}"
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(customUri))
+
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
             .padding(16.dp)
-            .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
+            .clickable(actionStartActivity(intent))
     ) {
         Text(
             text = "Todo",
