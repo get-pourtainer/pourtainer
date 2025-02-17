@@ -23,12 +23,12 @@ fun WidgetConfigurationView(
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         if (!isAuthorized) {
-            UnauthorizedView(openApp)
+            UnauthorizedSettingsView(openApp)
             return@Column
         }
 
         if (containers.isEmpty()) {
-            NoContainersView(openApp)
+            NoContainersSettingsView(openApp)
             return@Column
         }
 
@@ -94,7 +94,7 @@ fun ContainerItem(
 }
 
 @Composable
-fun UnauthorizedView(openApp: () -> Unit) {
+fun UnauthorizedSettingsView(openApp: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text(
             text = "Unauthorized",
@@ -125,7 +125,7 @@ fun UnauthorizedView(openApp: () -> Unit) {
 }
 
 @Composable
-fun NoContainersView(openApp: () -> Unit) {
+fun NoContainersSettingsView(openApp: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text(
             text = "No containers",
