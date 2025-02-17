@@ -10,6 +10,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.glance.GlanceComposable
+import androidx.glance.GlanceTheme
+import androidx.glance.material3.ColorProviders
 
 val errorColor = Color(0xFFEF4444)
 var warningColor = Color(0xFFF59E0B)
@@ -26,6 +29,11 @@ private val LightColorPalette = lightColorScheme(
 private val DarkColorPalette = darkColorScheme(
     background = Color(0xFF0F172A),
     onSurface = Color(0xFFF8FAFC)
+)
+
+private val GlanceColors = ColorProviders(
+    light = LightColorPalette,
+    dark = DarkColorPalette
 )
 
 private val LightTypography = Typography(
@@ -64,8 +72,9 @@ private val DarkTypography = Typography(
     )
 )
 
+
 @Composable
-fun PourtainerTheme(
+fun PourtainerMaterialTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
@@ -75,6 +84,17 @@ fun PourtainerTheme(
     MaterialTheme(
         colorScheme = colors,
         typography = typography,
+        content = content
+    )
+}
+
+@Composable
+@GlanceComposable
+fun PourtainerGlanceTheme(
+    content: @Composable () -> Unit
+) {
+    GlanceTheme(
+        colors = GlanceColors,
         content = content
     )
 }

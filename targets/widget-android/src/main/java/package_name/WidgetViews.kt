@@ -4,49 +4,77 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import androidx.glance.Button
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
+import androidx.glance.GlanceTheme
+import androidx.glance.action.clickable
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
-import androidx.glance.layout.fillMaxWidth
 import androidx.glance.text.Text
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.layout.Column
+import androidx.glance.text.FontWeight
+import androidx.glance.text.TextStyle
 
 @Composable
 fun UnauthorizedView(context: Context) {
-    Column(modifier = GlanceModifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
+    ) {
         Text(
             text = "Unauthorized",
+            style = TextStyle(
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = GlanceTheme.colors.onSurface
+            ),
             modifier = GlanceModifier.padding(bottom = 8.dp)
         )
         Text(
-            text = "Sign in with Pourtainer app",
+            text = "Sign in with\nPourtainer app",
             modifier = GlanceModifier.padding(bottom = 16.dp)
-        )
-        Button(
-            text = "Open Pourtainer App",
-            onClick = actionStartActivity(Intent(context, MainActivity::class.java)),
-            modifier = GlanceModifier.fillMaxWidth()
         )
     }
 }
 
 @Composable
 fun NoContainersView(context: Context) {
-    Column(modifier = GlanceModifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
+    ) {
         Text(
             text = "No containers",
+            style = TextStyle(
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = GlanceTheme.colors.onSurface
+            ),
             modifier = GlanceModifier.padding(bottom = 8.dp)
         )
         Text(
             text = "Add your first container in Pourtainer app",
             modifier = GlanceModifier.padding(bottom = 16.dp)
         )
-        Button(
-            text = "Open Pourtainer App",
-            onClick = actionStartActivity(Intent(context, MainActivity::class.java)),
-            modifier = GlanceModifier.fillMaxWidth()
+    }
+}
+
+@Composable
+fun ContainerView(context: Context) {
+    Column(
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
+    ) {
+        Text(
+            text = "Todo",
+            modifier = GlanceModifier.padding(bottom = 16.dp)
         )
     }
 }

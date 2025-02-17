@@ -7,6 +7,8 @@ const withModifiedAppBuildGradle = (config, opts) => withAppBuildGradle(config, 
     implementation("androidx.glance:glance:${opts.glanceVersion}")
     implementation("androidx.glance:glance-appwidget:${opts.glanceVersion}")
     implementation("androidx.glance:glance-preview:${opts.glanceVersion}")
+    implementation("androidx.glance:glance-material3:${opts.glanceVersion}")
+    implementation("androidx.glance:glance-appwidget-preview:${opts.glanceVersion}")
     implementation("com.google.code.gson:gson:2.12.1")
     implementation("androidx.activity:activity-compose:1.10.0")
     implementation("androidx.compose.ui:ui:1.7.8")

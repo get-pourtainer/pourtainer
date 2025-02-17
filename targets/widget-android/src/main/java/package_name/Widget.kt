@@ -2,25 +2,22 @@ package com.pourtainer.mobile
 
 import android.appwidget.AppWidgetManager
 import android.content.Context
-import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
+import androidx.glance.background
 import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.preview.ExperimentalGlancePreviewApi
 import androidx.glance.preview.Preview
-import androidx.glance.text.FontWeight
-import androidx.glance.text.Text
-import androidx.glance.text.TextStyle
 import com.google.gson.Gson
 import expo.modules.widgetkit.Client
 import expo.modules.widgetkit.ContainerSetting
@@ -31,16 +28,9 @@ import kotlinx.coroutines.launch
 class PourtainerWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
-            PourtainerTheme {
+            PourtainerGlanceTheme {
                 WidgetContent()
             }
-        }
-    }
-
-    fun openApp() {
-        val openAppIntent = Intent(Intent.ACTION_MAIN).apply {
-            setPackage("com.pourtainer.mobile")
-            addCategory(Intent.CATEGORY_LAUNCHER)
         }
     }
 
@@ -63,9 +53,14 @@ fun WidgetContent() {
     val containerList = Gson().fromJson(rawContainers, Array<ContainerSetting>::class.java) ?: emptyArray()
     val rawClient = prefs.getString("client", "null")
     val client = Gson().fromJson(rawClient, Client::class.java)
-    val isAuthorized = false
+    val isAuthorized = client != null
 
-    Column(modifier = GlanceModifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .background(GlanceTheme.colors.background)
+    ) {
         if (!isAuthorized) {
             UnauthorizedView(context)
             return@Column
@@ -76,18 +71,7 @@ fun WidgetContent() {
             return@Column
         }
 
-        Text(
-            text = "Available Containers",
-            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
-            modifier = GlanceModifier.padding(bottom = 8.dp)
-        )
-
-        for (container in containerList) {
-            Text(
-                text = container.name,
-                modifier = GlanceModifier.padding(4.dp)
-            )
-        }
+        ContainerView(context)
     }
 }
 
@@ -96,7 +80,7 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @OptIn(ExperimentalGlancePreviewApi::class)
-@Preview(widthDp = 200, heightDp = 150)
+@Preview(widthDp = 200, heightDp = 160)
 @Composable
 fun ContentPreview() {
     val context = LocalContext.current
@@ -105,10 +89,19 @@ fun ContentPreview() {
 }
 
 @OptIn(ExperimentalGlancePreviewApi::class)
-@Preview(widthDp = 200, heightDp = 150)
+@Preview(widthDp = 200, heightDp = 160)
 @Composable
 fun ContentPreview2() {
     val context = LocalContext.current
 
     NoContainersView(context)
+}
+
+@OptIn(ExperimentalGlancePreviewApi::class)
+@Preview(widthDp = 200, heightDp = 160)
+@Composable
+fun ContentPreview3() {
+    val context = LocalContext.current
+
+    ContainerView(context)
 }
