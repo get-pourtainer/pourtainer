@@ -9,4 +9,6 @@
     android:updatePeriodMillis="900000"
     android:resizeMode="none"
     android:widgetCategory="home_screen"
+    android:configure="com.pourtainer.mobile.PourtainerAppWidgetConfigurationActivity"
 />
+

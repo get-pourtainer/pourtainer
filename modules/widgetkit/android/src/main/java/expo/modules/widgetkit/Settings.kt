@@ -5,10 +5,10 @@ import expo.modules.kotlin.records.Record
 
 class ContainerSetting : Record {
     @Field
-    var name: String? = null
+    var name: String = ""
 
     @Field
-    var id: String? = null
+    var id: String = ""
 }
 
 class Client : Record {

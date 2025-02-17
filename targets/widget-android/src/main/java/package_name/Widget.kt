@@ -1,5 +1,6 @@
 package com.pourtainer.mobile
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -15,10 +16,16 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.text.Text
 
-class MyGlanceWidget : GlanceAppWidget() {
+class PourtainerWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             WidgetContent()
+        }
+    }
+
+    companion object {
+        internal fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
+            // todo
         }
     }
 }
@@ -36,5 +43,5 @@ fun WidgetContent() {
 }
 
 class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget = MyGlanceWidget()
+    override val glanceAppWidget = PourtainerWidget()
 }

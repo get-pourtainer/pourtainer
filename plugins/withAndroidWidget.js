@@ -6,6 +6,10 @@ const withModifiedAppBuildGradle = (config, opts) => withAppBuildGradle(config, 
     const gradleDependencies = `
     implementation("androidx.glance:glance:${opts.glanceVersion}")
     implementation("androidx.glance:glance-appwidget:${opts.glanceVersion}")
+    implementation("com.google.code.gson:gson:2.12.1")
+    implementation("androidx.activity:activity-compose:1.10.0")
+    implementation("androidx.compose.ui:ui:1.7.8")
+    implementation("androidx.compose.material3:material3-android:1.3.1")
     `
 
     const gradleAndroidConfig = `
@@ -50,7 +54,7 @@ const withModifiedAndroidManifest = (config, opts) => withAndroidManifest(config
     mainApplication.receiver = {
         $: {
             "android:name": `.${opts.receiverName}`,
-            "android:exported": 'false'
+            "android:exported": 'true'
         },
         "intent-filter": [
             {
@@ -62,6 +66,15 @@ const withModifiedAndroidManifest = (config, opts) => withAndroidManifest(config
                     },
                 ],
             },
+            {
+                action: [
+                    {
+                        $: {
+                            "android:name": "android.appwidget.action.APPWIDGET_CONFIGURE",
+                        },
+                    }
+                ]
+            }
         ],
         "meta-data": [
             {
@@ -72,6 +85,23 @@ const withModifiedAndroidManifest = (config, opts) => withAndroidManifest(config
             },
         ],
     }
+    mainApplication.activity.push({
+        $: {
+            "android:name": `.PourtainerAppWidgetConfigurationActivity`,
+            "android:exported": 'true'
+        },
+        "intent-filter": [
+            {
+                action: [
+                    {
+                        $: {
+                            "android:name": "android.appwidget.action.APPWIDGET_CONFIGURE",
+                        },
+                    }
+                ]
+            }
+        ],
+    })
 
     return config
 })
