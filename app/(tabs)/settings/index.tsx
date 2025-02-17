@@ -64,7 +64,10 @@ export default function SettingsScreen() {
                         endpoints?.map((endpoint) => (
                             <Pressable
                                 key={endpoint.Id}
-                                onPress={() => setCurrentEndpointId(endpoint.Id.toString())}
+                                onPress={() => {
+                                    setCurrentEndpointId(endpoint.Id.toString())
+                                    WidgetKitModule.updateEndpointId(endpoint.Id)
+                                }}
                                 style={({ pressed }) => [
                                     styles.endpointItem,
                                     pressed && { opacity: 0.7 },

@@ -18,12 +18,12 @@ class WidgetKitModule : Module() {
       )
     }
 
-    Function("registerClient") { url: String, accessToken: String ->
+    Function("registerClient") { client: Client ->
       appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
         val editor = prefs.edit()
+        val json = Gson().toJson(client)
 
-        editor.putString("url", url)
-        editor.putString("accessToken", accessToken)
+        editor.putString("client", json)
 
         editor.apply()
       }
@@ -40,32 +40,14 @@ class WidgetKitModule : Module() {
       }
     }
 
-    Function("getClient") {
-      val prefs = appContext.reactContext
-        ?.getSharedPreferences(groupName, Context.MODE_PRIVATE)
+    Function("hasClient") {
+      val rawClient = appContext.reactContext
+              ?.getSharedPreferences(groupName, Context.MODE_PRIVATE)
+              ?.getString("client", "null")
 
-      val sharedPrefs = prefs ?: return@Function mapOf(
-        "url" to "",
-        "accessToken" to ""
-      )
-
-      val maybeUrl = sharedPrefs.getString("url", "")
-      val maybeAccessToken = sharedPrefs.getString("accessToken", "")
-
-      return@Function mapOf(
-        "url" to maybeUrl,
-        "accessToken" to maybeAccessToken
-      )
-    }
-
-    Function("getAvailableContainers") {
-      val rawContainers = appContext.reactContext
-        ?.getSharedPreferences(groupName, Context.MODE_PRIVATE)
-        ?.getString("containers", "[]")
-
-      rawContainers?.let {
-        Gson().fromJson(it, Array<ContainerSetting>::class.java)
-      } ?: emptyArray<ContainerSetting>()
+      rawClient?.let {
+        Gson().fromJson(it, Client::class.java)
+      } != null
     }
 
     Function("clear") {
@@ -74,6 +56,24 @@ class WidgetKitModule : Module() {
 
         editor.clear()
         editor.apply()
+      }
+    }
+
+    Function("updateEndpointId") { endpointId: Int ->
+      appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
+        val rawClient = prefs.getString("client", "null")
+
+        rawClient?.let {
+          val client = Gson().fromJson(it, Client::class.java)
+
+          client.endpointId = endpointId
+
+          val json = Gson().toJson(client)
+          val editor = prefs.edit()
+
+          editor.putString("client", json)
+          editor.apply()
+        }
       }
     }
   }

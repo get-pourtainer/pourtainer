@@ -5,8 +5,19 @@ import expo.modules.kotlin.records.Record
 
 class ContainerSetting : Record {
     @Field
-    val name: String? = null
+    var name: String? = null
 
     @Field
-    val id: String? = null
+    var id: String? = null
+}
+
+class Client : Record {
+    @Field
+    var url: String? = null
+
+    @Field
+    var accessToken: String? = null
+
+    @Field
+    var endpointId: Int? = null
 }

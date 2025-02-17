@@ -13,16 +13,22 @@ public class WidgetKitModule: Module {
           ]
       }
 
-      Function("registerClient") { (url: String, accessToken: String) in
+      Function("registerClient") { (client: Client) in
           guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
               return
           }
+          
+          do {
+              let encodedData = try JSONEncoder().encode(client)
 
-          sharedDefaults.set(url, forKey: "url")
-          sharedDefaults.set(accessToken, forKey: "accessToken")
-          sharedDefaults.synchronize()
+              sharedDefaults.set(encodedData, forKey: "client")
+              sharedDefaults.synchronize()
 
-          WidgetCenter.shared.reloadAllTimelines()
+              WidgetCenter.shared.reloadAllTimelines()
+
+          } catch {
+              // for now do nothing
+          }
       }
 
       Function("registerContainers") { (containers: Array<ContainerSetting>) in
@@ -43,37 +49,14 @@ public class WidgetKitModule: Module {
           }
       }
 
-      Function("getClient") {
-          guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
-              return [
-                "url": "",
-                "accessToken": ""
-              ]
-          }
-
-          let url = sharedDefaults.string(forKey: "url") ?? ""
-          let accessToken = sharedDefaults.string(forKey: "accessToken") ?? ""
-
-          return [
-            "url": url,
-            "accessToken": accessToken
-          ]
-      }
-
-      Function("getAvailableContainers") {
+      Function("hasClient") {
           guard let sharedDefaults = UserDefaults(suiteName: _groupName),
-                let rawData = sharedDefaults.data(forKey: "containers") else {
-              return []
+                let rawData = sharedDefaults.data(forKey: "client"),
+                let _ = (try? JSONDecoder().decode(Client.self, from: rawData)) else {
+              return false
           }
 
-          let containers = (try? JSONDecoder().decode([ContainerSetting].self, from: rawData)) ?? []
-
-          return containers.map { container in
-              return [
-                "id": container.id,
-                "name": container.name
-              ]
-          }
+          return true
       }
 
       Function("clear") {
@@ -85,6 +68,28 @@ public class WidgetKitModule: Module {
          sharedDefaults.synchronize()
 
          WidgetCenter.shared.reloadAllTimelines()
+      }
+      
+      Function("updateEndpointId") { (endpointId: Int) in
+          guard let sharedDefaults = UserDefaults(suiteName: _groupName),
+                let rawData = sharedDefaults.data(forKey: "client"),
+                let client = (try? JSONDecoder().decode(Client.self, from: rawData)) else {
+              return
+          }
+          
+          client.endpointId = endpointId
+          
+          do {
+              let encodedData = try JSONEncoder().encode(client)
+
+              sharedDefaults.set(encodedData, forKey: "client")
+              sharedDefaults.synchronize()
+
+              WidgetCenter.shared.reloadAllTimelines()
+
+          } catch {
+              // for now do nothing
+          }
       }
   }
 }

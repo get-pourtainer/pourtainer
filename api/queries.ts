@@ -132,7 +132,7 @@ export async function fetchImages(): Promise<Image[]> {
 
 export async function fetchContainers(): Promise<Container[]> {
     console.log('Fetching CONTAINERS from API...')
-    const { currentEndpointId } = useAuthStore.getState()
+    const { currentEndpointId, instances, currentInstanceId } = useAuthStore.getState()
 
     try {
         const params = new URLSearchParams({
@@ -155,6 +155,20 @@ export async function fetchContainers(): Promise<Container[]> {
             const nameB = b.Names[0].replace(/^\//, '')
             return nameA.localeCompare(nameB)
         })
+
+        // todo remove me sometime in the future
+        // register client for users who were already signed in
+        if (!WidgetKitModule.hasClient()) {
+            const currentInstance = instances.find(instance => instance.id === currentInstanceId)
+
+            if (currentInstance && currentEndpointId) {
+                WidgetKitModule.registerClient({
+                    url: currentInstance.baseUrl,
+                    accessToken: currentInstance.apiToken,
+                    endpointId: Number.parseInt(currentEndpointId)
+                })
+            }
+        }
 
         WidgetKitModule.registerContainers(sortedContainers.map(container => ({
             id: container.Id,
