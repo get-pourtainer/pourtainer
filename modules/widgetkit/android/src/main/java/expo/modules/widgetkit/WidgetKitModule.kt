@@ -1,6 +1,7 @@
 package expo.modules.widgetkit
 
 import android.content.Context
+import android.content.Intent
 import com.google.gson.Gson
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -8,6 +9,14 @@ import expo.modules.kotlin.modules.ModuleDefinition
 class WidgetKitModule : Module() {
   override fun definition() = ModuleDefinition {
     val groupName: String = "group.com.pourtainer.mobile"
+
+    fun notifyAllWidgets() {
+      val intent = Intent().apply {
+        action = "android.appwidget.action.APPWIDGET_UPDATE"
+      }
+
+      appContext.reactContext?.sendBroadcast(intent)
+    }
 
     Name("PourtainerWidgetKit")
 
@@ -26,6 +35,7 @@ class WidgetKitModule : Module() {
         editor.putString("client", json)
 
         editor.apply()
+        notifyAllWidgets()
       }
     }
 
@@ -37,6 +47,7 @@ class WidgetKitModule : Module() {
         editor.putString("containers", json)
 
         editor.apply()
+        notifyAllWidgets()
       }
     }
 
@@ -56,6 +67,7 @@ class WidgetKitModule : Module() {
 
         editor.clear()
         editor.apply()
+        notifyAllWidgets()
       }
     }
 
@@ -73,6 +85,7 @@ class WidgetKitModule : Module() {
 
           editor.putString("client", json)
           editor.apply()
+          notifyAllWidgets()
         }
       }
     }

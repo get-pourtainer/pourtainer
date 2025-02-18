@@ -1,6 +1,7 @@
 package com.pourtainer.mobile
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -45,11 +46,11 @@ class PourtainerWidget : GlanceAppWidget() {
 @Composable
 fun WidgetContent() {
     val context = LocalContext.current
-    val prefs = context.getSharedPreferences("group.com.pourtainer.mobile", Context.MODE_PRIVATE)
-    val rawContainers = prefs.getString("containers", "[]")
-    val containerList = Gson().fromJson(rawContainers, Array<ContainerSetting>::class.java) ?: emptyArray()
-    val rawClient = prefs.getString("client", "null")
-    val client = Gson().fromJson(rawClient, Client::class.java)
+    val state = currentState<Preferences>()
+    val rawContainers = state[PourtainerWidgetReceiver.containersKey] ?: "[]]"
+    val containers =  Gson().fromJson(rawContainers, Array<ContainerSetting>::class.java) ?: emptyArray()
+    val rawClient = state[PourtainerWidgetReceiver.clientKey] ?: "null"
+    val client = Gson().fromJson(rawClient, Client::class.java) ?: null
     val isAuthorized = client != null
 
     Column(
@@ -63,14 +64,13 @@ fun WidgetContent() {
             return@Column
         }
 
-        if (containerList.isEmpty()) {
+        if (containers.isEmpty()) {
             NoContainersView(context)
             return@Column
         }
 
         // list is not empty and user selected container
-        val state = currentState<Preferences>()
-        val rawContainer = state[PourtainerWidgetReceiver.selectedContainer] ?: "null"
+        val rawContainer = state[PourtainerWidgetReceiver.selectedContainerKey] ?: "null"
         val container = Gson().fromJson(rawContainer, ContainerSetting::class.java)
 
         ContainerView(container, "running")
@@ -81,9 +81,37 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = PourtainerWidget()
 
     companion object {
-        val selectedContainer = stringPreferencesKey("selectedContainer")
-
+        const val sharedPreferencesGroup = "group.com.pourtainer.mobile"
+        val selectedContainerKey = stringPreferencesKey("selectedContainer")
+        val clientKey = stringPreferencesKey("client")
+        val containersKey = stringPreferencesKey("containers")
+        val containerMetadataKey = stringPreferencesKey("containerMetadata")
     }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == "android.appwidget.action.APPWIDGET_UPDATE") {
+            CoroutineScope(Dispatchers.IO).launch {
+                val glanceIds = GlanceAppWidgetManager(context).getGlanceIds(PourtainerWidget::class.java)
+                val sharedPrefs = context.getSharedPreferences(sharedPreferencesGroup, Context.MODE_PRIVATE)
+
+                glanceIds.forEach { glanceId ->
+                    updateAppWidgetState(
+                        context = context,
+                        definition = PreferencesGlanceStateDefinition,
+                        glanceId = glanceId
+                    ) { prefs ->
+                        prefs.toMutablePreferences().apply {
+                            this[clientKey] = sharedPrefs.getString("client", "null").toString()
+                            this[containersKey] = sharedPrefs.getString("containers", "[]").toString()
+                        }
+                    }
+
+                    glanceAppWidget.update(context, glanceId)
+
+                    }
+                }
+            }
+        }
 
     fun onContainerSelected(context: Context, glanceId: GlanceId, container: ContainerSetting?) {
         if (container == null) {
@@ -100,9 +128,10 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
                         glanceId = glanceId
                     ) { prefs ->
                         prefs.toMutablePreferences().apply {
-                            this[selectedContainer] = Gson().toJson(container)
+                            this[selectedContainerKey] = Gson().toJson(container)
                         }
                     }
+
                     glanceAppWidget.update(context, glanceId)
                 }
             }
