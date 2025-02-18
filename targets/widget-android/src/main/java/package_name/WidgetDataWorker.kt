@@ -5,10 +5,10 @@ import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.google.gson.Gson
+import expo.modules.widgetkit.Client
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.net.HttpURLConnection
-import java.net.URL
 
 class WidgetDataWorker(context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
     override suspend fun doWork(): Result {
@@ -28,12 +28,19 @@ class WidgetDataWorker(context: Context, workerParams: WorkerParameters) : Corou
         }
     }
 
-    private suspend fun fetchApiData(): String = withContext(Dispatchers.IO) {
-        // todo fetch container data
+    private suspend fun fetchApiData(): Container = withContext(Dispatchers.IO) {
+        val prefs = applicationContext.getSharedPreferences(PourtainerWidgetReceiver.sharedPreferencesGroup, Context.MODE_PRIVATE)
+        val containerId = inputData.getString(containerIdKey) ?: throw Exception("Missing container id")
+        val rawClient = prefs.getString("client", "null").toString()
+        val client = Gson().fromJson(rawClient, Client::class.java) ?: throw Exception("Missing client")
+
+        val container = getDockerContainer(containerId, client) ?: throw Exception("No container data")
+
+        container
     }
 
-    private fun updateWidget(context: Context, glanceId: GlanceId, data: String) {
-        // todo
+    private fun updateWidget(context: Context, glanceId: GlanceId, container: Container) {
+        PourtainerWidgetReceiver().onStatusUpdated(context = context, glanceId, container)
     }
 
     companion object {

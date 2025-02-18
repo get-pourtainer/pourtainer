@@ -79,8 +79,10 @@ fun WidgetContent() {
         // list is not empty and user selected container
         val rawContainer = state[PourtainerWidgetReceiver.selectedContainerKey] ?: "null"
         val container = Gson().fromJson(rawContainer, ContainerSetting::class.java)
+        val rawContainerDetails = state[PourtainerWidgetReceiver.containerMetadataKey] ?: "null"
+        val containerDetails = Gson().fromJson(rawContainerDetails, Container::class.java)
 
-        ContainerView(container, "running")
+        ContainerView(container, containerDetails?.state?.status ?: "unknown")
     }
 }
 
@@ -111,7 +113,7 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
                         val container = Gson().fromJson(rawContainer, ContainerSetting::class.java)
 
                         if (container != null) {
-                            onContainerStatusUpdated(context, glanceId, container)
+                            schedulePeriodicWork(context, glanceId, container)
                         }
 
                         prefs.toMutablePreferences().apply {
@@ -145,6 +147,7 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
 
         CoroutineScope(Dispatchers.IO).launch {
             val glanceIds = GlanceAppWidgetManager(context).getGlanceIds(PourtainerWidget::class.java)
+
             glanceIds.forEach { runningGlanceId ->
                 if (runningGlanceId == glanceId) {
                     updateAppWidgetState(
@@ -158,13 +161,35 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
                     }
 
                     glanceAppWidget.update(context, glanceId)
-                    onContainerStatusUpdated(context, glanceId, container)
+                    schedulePeriodicWork(context, glanceId, container)
                 }
             }
         }
     }
 
-    private fun onContainerStatusUpdated(context: Context, glanceId: GlanceId, container: ContainerSetting) {
+    fun onStatusUpdated(context: Context, glanceId: GlanceId, container: Container) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val glanceIds = GlanceAppWidgetManager(context).getGlanceIds(PourtainerWidget::class.java)
+
+            glanceIds.forEach { runningGlanceId ->
+                if (runningGlanceId == glanceId) {
+                    updateAppWidgetState(
+                        context = context,
+                        definition = PreferencesGlanceStateDefinition,
+                        glanceId = glanceId
+                    ) { prefs ->
+                        prefs.toMutablePreferences().apply {
+                            this[containerMetadataKey] = Gson().toJson(container)
+                        }
+                    }
+
+                    glanceAppWidget.update(context, glanceId)
+                }
+            }
+        }
+    }
+
+    private fun schedulePeriodicWork(context: Context, glanceId: GlanceId, container: ContainerSetting) {
         val workManager = WorkManager.getInstance(context)
 
         // cancel previous jobs if present
