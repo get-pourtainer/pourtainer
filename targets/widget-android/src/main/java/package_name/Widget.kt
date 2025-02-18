@@ -200,7 +200,8 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
             .build()
         val work = PeriodicWorkRequestBuilder<WidgetDataWorker>(15, TimeUnit.MINUTES)
             .setInputData(workDataOf(
-                WidgetDataWorker.containerIdKey to container.id
+                WidgetDataWorker.containerIdKey to container.id,
+                WidgetDataWorker.glanceIdKey to glanceId.hashCode().toString()
             ))
             .setConstraints(constraints)
             .build()

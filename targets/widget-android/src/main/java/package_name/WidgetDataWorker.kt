@@ -12,8 +12,9 @@ import kotlinx.coroutines.withContext
 
 class WidgetDataWorker(context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
     override suspend fun doWork(): Result {
+        val boxedGlanceId = inputData.getString(glanceIdKey) ?: throw Exception("Missing glance id")
         val glanceId = GlanceAppWidgetManager(context = applicationContext)
-            .getGlanceIds(PourtainerWidget::class.java).firstOrNull()
+            .getGlanceIds(PourtainerWidget::class.java).firstOrNull { id -> id.hashCode() == boxedGlanceId.toInt()}
 
         if (glanceId == null) {
             return Result.failure()
@@ -45,5 +46,6 @@ class WidgetDataWorker(context: Context, workerParams: WorkerParameters) : Corou
 
     companion object {
         const val containerIdKey = "container_id"
+        const val glanceIdKey = "glance_id"
     }
 }
