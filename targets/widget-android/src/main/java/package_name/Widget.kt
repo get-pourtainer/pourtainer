@@ -30,6 +30,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.currentState
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import java.util.concurrent.TimeUnit
 
 class PourtainerWidget : GlanceAppWidget() {
     override var stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
@@ -100,6 +107,13 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
                         definition = PreferencesGlanceStateDefinition,
                         glanceId = glanceId
                     ) { prefs ->
+                        val rawContainer = prefs[selectedContainerKey] ?: "null"
+                        val container = Gson().fromJson(rawContainer, ContainerSetting::class.java)
+
+                        if (container != null) {
+                            onContainerStatusUpdated(context, glanceId, container)
+                        }
+
                         prefs.toMutablePreferences().apply {
                             this[clientKey] = sharedPrefs.getString("client", "null").toString()
                             this[containersKey] = sharedPrefs.getString("containers", "[]").toString()
@@ -107,11 +121,22 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
                     }
 
                     glanceAppWidget.update(context, glanceId)
-
-                    }
                 }
             }
         }
+    }
+
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
+
+        appWidgetIds.forEach { appWidgetId ->
+            val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
+            val workManager = WorkManager.getInstance(context)
+
+            // widget should no longer get periodic updates
+            workManager.cancelUniqueWork("widget_update_${glanceId.hashCode()}")
+        }
+    }
 
     fun onContainerSelected(context: Context, glanceId: GlanceId, container: ContainerSetting?) {
         if (container == null) {
@@ -133,9 +158,33 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
                     }
 
                     glanceAppWidget.update(context, glanceId)
+                    onContainerStatusUpdated(context, glanceId, container)
                 }
             }
         }
+    }
+
+    private fun onContainerStatusUpdated(context: Context, glanceId: GlanceId, container: ContainerSetting) {
+        val workManager = WorkManager.getInstance(context)
+
+        // cancel previous jobs if present
+        workManager.cancelUniqueWork("widget_update_${glanceId.hashCode()}")
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+        val work = PeriodicWorkRequestBuilder<WidgetDataWorker>(15, TimeUnit.MINUTES)
+            .setInputData(workDataOf(
+                WidgetDataWorker.containerIdKey to container.id
+            ))
+            .setConstraints(constraints)
+            .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            "widget_update_${glanceId.hashCode()}",
+            ExistingPeriodicWorkPolicy.UPDATE,
+            work
+        )
     }
 }
 
