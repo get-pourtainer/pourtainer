@@ -57,7 +57,8 @@ const withModifiedAndroidManifest = (config, opts) => withAndroidManifest(config
     mainApplication.receiver = {
         $: {
             "android:name": `.${opts.receiverName}`,
-            "android:exported": 'true'
+            "android:exported": 'true',
+            "android:label": "@string/app_name"
         },
         "intent-filter": [
             {
@@ -84,6 +85,7 @@ const withModifiedAndroidManifest = (config, opts) => withAndroidManifest(config
                 $: {
                     "android:name": "android.appwidget.provider",
                     "android:resource": "@xml/pourtainer_widget_info",
+                    "android:description": "@string/widget_description"
                 },
             },
         ],

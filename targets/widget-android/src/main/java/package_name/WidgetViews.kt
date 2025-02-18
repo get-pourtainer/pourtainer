@@ -13,30 +13,40 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.text.Text
 import androidx.glance.appwidget.action.actionStartActivity
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.size
 import androidx.glance.text.FontWeight
 import androidx.glance.text.TextStyle
+import expo.modules.widgetkit.ContainerSetting
+import androidx.glance.background
+import androidx.glance.appwidget.cornerRadius
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Row
 
 @Composable
 fun UnauthorizedView(context: Context) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(8.dp)
             .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
     ) {
         Text(
             text = "Unauthorized",
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
+                fontSize = 16.sp,
                 color = GlanceTheme.colors.onSurface
             ),
             modifier = GlanceModifier.padding(bottom = 8.dp)
         )
         Text(
             text = "Sign in with\nPourtainer app",
-            modifier = GlanceModifier.padding(bottom = 16.dp)
+            style = TextStyle(
+                color = GlanceTheme.colors.onSurface
+            ),
+            modifier = GlanceModifier.padding(bottom = 4.dp)
         )
     }
 }
@@ -46,39 +56,79 @@ fun NoContainersView(context: Context) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(8.dp)
             .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
     ) {
         Text(
             text = "No containers",
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
+                fontSize = 16.sp,
                 color = GlanceTheme.colors.onSurface
             ),
             modifier = GlanceModifier.padding(bottom = 8.dp)
         )
         Text(
             text = "Add your first container in Pourtainer app",
-            modifier = GlanceModifier.padding(bottom = 16.dp)
+            style = TextStyle(
+                color = GlanceTheme.colors.onSurface
+            ),
+            modifier = GlanceModifier.padding(bottom = 4.dp)
         )
     }
 }
 
 @Composable
-fun ContainerView(context: Context, containerId: String?) {
-    val customUri = "pourtainer://container/${containerId ?: ""}"
+fun ContainerStatusView(status: String) {
+    val containerStatus = status.replaceFirstChar { it.titlecase() }
+    val statusColor = when (status) {
+        "running" -> successColor
+        "exited" -> errorColor
+        else -> warningColor
+    }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = GlanceModifier.padding(bottom = 8.dp)
+    ) {
+        Box(
+            modifier = GlanceModifier
+                .size(6.dp)
+                .cornerRadius(6.dp)
+                .background(statusColor)
+        ) {}
+        Text(
+            text = containerStatus,
+            style = TextStyle(
+                fontSize = 12.sp,
+                color = GlanceTheme.colors.onSurface
+            ),
+            modifier = GlanceModifier.padding(start = 4.dp)
+        )
+    }
+}
+
+@Composable
+fun ContainerView(container: ContainerSetting, status: String) {
+    val customUri = "pourtainer://container/${container.id}"
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(customUri))
 
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(8.dp)
             .clickable(actionStartActivity(intent))
     ) {
+        ContainerStatusView(status)
         Text(
-            text = "Todo",
-            modifier = GlanceModifier.padding(bottom = 16.dp)
+            text = container.name,
+            style = TextStyle(
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = GlanceTheme.colors.onSurface
+            ),
+            maxLines = 3,
+            modifier = GlanceModifier.padding(bottom = 4.dp)
         )
     }
 }

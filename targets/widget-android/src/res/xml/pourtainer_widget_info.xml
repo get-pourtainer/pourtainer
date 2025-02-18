@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:initialLayout="@layout/sample_widget"
-    android:previewImage="@drawable/example_appwidget_preview"
+    android:previewImage="@drawable/preview"
     android:minWidth="100dp"
     android:minHeight="40dp"
     android:targetCellWidth="2"
     android:targetCellHeight="1"
     android:updatePeriodMillis="900000"
     android:resizeMode="none"
+    android:description="@string/widget_description"
     android:widgetCategory="home_screen"
     android:configure="com.pourtainer.mobile.PourtainerAppWidgetConfigurationActivity"
+    android:widgetFeatures="reconfigurable"
 />
 

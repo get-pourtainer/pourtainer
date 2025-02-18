@@ -6,11 +6,14 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import com.google.gson.Gson
 import expo.modules.widgetkit.Client
 import expo.modules.widgetkit.ContainerSetting
 
 class PourtainerAppWidgetConfigurationActivity : AppCompatActivity() {
+    private var selectedContainer: ContainerSetting? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -23,6 +26,7 @@ class PourtainerAppWidgetConfigurationActivity : AppCompatActivity() {
 
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             finish()
+
             return
         }
 
@@ -37,15 +41,17 @@ class PourtainerAppWidgetConfigurationActivity : AppCompatActivity() {
                 WidgetConfigurationView (
                     isAuthorized = client != null,
                     containers = containerList,
-                    onContainerSelected = { selected ->
-                        prefs.edit().putString("selectedContainerId", selected.id).apply()
+                    onContainerSelected = { container ->
+                        this.selectedContainer = container
                     },
                     onDone = {
-                        val appWidgetManager = AppWidgetManager.getInstance(this)
-                        PourtainerWidget.updateAppWidget(this, appWidgetManager, appWidgetId)
+                        val glanceId = GlanceAppWidgetManager(applicationContext).getGlanceIdBy(appWidgetId)
 
-                        val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                        PourtainerWidgetReceiver().onContainerSelected(context = applicationContext, glanceId, selectedContainer)
 
+                        val resultValue = Intent()
+
+                        resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
                         setResult(RESULT_OK, resultValue)
                         finish()
                     },
