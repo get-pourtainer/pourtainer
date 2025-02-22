@@ -31,7 +31,7 @@ export default function SettingsScreen() {
         }
 
         queryClient.clear()
-        WidgetKitModule.clear()
+        WidgetKitModule.clearAllInstances()
         router.replace('/login')
     }
 
@@ -64,10 +64,7 @@ export default function SettingsScreen() {
                         endpoints?.map((endpoint) => (
                             <Pressable
                                 key={endpoint.Id}
-                                onPress={() => {
-                                    setCurrentEndpointId(endpoint.Id.toString())
-                                    WidgetKitModule.updateEndpointId(endpoint.Id)
-                                }}
+                                onPress={() => setCurrentEndpointId(endpoint.Id.toString())}
                                 style={({ pressed }) => [
                                     styles.endpointItem,
                                     pressed && { opacity: 0.7 },

@@ -1,10 +1,5 @@
-export type ContainerSetting = {
-    id: string,
-    name: string
-}
-
-export type Client = {
+export type Instance = {
     url: string,
-    accessToken: string,
-    endpointId: number
+    instanceId: string,
+    accessToken: string
 }

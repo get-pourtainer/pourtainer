@@ -2,95 +2,61 @@ import ExpoModulesCore
 import WidgetKit
 
 public class WidgetKitModule: Module {
-  public func definition() -> ModuleDefinition {
-      let _groupName: String = "group.com.pourtainer.mobile"
+    let _groupName: String = "group.com.pourtainer.mobile"
+    let _instancesKey: String = "pourtainer::instances"
 
-      Name("PourtainerWidgetKit")
+    private func getInstances() -> [Instance] {
+        guard let sharedDefaults = UserDefaults(suiteName: _groupName),
+              let rawExistingInstances = sharedDefaults.data(forKey: _instancesKey) else {
+            return []
+        }
 
-      Constants {
-          return [
-            "groupName": _groupName
-          ]
-      }
+        return (try? JSONDecoder().decode([Instance].self, from: rawExistingInstances)) ?? []
+    }
 
-      Function("registerClient") { (client: Client) in
-          guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
-              return
-          }
-          
-          do {
-              let encodedData = try JSONEncoder().encode(client)
+    public func definition() -> ModuleDefinition {
+        Name("PourtainerWidgetKit")
 
-              sharedDefaults.set(encodedData, forKey: "client")
-              sharedDefaults.synchronize()
+        Function("getInstances") {
+            return self.getInstances()
+        }
 
-              WidgetCenter.shared.reloadAllTimelines()
+        Function("registerInstance") { (instance: Instance) in
+            guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
+                return
+            }
 
-          } catch {
-              // for now do nothing
-          }
-      }
+            do {
+                var instances = self.getInstances()
 
-      Function("registerContainers") { (containers: Array<ContainerSetting>) in
-          guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
-              return
-          }
+                // add or update instance
+                if let index = instances.firstIndex(where: { $0.instanceId == instance.instanceId }) {
+                    instances[index] = instance
+                } else {
+                    instances.append(instance)
+                }
 
-          do {
-              let encodedData = try JSONEncoder().encode(containers)
+                let encodedInstances = try JSONEncoder().encode(instances)
 
-              sharedDefaults.set(encodedData, forKey: "containers")
-              sharedDefaults.synchronize()
+                sharedDefaults.set(encodedInstances, forKey: _instancesKey)
+                sharedDefaults.synchronize()
 
-              WidgetCenter.shared.reloadAllTimelines()
+                WidgetCenter.shared.reloadAllTimelines()
+            } catch {
+                // for now do nothing
+            }
+        }
 
-          } catch {
-              // for now do nothing
-          }
-      }
+        Function("clearAllInstances") {
+            guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
+                return
+            }
 
-      Function("hasClient") {
-          guard let sharedDefaults = UserDefaults(suiteName: _groupName),
-                let rawData = sharedDefaults.data(forKey: "client"),
-                let _ = (try? JSONDecoder().decode(Client.self, from: rawData)) else {
-              return false
-          }
+            sharedDefaults.removePersistentDomain(forName: _groupName)
+            sharedDefaults.synchronize()
 
-          return true
-      }
-
-      Function("clear") {
-         guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
-            return
-         }
-
-         sharedDefaults.removePersistentDomain(forName: _groupName)
-         sharedDefaults.synchronize()
-
-         WidgetCenter.shared.reloadAllTimelines()
-      }
-      
-      Function("updateEndpointId") { (endpointId: Int) in
-          guard let sharedDefaults = UserDefaults(suiteName: _groupName),
-                let rawData = sharedDefaults.data(forKey: "client"),
-                let client = (try? JSONDecoder().decode(Client.self, from: rawData)) else {
-              return
-          }
-          
-          client.endpointId = endpointId
-          
-          do {
-              let encodedData = try JSONEncoder().encode(client)
-
-              sharedDefaults.set(encodedData, forKey: "client")
-              sharedDefaults.synchronize()
-
-              WidgetCenter.shared.reloadAllTimelines()
-
-          } catch {
-              // for now do nothing
-          }
-      }
-  }
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+    }
 }
 

@@ -112,10 +112,10 @@ export default function LoginScreen() {
             setCurrentEndpointId(firstId.toString())
             addInstance({ id: instanceId, apiToken, baseUrl: sanitizedUrl })
 
-            WidgetKitModule.registerClient({
+            WidgetKitModule.registerInstance({
+                instanceId,
                 url: sanitizedUrl,
-                accessToken: apiToken,
-                endpointId: firstId
+                accessToken: apiToken
             })
 
             router.replace('/')

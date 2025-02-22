@@ -147,35 +147,29 @@ export async function fetchContainers(): Promise<Container[]> {
             throw new Error(`Network response was not ok: ${response.respInfo.status}`)
         }
 
-        const data = await response.json()
-
-        // Sort containers by their first name (removing leading slash)
-        const sortedContainers = (data as Container[]).sort((a, b) => {
-            const nameA = a.Names[0].replace(/^\//, '')
-            const nameB = b.Names[0].replace(/^\//, '')
-            return nameA.localeCompare(nameB)
-        })
-
         // todo remove me sometime in the future
-        // register client for users who were already signed in
-        if (!WidgetKitModule.hasClient()) {
-            const currentInstance = instances.find(instance => instance.id === currentInstanceId)
+        // register instance for users who were already signed in
+        if (WidgetKitModule.getInstances().length === 0) {
+            const currentInstance = instances
+                .find(instance => instance.id === currentInstanceId)
 
-            if (currentInstance && currentEndpointId) {
-                WidgetKitModule.registerClient({
+            if (currentInstance && currentInstanceId) {
+                WidgetKitModule.registerInstance({
                     url: currentInstance.baseUrl,
                     accessToken: currentInstance.apiToken,
-                    endpointId: Number.parseInt(currentEndpointId)
+                    instanceId: currentInstanceId,
                 })
             }
         }
 
-        WidgetKitModule.registerContainers(sortedContainers.map(container => ({
-            id: container.Id,
-            name: container.Names.at(0) ?? "Unnamed"
-        })))
+        const data = await response.json()
 
-        return sortedContainers
+        // Sort containers by their first name (removing leading slash)
+        return (data as Container[]).sort((a, b) => {
+            const nameA = a.Names[0].replace(/^\//, '')
+            const nameB = b.Names[0].replace(/^\//, '')
+            return nameA.localeCompare(nameB)
+        })
     } catch (error) {
         console.error('Error fetching applications:', error)
         console.log(JSON.stringify(error, null, 2))

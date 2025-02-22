@@ -3,15 +3,7 @@ package expo.modules.widgetkit
 import expo.modules.kotlin.records.Field
 import expo.modules.kotlin.records.Record
 
-class ContainerSetting : Record {
-    @Field
-    var name: String = ""
-
-    @Field
-    var id: String = ""
-}
-
-class Client : Record {
+class Instance : Record {
     @Field
     var url: String? = null
 
@@ -19,5 +11,5 @@ class Client : Record {
     var accessToken: String? = null
 
     @Field
-    var endpointId: Int? = null
+    var instanceId: String? = null
 }

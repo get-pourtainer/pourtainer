@@ -5,89 +5,71 @@ import android.content.Intent
 import com.google.gson.Gson
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import androidx.core.content.edit
 
 class WidgetKitModule : Module() {
-  override fun definition() = ModuleDefinition {
-    val groupName: String = "group.com.pourtainer.mobile"
-
-    fun notifyAllWidgets() {
-      val intent = Intent().apply {
-        action = "android.appwidget.action.APPWIDGET_UPDATE"
-      }
-
-      appContext.reactContext?.sendBroadcast(intent)
+    companion object {
+        const val groupName = "group.com.pourtainer.mobile"
+        const val instancesKey = "pourtainer::instances"
     }
 
-    Name("PourtainerWidgetKit")
-
-    Constants {
-      return@Constants mapOf(
-        // this has nothing to do with app group but acts like a key
-        "groupName" to groupName
-      )
-    }
-
-    Function("registerClient") { client: Client ->
-      appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
-        val editor = prefs.edit()
-        val json = Gson().toJson(client)
-
-        editor.putString("client", json)
-
-        editor.apply()
-        notifyAllWidgets()
-      }
-    }
-
-    Function("registerContainers") { containers: List<ContainerSetting> ->
-      appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
-        val editor = prefs.edit()
-        val json = Gson().toJson(containers)
-
-        editor.putString("containers", json)
-
-        editor.apply()
-        notifyAllWidgets()
-      }
-    }
-
-    Function("hasClient") {
-      val rawClient = appContext.reactContext
-        ?.getSharedPreferences(groupName, Context.MODE_PRIVATE)
-        ?.getString("client", "null")
-
-      rawClient?.let {
-        Gson().fromJson(it, Client::class.java)
-      } != null
-    }
-
-    Function("clear") {
-      appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
-        val editor = prefs.edit()
-
-        editor.clear()
-        editor.apply()
-        notifyAllWidgets()
-      }
-    }
-
-    Function("updateEndpointId") { endpointId: Int ->
-      appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
-        val rawClient = prefs.getString("client", "null")
-
-        rawClient?.let {
-          val client = Gson().fromJson(it, Client::class.java)
-
-          client.endpointId = endpointId
-
-          val json = Gson().toJson(client)
-          val editor = prefs.edit()
-
-          editor.putString("client", json)
-          editor.apply()
-          notifyAllWidgets()
+    private fun notifyAllWidgets() {
+        val intent = Intent().apply {
+            action = "android.appwidget.action.APPWIDGET_UPDATE"
         }
-      }
+
+        appContext.reactContext?.sendBroadcast(intent)
     }
-  }
+
+    private fun getInstances(): List<Instance> {
+        val rawInstances = appContext.reactContext
+            ?.getSharedPreferences(groupName, Context.MODE_PRIVATE)
+            ?.getString(instancesKey, "null")
+
+        return rawInstances?.let {
+            Gson().fromJson(it, Array<Instance>::class.java).toList()
+        } ?: emptyList()
+    }
+
+    override fun definition() = ModuleDefinition {
+
+        Name("PourtainerWidgetKit")
+
+        Function("getInstances") {
+            return@Function this@WidgetKitModule.getInstances()
+        }
+
+        Function("registerInstance") { instance: Instance ->
+            appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
+                val instances = this@WidgetKitModule.getInstances().toMutableList()
+
+                // Add or update instance
+                val index = instances.indexOfFirst { it.instanceId == instance.instanceId }
+
+                if (index != -1) {
+                    instances[index] = instance
+                } else {
+                    instances.add(instance)
+                }
+
+                prefs.edit() {
+                    putString(instancesKey, Gson().toJson(instances))
+                    apply()
+                }
+
+                notifyAllWidgets()
+            }
+        }
+
+        Function("clearAllInstances") {
+            appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
+                prefs.edit() {
+                    clear()
+                    apply()
+                }
+
+                notifyAllWidgets()
+            }
+        }
+    }
 }
