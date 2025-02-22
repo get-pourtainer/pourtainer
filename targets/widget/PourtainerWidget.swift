@@ -81,7 +81,7 @@ struct PourtainerWidget: Widget {
                 WidgetEntryView(selectedContainer: widget.selectedContainer!)
                     .containerBackground(Color("$background"), for: .widget)
             }
-        }}
+        }
         .supportedFamilies([.systemSmall])
     }
 }

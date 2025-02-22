@@ -59,10 +59,6 @@ struct ContainerQuery: EntityQuery {
     }
 
     func suggestedEntities() async throws -> Array<ContainerListItem> {
-        if (!hasInstances()) {
-            return []
-        }
-
         return try await getSharedOptions()
     }
 
@@ -77,13 +73,5 @@ struct ContainerQuery: EntityQuery {
 
         sharedDefaults.set(hasContainers, forKey: hasContainersKey)
         sharedDefaults.synchronize()
-    }
-
-    private func hasInstances() -> Bool {
-        guard let sharedDefaults = UserDefaults(suiteName: appGroupName) else {
-            return false
-        }
-
-        return sharedDefaults.bool(forKey: hasContainersKey)
     }
 }
