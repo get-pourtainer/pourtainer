@@ -1,96 +1,113 @@
 import WidgetKit
 import SwiftUI
 
-let APP_GROUP_NAME: String = "group.com.pourtainer.mobile"
-let EXAMPLE_CLIENT: Client = Client(url: "url", accessToken: "accessToken", endpointId: 1)
-
 struct Provider: AppIntentTimelineProvider {
     // this function will be called BEFORE widget is initialized
     // we should pass here placeholder data
-    func placeholder(in context: Context) -> SimpleEntry {
-      SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(container: ContainerSetting(id: "1", name: "Example container")), client: EXAMPLE_CLIENT, status: "running")
+    func placeholder(in context: Context) -> WidgetEntry {
+        placeholderWidget
     }
 
     // this function will be called when user configures the widget
     // or home screen, should also display placeholder data
-    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-      SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(container: ContainerSetting(id: "1", name: "Example container")), client: EXAMPLE_CLIENT, status: "running")
+    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> WidgetEntry {
+        placeholderWidget
     }
 
     // responsible for telling iOS WHEN widget should update + fetching data
-    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-        var entries: [SimpleEntry] = []
+    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<WidgetEntry> {
+        var entries: [WidgetEntry] = []
 
         let currentDate = Date()
-        let container: Container? = if let containerId = configuration.container?.id {
-            try? await getDockerContainer(id: containerId)
+        let instances = self.getInstances()
+        let hasContainers = self.hasContainers()
+        let container: Container? = if let containerId = configuration.container?.id,
+                                       let instance = configuration.container?.instance,
+                                       let endpoint = configuration.container?.endpoint {
+            try? await fetchContainer(instance: instance, endpoint: endpoint, containerId: containerId)
         } else {
             nil
         }
 
         // update widget every 15 minutes
         for minuteOffset in stride(from: 0, to: 60 * 5, by: 15) {
-          let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate)!
-          let entry = SimpleEntry(date: entryDate, configuration: configuration, client: EXAMPLE_CLIENT, status: container?.State.Status ?? "Loading...")
+            let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate)!
 
-           entries.append(entry)
+            let entry: WidgetEntry = if let container = container {
+                WidgetEntry(date: entryDate, hasInstances: !instances.isEmpty, hasContainers: hasContainers, selectedContainer: container)
+            } else {
+                WidgetEntry(date: entryDate, hasInstances: !instances.isEmpty, hasContainers: hasContainers, selectedContainer: nil)
+            }
+
+            entries.append(entry)
         }
 
         return Timeline(entries: entries, policy: .atEnd)
     }
-}
 
-struct SimpleEntry: TimelineEntry {
-    let date: Date
-    let configuration: ConfigurationAppIntent
-    let client: Client?
-    let status: String?
+    private func getInstances() -> [Instance] {
+        guard let sharedDefaults = UserDefaults(suiteName: appGroupName),
+              let rawExistingInstances = sharedDefaults.data(forKey: instancesKey) else {
+            return []
+        }
+
+        return (try? JSONDecoder().decode([Instance].self, from: rawExistingInstances)) ?? []
+    }
+
+    private func hasContainers() -> Bool {
+        guard let sharedDefaults = UserDefaults(suiteName: appGroupName) else {
+            return false
+        }
+
+        return sharedDefaults.bool(forKey: hasContainersKey)
+    }
 }
 
 struct PourtainerWidget: Widget {
     let kind: String = "widget"
 
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
-          if (entry.client == nil) {
-            UnauthorizedEntryView()
-              .containerBackground(Color("$background"), for: .widget)
-          } else if (entry.configuration.container == nil) {
-            EmptyEntryView()
+        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { widget in
+            if (!widget.hasInstances) {
+                UnauthorizedEntryView()
                 .containerBackground(Color("$background"), for: .widget)
-          } else {
-            WidgetEntryView(entry: entry)
+            } else if (!widget.hasContainers) {
+                EmptyEntryView()
                 .containerBackground(Color("$background"), for: .widget)
-          }
-        }
+            } else if (widget.selectedContainer == nil) {
+                InvalidEntryView()
+                .containerBackground(Color("$background"), for: .widget)
+            } else {
+                WidgetEntryView(selectedContainer: widget.selectedContainer!)
+                    .containerBackground(Color("$background"), for: .widget)
+            }
+        }}
         .supportedFamilies([.systemSmall])
     }
 }
 
-extension ConfigurationAppIntent {
-    fileprivate static var running: ConfigurationAppIntent {
-        let intent = ConfigurationAppIntent()
-
-        intent.container = ContainerSetting(id: "1", name: "portainer")
-
-        return intent
-    }
-
-    fileprivate static var empty: ConfigurationAppIntent {
-        let intent = ConfigurationAppIntent()
-
-        intent.container = nil
-
-        return intent
-    }
-}
-
 #Preview("Pourtainer Widget", as: .systemSmall) {
-  PourtainerWidget()
+    PourtainerWidget()
 } timeline: {
-  SimpleEntry(date: .now, configuration: .empty, client: nil, status: nil)
-  SimpleEntry(date: .now, configuration: .empty, client: EXAMPLE_CLIENT, status: nil)
-  SimpleEntry(date: .now, configuration: .running, client: EXAMPLE_CLIENT, status: "running")
-  SimpleEntry(date: .now, configuration: .running, client: EXAMPLE_CLIENT, status: "exited")
-  SimpleEntry(date: .now, configuration: .running, client: EXAMPLE_CLIENT, status: "unknown")
+    WidgetEntry(date: .now, hasInstances: false, hasContainers: false, selectedContainer: nil)
+    WidgetEntry(date: .now, hasInstances: true, hasContainers: false, selectedContainer: nil)
+    WidgetEntry(date: .now, hasInstances: true, hasContainers: true, selectedContainer: nil)
+    WidgetEntry(
+        date: .now,
+        hasInstances: true,
+        hasContainers: true,
+        selectedContainer: Container(Id: "1", Name: "Pourtainer", State: ContainerState(StartedAt: "", Status: "running"))
+    )
+    WidgetEntry(
+        date: .now,
+        hasInstances: true,
+        hasContainers: true,
+        selectedContainer: Container(Id: "1", Name: "Pourtainer", State: ContainerState(StartedAt: "", Status: "exited"))
+    )
+    WidgetEntry(
+        date: .now,
+        hasInstances: true,
+        hasContainers: true,
+        selectedContainer: Container(Id: "1", Name: "Pourtainer", State: ContainerState(StartedAt: "", Status: "unknown"))
+    )
 }

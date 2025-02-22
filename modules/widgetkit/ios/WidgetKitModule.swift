@@ -41,6 +41,10 @@ public class WidgetKitModule: Module {
                 sharedDefaults.set(encodedInstances, forKey: _instancesKey)
                 sharedDefaults.synchronize()
 
+                if #available(iOS 16.0, *) {
+                    WidgetCenter.shared.invalidateConfigurationRecommendations()
+                }
+                
                 WidgetCenter.shared.reloadAllTimelines()
             } catch {
                 // for now do nothing
@@ -55,6 +59,10 @@ public class WidgetKitModule: Module {
             sharedDefaults.removePersistentDomain(forName: _groupName)
             sharedDefaults.synchronize()
 
+            if #available(iOS 16.0, *) {
+                WidgetCenter.shared.invalidateConfigurationRecommendations()
+            }
+            
             WidgetCenter.shared.reloadAllTimelines()
         }
     }
