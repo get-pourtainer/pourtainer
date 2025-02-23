@@ -1,8 +1,8 @@
 package com.pourtainer.mobile
 
+import ContainerListItem
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -18,11 +18,11 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.size
 import androidx.glance.text.FontWeight
 import androidx.glance.text.TextStyle
-import expo.modules.widgetkit.ContainerSetting
 import androidx.glance.background
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Row
+import androidx.core.net.toUri
 
 @Composable
 fun UnauthorizedView(context: Context) {
@@ -109,26 +109,25 @@ fun ContainerStatusView(status: String) {
 }
 
 @Composable
-fun ContainerView(container: ContainerSetting, status: String) {
+fun ContainerView(container: ContainerListItem, status: String) {
     val customUri = "pourtainer://container/${container.id}"
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(customUri))
+    val intent = Intent(Intent.ACTION_VIEW, customUri.toUri())
 
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(8.dp)
+            .padding(2.dp)
             .clickable(actionStartActivity(intent))
     ) {
         ContainerStatusView(status)
         Text(
-            text = container.name,
+            text = container.containerName,
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = GlanceTheme.colors.onSurface
             ),
-            maxLines = 3,
-            modifier = GlanceModifier.padding(bottom = 4.dp)
+            maxLines = 3
         )
     }
 }

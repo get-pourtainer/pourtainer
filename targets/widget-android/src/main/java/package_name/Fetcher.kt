@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import com.google.gson.Gson
-import expo.modules.widgetkit.Client
+import expo.modules.widgetkit.Instance
 
 enum class HTTPMethod(val value: String) {
     GET("GET"),
@@ -20,12 +20,10 @@ enum class HTTPMethod(val value: String) {
     DELETE("DELETE")
 }
 
-data class FetchParams(val method: HTTPMethod, val url: String)
-
-data class Client(
-    val endpointId: String,
+data class FetchParams(
+    val method: HTTPMethod,
     val url: String,
-    val accessToken: String
+    val instance: Instance
 )
 
 fun enableUnsafeSSL() {
@@ -38,6 +36,7 @@ fun enableUnsafeSSL() {
             }
         )
         val sc = SSLContext.getInstance("SSL")
+
         sc.init(null, trustAllCerts, java.security.SecureRandom())
         HttpsURLConnection.setDefaultSSLSocketFactory(sc.socketFactory)
         HttpsURLConnection.setDefaultHostnameVerifier { _, _ -> true }
@@ -46,13 +45,12 @@ fun enableUnsafeSSL() {
     }
 }
 
-suspend fun fetch(params: FetchParams, client: Client): ByteArray = withContext(Dispatchers.IO) {
+suspend fun fetch(params: FetchParams): ByteArray = withContext(Dispatchers.IO) {
     if (!params.url.startsWith("/")) {
         throw Exception("URL should start with /")
     }
 
-    val path = "/api/endpoints/${client.endpointId}/docker${params.url}"
-    val fullUrlString = client.url + path
+    val fullUrlString = params.instance.url + params.url
     val url = URL(fullUrlString)
 
     enableUnsafeSSL()
@@ -60,7 +58,7 @@ suspend fun fetch(params: FetchParams, client: Client): ByteArray = withContext(
     val connection = (url.openConnection() as HttpURLConnection).apply {
         requestMethod = params.method.value
         setRequestProperty("Accept", "application/json")
-        setRequestProperty("x-api-key", client.accessToken)
+        setRequestProperty("x-api-key", params.instance.accessToken)
         connectTimeout = 15000
         readTimeout = 15000
     }
@@ -89,8 +87,9 @@ suspend fun fetch(params: FetchParams, client: Client): ByteArray = withContext(
     }
 }
 
-suspend inline fun <reified T> httpRequest(params: FetchParams, client: Client): T {
-    val data = fetch(params, client)
+suspend inline fun <reified T> httpRequest(params: FetchParams): T {
+    val data = fetch(params)
     val json = String(data, Charsets.UTF_8)
+
     return Gson().fromJson(json, T::class.java)
 }

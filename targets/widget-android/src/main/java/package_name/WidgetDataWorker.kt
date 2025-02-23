@@ -1,12 +1,13 @@
 package com.pourtainer.mobile
 
+import Container
+import ContainerListItem
 import android.content.Context
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.gson.Gson
-import expo.modules.widgetkit.Client
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -22,6 +23,7 @@ class WidgetDataWorker(context: Context, workerParams: WorkerParameters) : Corou
 
         return try {
             val response = fetchApiData()
+
             updateWidget(applicationContext, glanceId, response)
             Result.success()
         } catch (e: Exception) {
@@ -30,12 +32,14 @@ class WidgetDataWorker(context: Context, workerParams: WorkerParameters) : Corou
     }
 
     private suspend fun fetchApiData(): Container = withContext(Dispatchers.IO) {
-        val prefs = applicationContext.getSharedPreferences(PourtainerWidgetReceiver.sharedPreferencesGroup, Context.MODE_PRIVATE)
-        val containerId = inputData.getString(containerIdKey) ?: throw Exception("Missing container id")
-        val rawClient = prefs.getString("client", "null").toString()
-        val client = Gson().fromJson(rawClient, Client::class.java) ?: throw Exception("Missing client")
+        val rawContainer = inputData.getString(containerKey) ?: "null"
+        val selectedContainer = Gson().fromJson(rawContainer, ContainerListItem::class.java) ?: throw Exception("Missing selected container")
 
-        val container = getDockerContainer(containerId, client) ?: throw Exception("No container data")
+        val container = fetchContainer(
+            selectedContainer.instance,
+            selectedContainer.endpoint,
+            selectedContainer.id
+        ) ?: throw Exception("No container data")
 
         container
     }
@@ -45,7 +49,7 @@ class WidgetDataWorker(context: Context, workerParams: WorkerParameters) : Corou
     }
 
     companion object {
-        const val containerIdKey = "container_id"
+        const val containerKey = "container"
         const val glanceIdKey = "glance_id"
     }
 }

@@ -1,5 +1,9 @@
 package com.pourtainer.mobile
 
+import Container
+import ContainerListItem
+import Endpoint
+import WidgetIntentState
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -23,8 +27,6 @@ import androidx.glance.preview.Preview
 import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import com.google.gson.Gson
-import expo.modules.widgetkit.Client
-import expo.modules.widgetkit.ContainerSetting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,6 +38,9 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import expo.modules.widgetkit.Instance
+import savedInstancesKey
+import savedWidgetStateKey
 import java.util.concurrent.TimeUnit
 
 class PourtainerWidget : GlanceAppWidget() {
@@ -54,11 +59,12 @@ class PourtainerWidget : GlanceAppWidget() {
 fun WidgetContent() {
     val context = LocalContext.current
     val state = currentState<Preferences>()
-    val rawContainers = state[PourtainerWidgetReceiver.containersKey] ?: "[]]"
-    val containers =  Gson().fromJson(rawContainers, Array<ContainerSetting>::class.java) ?: emptyArray()
-    val rawClient = state[PourtainerWidgetReceiver.clientKey] ?: "null"
-    val client = Gson().fromJson(rawClient, Client::class.java) ?: null
-    val isAuthorized = client != null
+
+    val rawWidgetState = state[PourtainerWidgetReceiver.widgetStateKey] ?: "null"
+    val widgetState =  Gson().fromJson(rawWidgetState, WidgetIntentState::class.java) ?: WidgetIntentState.LOADING
+    val rawInstances = state[PourtainerWidgetReceiver.instancesKey] ?: "[]"
+    val instances = Gson().fromJson(rawInstances, Array<Instance>::class.java) ?: emptyArray()
+    val isAuthorized = instances.isNotEmpty()
 
     Column(
         modifier = GlanceModifier
@@ -71,18 +77,18 @@ fun WidgetContent() {
             return@Column
         }
 
-        if (containers.isEmpty()) {
+        if (widgetState == WidgetIntentState.NO_CONTAINERS) {
             NoContainersView(context)
             return@Column
         }
 
         // list is not empty and user selected container
         val rawContainer = state[PourtainerWidgetReceiver.selectedContainerKey] ?: "null"
-        val container = Gson().fromJson(rawContainer, ContainerSetting::class.java)
+        val container = Gson().fromJson(rawContainer, ContainerListItem::class.java)
         val rawContainerDetails = state[PourtainerWidgetReceiver.containerMetadataKey] ?: "null"
         val containerDetails = Gson().fromJson(rawContainerDetails, Container::class.java)
 
-        ContainerView(container, containerDetails?.state?.status ?: "unknown")
+        ContainerView(container, containerDetails.State.Status)
     }
 }
 
@@ -92,9 +98,9 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
     companion object {
         const val sharedPreferencesGroup = "group.com.pourtainer.mobile"
         val selectedContainerKey = stringPreferencesKey("selectedContainer")
-        val clientKey = stringPreferencesKey("client")
-        val containersKey = stringPreferencesKey("containers")
+        val widgetStateKey = stringPreferencesKey("state")
         val containerMetadataKey = stringPreferencesKey("containerMetadata")
+        val instancesKey = stringPreferencesKey("instances")
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -110,15 +116,15 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
                         glanceId = glanceId
                     ) { prefs ->
                         val rawContainer = prefs[selectedContainerKey] ?: "null"
-                        val container = Gson().fromJson(rawContainer, ContainerSetting::class.java)
+                        val container = Gson().fromJson(rawContainer, ContainerListItem::class.java)
 
                         if (container != null) {
                             schedulePeriodicWork(context, glanceId, container)
                         }
 
                         prefs.toMutablePreferences().apply {
-                            this[clientKey] = sharedPrefs.getString("client", "null").toString()
-                            this[containersKey] = sharedPrefs.getString("containers", "[]").toString()
+                            this[instancesKey] = sharedPrefs.getString(savedInstancesKey, "null").toString()
+                            this[widgetStateKey] = sharedPrefs.getInt(savedWidgetStateKey, WidgetIntentState.LOADING.value).toString()
                         }
                     }
 
@@ -140,7 +146,7 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
         }
     }
 
-    fun onContainerSelected(context: Context, glanceId: GlanceId, container: ContainerSetting?) {
+    fun onContainerSelected(context: Context, glanceId: GlanceId, container: ContainerListItem?) {
         if (container == null) {
             return
         }
@@ -189,7 +195,7 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
         }
     }
 
-    private fun schedulePeriodicWork(context: Context, glanceId: GlanceId, container: ContainerSetting) {
+    private fun schedulePeriodicWork(context: Context, glanceId: GlanceId, container: ContainerListItem) {
         val workManager = WorkManager.getInstance(context)
 
         // cancel previous jobs if present
@@ -200,7 +206,7 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
             .build()
         val work = PeriodicWorkRequestBuilder<WidgetDataWorker>(15, TimeUnit.MINUTES)
             .setInputData(workDataOf(
-                WidgetDataWorker.containerIdKey to container.id,
+                WidgetDataWorker.containerKey to Gson().toJson(container),
                 WidgetDataWorker.glanceIdKey to glanceId.hashCode().toString()
             ))
             .setConstraints(constraints)
@@ -236,10 +242,12 @@ fun ContentPreview2() {
 @Preview(widthDp = 200, heightDp = 160)
 @Composable
 fun ContentPreview3() {
-    val container = ContainerSetting()
-
-    container.name = "Pourtainer"
-    container.id = "1'"
+    val container = ContainerListItem(
+        id = "1",
+        containerName = "Pourtainer",
+        endpoint = Endpoint(1),
+        instance = Instance()
+    )
 
     ContainerView(container, "running")
 }
@@ -248,10 +256,12 @@ fun ContentPreview3() {
 @Preview(widthDp = 200, heightDp = 160)
 @Composable
 fun ContentPreview4() {
-    val container = ContainerSetting()
-
-    container.name = "Pourtainer"
-    container.id = "1'"
+    val container = ContainerListItem(
+        id = "1",
+        containerName = "Pourtainer",
+        endpoint = Endpoint(1),
+        instance = Instance()
+    )
 
     ContainerView(container, "exited")
 }
@@ -260,10 +270,12 @@ fun ContentPreview4() {
 @Preview(widthDp = 200, heightDp = 160)
 @Composable
 fun ContentPreview5() {
-    val container = ContainerSetting()
-
-    container.name = "Pourtainer"
-    container.id = "1'"
+    val container = ContainerListItem(
+        id = "1",
+        containerName = "Pourtainer",
+        endpoint = Endpoint(1),
+        instance = Instance()
+    )
 
     ContainerView(container, "unknown")
 }

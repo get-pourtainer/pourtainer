@@ -1,5 +1,6 @@
 package com.pourtainer.mobile
 
+import ContainerListItem
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,17 +10,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import expo.modules.widgetkit.ContainerSetting
 
 @Composable
 fun WidgetConfigurationView(
     isAuthorized: Boolean,
-    containers: Array<ContainerSetting>,
-    onContainerSelected: (ContainerSetting) -> Unit,
+    containers: List<ContainerListItem>,
+    onContainerSelected: (ContainerListItem) -> Unit,
     onDone: () -> Unit,
     openApp: () -> Unit
 ) {
-    var selectedContainer by remember { mutableStateOf<ContainerSetting?>(null) }
+    var selectedContainer by remember { mutableStateOf<ContainerListItem?>(null) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         if (!isAuthorized) {
@@ -70,7 +70,7 @@ fun WidgetConfigurationView(
 
 @Composable
 fun ContainerItem(
-    container: ContainerSetting,
+    container: ContainerListItem,
     isSelected: Boolean,
     onSelect: () -> Unit
 ) {
@@ -85,7 +85,7 @@ fun ContainerItem(
         )
     ) {
         Text(
-            text = container.name,
+            text = container.containerName,
             modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.bodyLarge,
             color = if (isSelected) whiteColor else MaterialTheme.colorScheme.onSurface

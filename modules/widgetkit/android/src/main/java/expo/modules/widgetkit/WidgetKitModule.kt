@@ -24,7 +24,7 @@ class WidgetKitModule : Module() {
     private fun getInstances(): List<Instance> {
         val rawInstances = appContext.reactContext
             ?.getSharedPreferences(groupName, Context.MODE_PRIVATE)
-            ?.getString(instancesKey, "null")
+            ?.getString(instancesKey, "[]")
 
         return rawInstances?.let {
             Gson().fromJson(it, Array<Instance>::class.java).toList()
@@ -36,7 +36,13 @@ class WidgetKitModule : Module() {
         Name("PourtainerWidgetKit")
 
         Function("getInstances") {
-            return@Function this@WidgetKitModule.getInstances()
+            return@Function this@WidgetKitModule.getInstances().map {
+                mapOf(
+                    "accessToken" to it.accessToken,
+                    "instanceId" to it.instanceId,
+                    "url" to it.url,
+                )
+            }
         }
 
         Function("registerInstance") { instance: Instance ->
