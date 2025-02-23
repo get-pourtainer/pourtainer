@@ -3,7 +3,7 @@ import WidgetKit
 
 let appGroupName: String = "group.com.pourtainer.mobile"
 let instancesKey: String = "pourtainer::instances"
-let hasContainersKey: String = "pourtainer::hasContainers"
+let widgetStateKey: String = "pourtainer::widgetState"
 
 struct Instance: Decodable {
     let url: String
@@ -34,6 +34,13 @@ struct Container: Decodable {
     let State: ContainerState
 
     // add more fields if necessary
+}
+
+enum WidgetIntentState: Int {
+    case loading = 0
+    case apiFailed = 1
+    case hasContainers = 2
+    case noContainers = 3
 }
 
 // widget state

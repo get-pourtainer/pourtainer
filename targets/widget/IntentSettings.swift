@@ -18,10 +18,12 @@ struct ContainerQuery: EntityQuery {
     func getSharedOptions() async throws -> Array<ContainerListItem> {
         var options: [ContainerListItem] = []
 
-        setHasContainers(false)
+        setWidgetState(state: .loading)
 
         guard let sharedDefaults = UserDefaults(suiteName: appGroupName),
               let rawInstances = sharedDefaults.data(forKey: instancesKey) else {
+            setWidgetState(state: .apiFailed)
+          
             return options
         }
 
@@ -29,10 +31,10 @@ struct ContainerQuery: EntityQuery {
 
         for instance in instances {
             do {
-                let endpoints = try await fetchEndpoints(instance: instance)
+                let endpoints = try await CacheManager.shared.fetchCachedEndpoints(instance: instance)
 
                 for endpoint in endpoints {
-                    let containers = try await fetchContainers(instance: instance, endpoint: endpoint)
+                    let containers = try await CacheManager.shared.fetchCachedContainers(instance: instance, endpoint: endpoint)
 
                     options.append(contentsOf: containers.map { container in
                         ContainerListItem(
@@ -45,11 +47,13 @@ struct ContainerQuery: EntityQuery {
                 }
 
             } catch {
+                setWidgetState(state: .apiFailed)
+              
                 return options
             }
         }
 
-        setHasContainers(!options.isEmpty)
+        setWidgetState(state: options.isEmpty ? .noContainers : .hasContainers)
 
         return options
     }
@@ -66,12 +70,12 @@ struct ContainerQuery: EntityQuery {
         return try? await suggestedEntities().first
     }
 
-    private func setHasContainers(_ hasContainers: Bool) {
+    private func setWidgetState(state: WidgetIntentState) {
         guard let sharedDefaults = UserDefaults(suiteName: appGroupName) else {
             return
         }
 
-        sharedDefaults.set(hasContainers, forKey: hasContainersKey)
+        sharedDefaults.set(state.rawValue, forKey: widgetStateKey)
         sharedDefaults.synchronize()
     }
 }

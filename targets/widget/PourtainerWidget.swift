@@ -59,28 +59,45 @@ struct Provider: AppIntentTimelineProvider {
             return false
         }
 
-        return sharedDefaults.bool(forKey: hasContainersKey)
+        let state = WidgetIntentState(rawValue: sharedDefaults.integer(forKey: widgetStateKey))
+      
+        return state == .hasContainers
     }
 }
 
 struct PourtainerWidget: Widget {
     let kind: String = "widget"
+  
+    private func getWidgetState() -> WidgetIntentState? {
+      guard let sharedDefaults = UserDefaults(suiteName: appGroupName) else {
+          return nil
+      }
+      
+      return WidgetIntentState(rawValue: sharedDefaults.integer(forKey: widgetStateKey))
+    }
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { widget in
-            if (!widget.hasInstances) {
-                UnauthorizedEntryView()
+          switch (widget.hasInstances, widget.hasContainers, self.getWidgetState(), widget.selectedContainer) {
+          case (false, _, _, _):
+              EntryView(title: "Unauthorized", description: "Sign in with Pourtainer app")
                 .containerBackground(Color("$background"), for: .widget)
-            } else if (!widget.hasContainers) {
-                EmptyEntryView()
+          case (true, false, _, _), (true, true, .noContainers, nil):
+              EntryView(title: "No containers", description: "Add your first container to show it here")
                 .containerBackground(Color("$background"), for: .widget)
-            } else if (widget.selectedContainer == nil) {
-                InvalidEntryView()
+          case (true, true, .hasContainers, nil):
+              EntryView(title: "Container not found", description: "Configure your widget and select new container")
                 .containerBackground(Color("$background"), for: .widget)
-            } else {
-                WidgetEntryView(selectedContainer: widget.selectedContainer!)
-                    .containerBackground(Color("$background"), for: .widget)
-            }
+          case (true, true, .apiFailed, nil):
+              EntryView(title: "Api error", description: "We couln't fetch data from api")
+                .containerBackground(Color("$background"), for: .widget)
+          case (true, true, .loading, nil), (true, true, .none, nil):
+              EntryView(title: "Loading...", description: "We're fetching your container details")
+                .containerBackground(Color("$background"), for: .widget)
+          case (true, true, _, let container?):
+              WidgetEntryView(selectedContainer: container)
+                .containerBackground(Color("$background"), for: .widget)
+          }
         }
         .supportedFamilies([.systemSmall])
     }
