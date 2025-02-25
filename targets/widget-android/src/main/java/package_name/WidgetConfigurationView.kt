@@ -1,6 +1,7 @@
 package com.pourtainer.mobile
 
 import ContainerListItem
+import WidgetIntentState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,21 +15,31 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun WidgetConfigurationView(
     isAuthorized: Boolean,
+    state: WidgetIntentState,
+    selectedContainer: ContainerListItem?,
     containers: List<ContainerListItem>,
     onContainerSelected: (ContainerListItem) -> Unit,
     onDone: () -> Unit,
     openApp: () -> Unit
 ) {
-    var selectedContainer by remember { mutableStateOf<ContainerListItem?>(null) }
-
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         if (!isAuthorized) {
-            UnauthorizedSettingsView(openApp)
+            SettingsView("Unauthorized", "Sign in with Pourtainer app", openApp)
             return@Column
         }
 
-        if (containers.isEmpty()) {
-            NoContainersSettingsView(openApp)
+        if (state == WidgetIntentState.LOADING) {
+            SettingsView("Loading...", "We're fetching your container details")
+            return@Column
+        }
+
+        if (state == WidgetIntentState.API_FAILED) {
+            SettingsView("Api error", "We couldn't fetch data from api", openApp)
+            return@Column
+        }
+
+        if (state == WidgetIntentState.NO_CONTAINERS) {
+            SettingsView("No containers", "Add your first container in Pourtainer app", openApp)
             return@Column
         }
 
@@ -40,7 +51,6 @@ fun WidgetConfigurationView(
                     container = container,
                     isSelected = container == selectedContainer,
                     onSelect = {
-                        selectedContainer = container
                         onContainerSelected(container)
                     }
                 )
@@ -94,63 +104,34 @@ fun ContainerItem(
 }
 
 @Composable
-fun UnauthorizedSettingsView(openApp: () -> Unit) {
+fun SettingsView(title: String, description: String, openApp: (() -> Unit)? = null) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text(
-            text = "Unauthorized",
+            text = title,
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Text(
-            text = "Sign in with Pourtainer app",
+            text = description,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        Button(
-            onClick = openApp,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonColors(
-                containerColor = buttonColor,
-                contentColor = whiteColor,
-                disabledContainerColor = buttonInactiveColor,
-                disabledContentColor = whiteColor
-            )
-        ) {
-            Text(
-                text = "Open Pourtainer App",
-                color = whiteColor
-            )
-        }
-    }
-}
-
-@Composable
-fun NoContainersSettingsView(openApp: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text(
-            text = "No containers",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        Text(
-            text = "Add your first container in Pourtainer app",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        Button(
-            onClick = openApp,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonColors(
-                containerColor = buttonColor,
-                contentColor = whiteColor,
-                disabledContainerColor = buttonInactiveColor,
-                disabledContentColor = whiteColor
-            )
-        ) {
-            Text(
-                text = "Open Pourtainer App",
-                color = whiteColor
-            )
+        if (openApp != null) {
+            Button(
+                onClick = openApp,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonColors(
+                    containerColor = buttonColor,
+                    contentColor = whiteColor,
+                    disabledContainerColor = buttonInactiveColor,
+                    disabledContentColor = whiteColor
+                )
+            ) {
+                Text(
+                    text = "Open Pourtainer App",
+                    color = whiteColor
+                )
+            }
         }
     }
 }

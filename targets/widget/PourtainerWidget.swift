@@ -89,7 +89,7 @@ struct PourtainerWidget: Widget {
               EntryView(title: "Container not found", description: "Configure your widget and select new container")
                 .containerBackground(Color("$background"), for: .widget)
           case (true, true, .apiFailed, nil):
-              EntryView(title: "Api error", description: "We couln't fetch data from api")
+              EntryView(title: "Api error", description: "We couldn't fetch data from api")
                 .containerBackground(Color("$background"), for: .widget)
           case (true, true, .loading, nil), (true, true, .none, nil):
               EntryView(title: "Loading...", description: "We're fetching your container details")
@@ -99,7 +99,7 @@ struct PourtainerWidget: Widget {
                 .containerBackground(Color("$background"), for: .widget)
           }
         }
-        .supportedFamilies([.systemSmall])
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
