@@ -1,6 +1,6 @@
 package com.pourtainer.mobile
 
-import ContainerListItem
+import Container
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -25,7 +25,7 @@ import androidx.glance.layout.Row
 import androidx.core.net.toUri
 
 @Composable
-fun UnauthorizedView(context: Context) {
+fun StatusView(title: String, description: String, context: Context) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -33,7 +33,7 @@ fun UnauthorizedView(context: Context) {
             .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
     ) {
         Text(
-            text = "Unauthorized",
+            text = title,
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
@@ -42,34 +42,7 @@ fun UnauthorizedView(context: Context) {
             modifier = GlanceModifier.padding(bottom = 8.dp)
         )
         Text(
-            text = "Sign in with\nPourtainer app",
-            style = TextStyle(
-                color = GlanceTheme.colors.onSurface
-            ),
-            modifier = GlanceModifier.padding(bottom = 4.dp)
-        )
-    }
-}
-
-@Composable
-fun NoContainersView(context: Context) {
-    Column(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .padding(8.dp)
-            .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
-    ) {
-        Text(
-            text = "No containers",
-            style = TextStyle(
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = GlanceTheme.colors.onSurface
-            ),
-            modifier = GlanceModifier.padding(bottom = 8.dp)
-        )
-        Text(
-            text = "Add your first container in Pourtainer app",
+            text = description,
             style = TextStyle(
                 color = GlanceTheme.colors.onSurface
             ),
@@ -109,8 +82,8 @@ fun ContainerStatusView(status: String) {
 }
 
 @Composable
-fun ContainerView(container: ContainerListItem, status: String) {
-    val customUri = "pourtainer://container/${container.id}"
+fun ContainerView(container: Container) {
+    val customUri = "pourtainer://container/${container.Id}"
     val intent = Intent(Intent.ACTION_VIEW, customUri.toUri())
 
     Column(
@@ -119,9 +92,9 @@ fun ContainerView(container: ContainerListItem, status: String) {
             .padding(2.dp)
             .clickable(actionStartActivity(intent))
     ) {
-        ContainerStatusView(status)
+        ContainerStatusView(container.State.Status)
         Text(
-            text = container.containerName,
+            text = container.Name,
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
