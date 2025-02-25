@@ -29,7 +29,7 @@ fun WidgetConfigurationView(
         }
 
         if (state == WidgetIntentState.LOADING) {
-            SettingsView("Loading...", "We're fetching your container details")
+            SettingsView("Loading...", "We're fetching your containers")
             return@Column
         }
 

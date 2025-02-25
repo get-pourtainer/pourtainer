@@ -27,6 +27,7 @@ class WidgetDataWorker(context: Context, workerParams: WorkerParameters) : Corou
             updateWidget(applicationContext, glanceId, response)
             Result.success()
         } catch (e: Exception) {
+            this.onFetchError(applicationContext, glanceId)
             Result.retry()
         }
     }
@@ -46,6 +47,10 @@ class WidgetDataWorker(context: Context, workerParams: WorkerParameters) : Corou
 
     private fun updateWidget(context: Context, glanceId: GlanceId, container: Container) {
         PourtainerWidgetReceiver().onStatusUpdated(context = context, glanceId, container)
+    }
+
+    private fun onFetchError(context: Context, glanceId: GlanceId) {
+        PourtainerWidgetReceiver().onFetchError(context = context, glanceId)
     }
 
     companion object {

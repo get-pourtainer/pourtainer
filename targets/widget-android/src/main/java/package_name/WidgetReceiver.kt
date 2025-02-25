@@ -2,6 +2,7 @@ package com.pourtainer.mobile
 
 import Container
 import ContainerListItem
+import WidgetIntentState
 import android.content.Context
 import android.content.Intent
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -128,6 +129,28 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
         }
     }
 
+    fun onFetchError(context: Context, glanceId: GlanceId) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val glanceIds = GlanceAppWidgetManager(context).getGlanceIds(PourtainerWidget::class.java)
+
+            glanceIds.forEach { runningGlanceId ->
+                if (runningGlanceId == glanceId) {
+                    updateAppWidgetState(
+                        context = context,
+                        definition = PreferencesGlanceStateDefinition,
+                        glanceId = glanceId
+                    ) { prefs ->
+                        prefs.toMutablePreferences().apply {
+                            this[widgetStateKey] = WidgetIntentState.API_FAILED.toString()
+                        }
+                    }
+
+                    glanceAppWidget.update(context, glanceId)
+                }
+            }
+        }
+    }
+
     private fun schedulePeriodicWork(context: Context, glanceId: GlanceId, container: ContainerListItem) {
         val workManager = WorkManager.getInstance(context)
 
@@ -140,9 +163,9 @@ class PourtainerWidgetReceiver : GlanceAppWidgetReceiver() {
         val work = PeriodicWorkRequestBuilder<WidgetDataWorker>(15, TimeUnit.MINUTES)
             .setInputData(
                 workDataOf(
-                WidgetDataWorker.containerKey to Gson().toJson(container),
-                WidgetDataWorker.glanceIdKey to glanceId.hashCode().toString()
-            )
+                    WidgetDataWorker.containerKey to Gson().toJson(container),
+                    WidgetDataWorker.glanceIdKey to glanceId.hashCode().toString()
+                )
             )
             .setConstraints(constraints)
             .build()
