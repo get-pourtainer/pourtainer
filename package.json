@@ -14,6 +14,7 @@
         "prebuild:android": "expo prebuild --platform android"
     },
     "dependencies": {
+        "@bacons/apple-targets": "^0.2.1",
         "@expo/vector-icons": "^14.0.4",
         "@react-native-clipboard/clipboard": "^1.15.0",
         "@react-native-masked-view/masked-view": "0.3.2",
@@ -56,7 +57,7 @@
         "react-native-keyboard-controller": "^1.15.2",
         "react-native-mmkv": "^3.2.0",
         "react-native-nitro-modules": "0.22.1",
-        "react-native-reanimated": "^3.16.6",
+        "react-native-reanimated": "^3.16.7",
         "react-native-safe-area-context": "5.0.0",
         "react-native-screens": "~4.4.0",
         "react-native-svg": "15.10.1",

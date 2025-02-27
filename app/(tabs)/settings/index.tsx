@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
+import WidgetKitModule from '@/widgetkit'
 
 export default function SettingsScreen() {
     const queryClient = useQueryClient()
@@ -30,6 +31,7 @@ export default function SettingsScreen() {
         }
 
         queryClient.clear()
+        WidgetKitModule.clearAllInstances()
         router.replace('/login')
     }
 

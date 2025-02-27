@@ -7,6 +7,7 @@ import type { Network } from '@/types/network'
 import type { Status } from '@/types/status'
 import type { User } from '@/types/user'
 import type { Volume, VolumeEntity } from '@/types/volume'
+import WidgetKitModule from '@/widgetkit'
 
 export async function fetchNetworks(): Promise<Network[]> {
     console.log('Fetching NETWORKS from API...')
@@ -131,7 +132,7 @@ export async function fetchImages(): Promise<Image[]> {
 
 export async function fetchContainers(): Promise<Container[]> {
     console.log('Fetching CONTAINERS from API...')
-    const { currentEndpointId } = useAuthStore.getState()
+    const { currentEndpointId, instances, currentInstanceId } = useAuthStore.getState()
 
     try {
         const params = new URLSearchParams({
@@ -144,6 +145,21 @@ export async function fetchContainers(): Promise<Container[]> {
 
         if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
             throw new Error(`Network response was not ok: ${response.respInfo.status}`)
+        }
+
+        // todo remove me sometime in the future
+        // register instance for users who were already signed in
+        if (WidgetKitModule.getInstances().length === 0) {
+            const currentInstance = instances
+                .find(instance => instance.id === currentInstanceId)
+
+            if (currentInstance && currentInstanceId) {
+                WidgetKitModule.registerInstance({
+                    url: currentInstance.baseUrl,
+                    accessToken: currentInstance.apiToken,
+                    instanceId: currentInstanceId,
+                })
+            }
         }
 
         const data = await response.json()

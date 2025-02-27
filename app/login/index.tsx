@@ -7,6 +7,7 @@ import { useCallback, useRef, useState } from 'react'
 import Animated, { interpolate, useAnimatedKeyboard, useAnimatedStyle, withTiming } from 'react-native-reanimated'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { StyleSheet } from 'react-native-unistyles'
+import WidgetKitModule from '@/widgetkit'
 import {
     Alert,
     Button,
@@ -110,6 +111,12 @@ export default function LoginScreen() {
 
             setCurrentEndpointId(firstId.toString())
             addInstance({ id: instanceId, apiToken, baseUrl: sanitizedUrl })
+
+            WidgetKitModule.registerInstance({
+                instanceId,
+                url: sanitizedUrl,
+                accessToken: apiToken
+            })
 
             router.replace('/')
         }
