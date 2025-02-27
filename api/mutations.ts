@@ -1,3 +1,4 @@
+import ReactNativeBlobUtil from 'react-native-blob-util'
 import { apiClient } from '@/lib/api-client'
 import { useAuthStore } from '@/stores/auth'
 
@@ -233,50 +234,31 @@ export async function uploadFile(
     console.log('Uploading file to:', filePath)
     const { currentEndpointId } = useAuthStore.getState()
 
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('Path', filePath)
-
-    // console.log('formData', formData)
-
     const params = new URLSearchParams({
         volumeID: 'letsencrypt_data',
     })
 
-    // console.log(file.uri)
-
-    // const base64Img = `data:${file.type};base64,${file.uri}`
-
-    // https://github.com/wkh237/react-native-fetch-blob/issues/692#issuecomment-416823216
-    // https://github.com/ID-Buddy/IDBuddy/issues/1
-
-    // Create array of form parts as specified in the docs
-    // const formData = [
-    //     // File part
-    //     {
-    //         name: file.name,
-    //         filename: file.name,
-    //         type: file.type || 'application/octet-stream',
-    //         // data: ReactNativeBlobUtil.wrap(file.uri.replace('file://', '')),
-    //         data: file.uri,
-    //     },
-    //     // Path part
-    //     //     {
-    //     //         name: 'Path',
-    //     //         data: filePath,
-    //     //     },
-    // ]
-
-    console.log('formData', formData)
+    // in ReactNativeBlobUtil wrapping "FormData" in array is equal to setting a header "Content-Type: multipart/form-data"
+    // structure based on /endpoints/{id}/docker/v2/browse/put
+    const body = [
+        {
+            name: 'file',
+            filename: file.name,
+            type: file.type,
+            // todo test in with Android
+            data: ReactNativeBlobUtil.wrap(localPath.replace("file://", ""))
+        },
+        {
+            name: 'Path',
+            data: filePath
+        }
+    ]
 
     const response = await apiClient(
         `/api/endpoints/${currentEndpointId}/docker/v2/browse/put?${params.toString()}`,
         {
             method: 'POST',
-            body: formData,
-            // headers: {
-            //     'Content-Type': 'multipart/form-data',
-            // },
+            body
         },
         true
     ).catch((error) => {
