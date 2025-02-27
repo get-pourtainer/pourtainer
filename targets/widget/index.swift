@@ -5,5 +5,7 @@ import SwiftUI
 struct ExportWidgets: WidgetBundle {
     var body: some Widget {
         PourtainerWidget()
+//        NewWidget()
     }
 }
+
