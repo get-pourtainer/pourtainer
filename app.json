@@ -1,94 +1,92 @@
 {
-  "expo": {
-    "name": "Pourtainer",
-    "slug": "pourtainer",
-    "owner": "ffglobal",
-    "version": "1.2.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "scheme": "pourtainer",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true,
-      "appleTeamId": "8FT82R3S6A",
-      "bundleIdentifier": "com.pourtainer.mobile",
-      "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
+    "expo": {
+        "name": "Pourtainer",
+        "slug": "pourtainer",
+        "owner": "ffglobal",
+        "version": "1.2.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "scheme": "pourtainer",
+        "userInterfaceStyle": "automatic",
+        "newArchEnabled": true,
+        "ios": {
+            "supportsTablet": true,
+            "appleTeamId": "8FT82R3S6A",
+            "bundleIdentifier": "com.pourtainer.mobile",
+            "infoPlist": {
+                "NSAppTransportSecurity": {
+                    "NSAllowsArbitraryLoads": true
+                }
+            },
+            "entitlements": {
+                "com.apple.security.application-groups": ["group.com.pourtainer.mobile"]
+            }
+        },
+        "android": {
+            "package": "com.pourtainer.mobile"
+        },
+        "plugins": [
+            "expo-router",
+            [
+                "expo-splash-screen",
+                {
+                    "backgroundColor": "#1a98ff",
+                    "image": "./assets/splash/light.png",
+                    "dark": {
+                        "image": "./assets/splash/dark.png",
+                        "backgroundColor": "#0f172a"
+                    },
+                    "imageWidth": 200
+                }
+            ],
+            [
+                "react-native-edge-to-edge",
+                {
+                    "android": {
+                        "parentTheme": "Material3.Dynamic",
+                        "enforceNavigationBarContrast": false
+                    }
+                }
+            ],
+            [
+                "expo-build-properties",
+                {
+                    "ios": {
+                        "networkInspector": false
+                    }
+                }
+            ],
+            "expo-asset",
+            [
+                "@sentry/react-native/expo",
+                {
+                    "organization": "ff-global",
+                    "project": "react-native",
+                    "url": "https://sentry.io/"
+                }
+            ],
+            "./plugins/withBlobSelfSignedServer",
+            "@bacons/apple-targets",
+            [
+                "./plugins/withAndroidWidget",
+                {
+                    "src": "./targets/widget-android",
+                    "glanceVersion": "1.1.1",
+                    "kotlinExtensionVersion": "1.5.15",
+                    "receiverName": "PourtainerWidgetReceiver"
+                }
+            ]
+        ],
+        "experiments": {
+            "typedRoutes": true
+        },
+        "extra": {
+            "router": {
+                "origin": false
+            },
+            "eas": {
+                "projectId": "ce35e70d-cc47-4ebe-ad3d-59cd4dc00da5"
+            }
         }
-      },
-      "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.com.pourtainer.mobile"
-        ]
-      }
-    },
-    "android": {
-      "package": "com.pourtainer.mobile"
-    },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#1a98ff",
-          "image": "./assets/splash/light.png",
-          "dark": {
-            "image": "./assets/splash/dark.png",
-            "backgroundColor": "#0f172a"
-          },
-          "imageWidth": 200
-        }
-      ],
-      [
-        "react-native-edge-to-edge",
-        {
-          "android": {
-            "parentTheme": "Material3.Dynamic",
-            "enforceNavigationBarContrast": false
-          }
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "networkInspector": false
-          }
-        }
-      ],
-      "expo-asset",
-      [
-        "@sentry/react-native/expo",
-        {
-          "organization": "ff-global",
-          "project": "react-native",
-          "url": "https://sentry.io/"
-        }
-      ],
-      "./plugins/withBlobSelfSignedServer",
-      "@bacons/apple-targets",
-      [
-        "./plugins/withAndroidWidget",
-        {
-          "src": "./targets/widget-android",
-          "glanceVersion": "1.1.1",
-          "kotlinExtensionVersion": "1.5.15",
-          "receiverName": "PourtainerWidgetReceiver"
-        }
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "router": {
-        "origin": false
-      },
-      "eas": {
-        "projectId": "ce35e70d-cc47-4ebe-ad3d-59cd4dc00da5"
-      }
     }
-  }
 }
