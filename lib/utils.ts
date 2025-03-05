@@ -15,7 +15,7 @@ export function formatBytes(bytes: number, decimals = 2) {
     return `${Number.parseFloat((bytes / k ** i).toFixed(dm))} ${sizes[i]}`
 }
 
-export async function previewFile({
+export async function downloadFile({
     volumeName,
     filePath,
     fileName,
@@ -62,4 +62,4 @@ export async function previewFile({
         console.error('Error previewing file:', error)
         throw error
     }
-} 
+}

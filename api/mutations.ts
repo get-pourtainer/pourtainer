@@ -1,6 +1,6 @@
-import ReactNativeBlobUtil from 'react-native-blob-util'
 import { apiClient } from '@/lib/api-client'
 import { useAuthStore } from '@/stores/auth'
+import ReactNativeBlobUtil from 'react-native-blob-util'
 
 export async function restartContainer(id: string): Promise<void> {
     console.log('Restarting container:', id)
@@ -226,7 +226,7 @@ export async function deleteVolume(name: string): Promise<void> {
 }
 
 export async function uploadFile(
-    volumeName: string,
+    volumeId: string,
     filePath: string,
     file: File,
     localPath: string
@@ -235,7 +235,7 @@ export async function uploadFile(
     const { currentEndpointId } = useAuthStore.getState()
 
     const params = new URLSearchParams({
-        volumeID: 'letsencrypt_data',
+        volumeID: volumeId,
     })
 
     // in ReactNativeBlobUtil wrapping "FormData" in array is equal to setting a header "Content-Type: multipart/form-data"
@@ -246,19 +246,19 @@ export async function uploadFile(
             filename: file.name,
             type: file.type,
             // todo test in with Android
-            data: ReactNativeBlobUtil.wrap(localPath.replace("file://", ""))
+            data: ReactNativeBlobUtil.wrap(localPath.replace('file://', '')),
         },
         {
             name: 'Path',
-            data: filePath
-        }
+            data: filePath,
+        },
     ]
 
     const response = await apiClient(
         `/api/endpoints/${currentEndpointId}/docker/v2/browse/put?${params.toString()}`,
         {
             method: 'POST',
-            body
+            body,
         },
         true
     ).catch((error) => {
@@ -282,7 +282,7 @@ export async function deleteFile(volumeId: string, path: string): Promise<void> 
 
     const params = new URLSearchParams({
         path: path,
-        volumeID: 'letsencrypt_data',
+        volumeID: volumeId,
     })
 
     const response = await apiClient(
@@ -312,10 +312,7 @@ export async function renameFile(volumeId: string, path: string, newName: string
     const newFilePath = `${dirPath}/${newName}`.replace('//', '/')
 
     const response = await apiClient(
-        `/api/endpoints/${currentEndpointId}/docker/v2/browse/rename?volumeID=${
-            // volumeId
-            'letsencrypt_data'
-        }`,
+        `/api/endpoints/${currentEndpointId}/docker/v2/browse/rename?volumeID=${volumeId}`,
         {
             method: 'PUT',
             headers: {

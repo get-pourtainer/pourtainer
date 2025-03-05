@@ -1,8 +1,8 @@
 import { deleteFile, renameFile, uploadFile } from '@/api/mutations'
 import { fetchVolumeContent } from '@/api/queries'
-import { showActionSheet } from '@/components/ActionSheet'
+import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
 import { formatBytes } from '@/lib/utils'
-import { previewFile } from '@/lib/utils'
+import { downloadFile } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth'
 import type { VolumeEntity } from '@/types/volume'
 import { Ionicons } from '@expo/vector-icons'
@@ -26,44 +26,6 @@ export default function VolumeDetailScreen() {
     const [isSearchVisible, setIsSearchVisible] = useState(false)
     const theme = UnistylesRuntime.getTheme()
     const { currentEndpointId } = useAuthStore()
-
-    const currentFolderName =
-        path === '/' ? 'Browse' : path.split('/').filter(Boolean).pop() || 'Volume Details'
-
-    const handleBack = useCallback(() => {
-        if (path === '/') {
-            router.back()
-            return
-        }
-        const parentPath = path.split('/').slice(0, -1).join('/') || '/'
-        router.push({
-            pathname: '/volume/[id]',
-            params: { id, path: parentPath },
-        })
-    }, [path, router, id])
-
-    useLayoutEffect(() => {
-        navigation.setOptions({
-            headerLeft: () => (
-                <Pressable onPress={handleBack}>
-                    <Ionicons name="chevron-back" size={24} color={theme.colors.text.white} />
-                </Pressable>
-            ),
-            headerRight: () => (
-                <Pressable
-                    onPress={() => setIsSearchVisible((v) => !v)}
-                    style={({ pressed }) => [
-                        styles.headerButton,
-                        pressed && styles.headerButtonPressed,
-                    ]}
-                >
-                    <Ionicons name="search" size={24} color={theme.colors.text.white} />
-                </Pressable>
-            ),
-            headerBackVisible: false,
-            title: currentFolderName,
-        })
-    }, [navigation, handleBack, currentFolderName, theme.colors.text.white])
 
     const { data: entities, isLoading } = useQuery({
         queryKey: ['volume-content', id, path],
@@ -90,46 +52,6 @@ export default function VolumeDetailScreen() {
         },
     })
 
-    const handleUpload = useCallback(async () => {
-        try {
-            const result = await DocumentPicker.getDocumentAsync({
-                copyToCacheDirectory: true,
-            })
-
-            if (!result.canceled) {
-                await uploadMutation.mutateAsync(result.assets[0])
-            }
-        } catch (error) {
-            console.error('Error picking document:', error)
-        }
-    }, [uploadMutation])
-
-    const navigateToPath = (newPath: string) => {
-        router.push({
-            pathname: '/volume/[id]',
-            params: { id, path: newPath },
-        })
-    }
-
-    const handlePress = async (item: VolumeEntity) => {
-        if (item.Dir) {
-            navigateToPath(`${path}/${item.Name}`.replace('//', '/'))
-        } else {
-            try {
-                console.log('Previewing file:', `${path}/${item.Name}`.replace('//', '/'))
-                await previewFile({
-                    volumeName: id,
-                    filePath: `${path}/${item.Name}`.replace('//', '/'),
-                    fileName: item.Name,
-                    endpointId: currentEndpointId!,
-                })
-            } catch (error) {
-                console.error('Error opening file:', error)
-                // You might want to show an error message to the user here
-            }
-        }
-    }
-
     const deleteMutation = useMutation({
         mutationFn: async (itemPath: string) => {
             await deleteFile(id, itemPath)
@@ -148,100 +70,143 @@ export default function VolumeDetailScreen() {
         },
     })
 
+    const navigateToPath = useCallback(
+        (newPath: string) => {
+            router.push({
+                pathname: '/volume/[id]',
+                params: { id, path: newPath },
+            })
+        },
+        [id, router]
+    )
+
+    const handleUpload = useCallback(async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                copyToCacheDirectory: true,
+            })
+
+            if (!result.canceled) {
+                await uploadMutation.mutateAsync(result.assets[0])
+            }
+        } catch (error) {
+            console.error('Error picking document:', error)
+        }
+    }, [uploadMutation])
+
+    const handleBack = useCallback(() => {
+        if (path === '/') {
+            router.back()
+            return
+        }
+        const parentPath = path.split('/').slice(0, -1).join('/') || '/'
+        router.push({
+            pathname: '/volume/[id]',
+            params: { id, path: parentPath },
+        })
+    }, [path, router, id])
+
     const handleLongPress = useCallback(
         (item: VolumeEntity) => {
             const itemPath = `${path}/${item.Name}`.replace('//', '/')
 
-            showActionSheet(item.Name, [
-                {
-                    label: 'Rename',
-                    onPress: () => {
-                        Alert.prompt(
-                            'Rename',
-                            `Enter new name for ${item.Dir ? 'folder' : 'file'}:`,
-                            async (newName) => {
-                                if (!newName || newName === item.Name) return
-                                try {
-                                    await renameMutation.mutateAsync({
-                                        oldPath: itemPath,
-                                        newName,
-                                    })
-                                } catch (error) {
-                                    Alert.alert('Error', 'Failed to rename item')
-                                }
-                            },
-                            'plain-text',
-                            item.Name
-                        )
-                    },
-                },
-                {
-                    label: 'Delete',
+            const actions: ActionSheetOption[] = []
+
+            if (!item.Dir) {
+                actions.push({
+                    label: 'Download',
                     onPress: async () => {
-                        Alert.alert(
-                            'Confirm Delete',
-                            `Are you sure you want to delete this ${item.Dir ? 'folder' : 'file'}?`,
-                            [
-                                {
-                                    text: 'Cancel',
-                                    style: 'cancel',
-                                },
-                                {
-                                    text: 'Delete',
-                                    style: 'destructive',
-                                    onPress: async () => {
-                                        try {
-                                            await deleteMutation.mutateAsync(itemPath)
-                                        } catch (error) {
-                                            Alert.alert('Error', 'Failed to delete item')
-                                        }
-                                    },
-                                },
-                            ]
-                        )
+                        try {
+                            console.log(
+                                'Downloading file:',
+                                `${path}/${item.Name}`.replace('//', '/')
+                            )
+                            await downloadFile({
+                                volumeName: id,
+                                filePath: `${path}/${item.Name}`.replace('//', '/'),
+                                fileName: item.Name,
+                                endpointId: currentEndpointId!,
+                            })
+                        } catch (error) {
+                            console.error('Error opening file:', error)
+                            Alert.alert('Error', 'Failed to download file')
+                        }
                     },
-                    destructive: true,
+                })
+            }
+
+            actions.push({
+                label: 'Rename',
+                onPress: () => {
+                    Alert.prompt(
+                        'Rename',
+                        `Enter new name for ${item.Dir ? 'folder' : 'file'}:`,
+                        async (newName) => {
+                            if (!newName || newName === item.Name) return
+                            try {
+                                await renameMutation.mutateAsync({
+                                    oldPath: itemPath,
+                                    newName,
+                                })
+                            } catch (error) {
+                                Alert.alert('Error', 'Failed to rename item')
+                            }
+                        },
+                        'plain-text',
+                        item.Name
+                    )
                 },
-                {
-                    label: 'Cancel',
-                    onPress: () => {},
-                    cancel: true,
+            })
+
+            actions.push({
+                label: 'Delete',
+                onPress: async () => {
+                    Alert.alert(
+                        'Confirm Delete',
+                        `Are you sure you want to delete this ${item.Dir ? 'folder' : 'file'}?`,
+                        [
+                            {
+                                text: 'Cancel',
+                                style: 'cancel',
+                            },
+                            {
+                                text: 'Delete',
+                                style: 'destructive',
+                                onPress: async () => {
+                                    try {
+                                        await deleteMutation.mutateAsync(itemPath)
+                                    } catch (error) {
+                                        Alert.alert('Error', 'Failed to delete item')
+                                    }
+                                },
+                            },
+                        ]
+                    )
                 },
-            ])
+                destructive: true,
+            })
+
+            actions.push({
+                label: 'Cancel',
+                onPress: () => {},
+                cancel: true,
+            })
+
+            showActionSheet(item.Name, actions)
         },
-        [path, deleteMutation, renameMutation]
+        [path, deleteMutation, renameMutation, currentEndpointId, id]
     )
 
-    const renderItem = ({ item }: { item: VolumeEntity }) => {
-        const isDirectory = item.Dir
-        const timestamp = new Date(item.ModTime * 1000)
-        const timeAgo = formatDistance(timestamp, new Date(), { addSuffix: true })
-
-        return (
-            <Pressable
-                onPress={() => handlePress(item)}
-                onLongPress={() => handleLongPress(item)}
-                style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
-            >
-                <View style={styles.itemContent}>
-                    <View style={styles.itemLeftSection}>
-                        <Ionicons
-                            name={isDirectory ? 'folder' : 'document'}
-                            size={24}
-                            color={isDirectory ? '#FFB800' : '#666'}
-                        />
-                        <Text style={styles.itemName}>{item.Name}</Text>
-                    </View>
-                    <View style={styles.itemRightSection}>
-                        <Text style={styles.itemDetails}>
-                            {!isDirectory && formatBytes(item.Size)}
-                        </Text>
-                        <Text style={styles.itemTime}>{timeAgo}</Text>
-                    </View>
-                </View>
-            </Pressable>
-        )
-    }
+    const handlePress = useCallback(
+        (item: VolumeEntity) => {
+            if (item.Dir) {
+                navigateToPath(`${path}/${item.Name}`.replace('//', '/'))
+            } else {
+                handleLongPress(item)
+            }
+        },
+        [path, navigateToPath, handleLongPress]
+    )
 
     const filteredEntities = useMemo(() => {
         if (!entities) return []
@@ -250,6 +215,66 @@ export default function VolumeDetailScreen() {
 
         return entities.filter((item) => item.Name.toLowerCase().includes(query))
     }, [entities, searchQuery])
+
+    useLayoutEffect(() => {
+        const currentFolderName =
+            path === '/' ? 'Browse' : path.split('/').filter(Boolean).pop() || 'Volume Details'
+
+        navigation.setOptions({
+            headerLeft: () => (
+                <Pressable onPress={handleBack}>
+                    <Ionicons name="chevron-back" size={24} color={theme.colors.text.white} />
+                </Pressable>
+            ),
+            headerRight: () => (
+                <Pressable
+                    onPress={() => setIsSearchVisible((v) => !v)}
+                    style={({ pressed }) => [
+                        styles.headerButton,
+                        pressed && styles.headerButtonPressed,
+                    ]}
+                >
+                    <Ionicons name="search" size={24} color={theme.colors.text.white} />
+                </Pressable>
+            ),
+            headerBackVisible: false,
+            title: currentFolderName,
+        })
+    }, [navigation, handleBack, path, theme.colors.text.white])
+
+    const renderItem = useCallback(
+        ({ item }: { item: VolumeEntity }) => {
+            const isDirectory = item.Dir
+            const timestamp = new Date(item.ModTime * 1000)
+            const timeAgo = formatDistance(timestamp, new Date(), { addSuffix: true })
+
+            return (
+                <Pressable
+                    onPress={() => handlePress(item)}
+                    onLongPress={() => handleLongPress(item)}
+                    style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
+                >
+                    <View style={styles.itemContent}>
+                        <View style={styles.itemLeftSection}>
+                            <Ionicons
+                                name={isDirectory ? 'folder' : 'document'}
+                                size={24}
+                                color={isDirectory ? '#FFB800' : '#666'}
+                            />
+                            <Text style={styles.itemName}>{item.Name}</Text>
+                        </View>
+                        <View style={styles.itemRightSection}>
+                            <Text style={styles.itemDetails}>
+                                {!isDirectory && formatBytes(item.Size)}
+                            </Text>
+                            <Text style={styles.itemTime}>{timeAgo}</Text>
+                        </View>
+                    </View>
+                </Pressable>
+            )
+        },
+        [handlePress, handleLongPress]
+    )
 
     return (
         <View style={styles.container}>
@@ -300,12 +325,12 @@ export default function VolumeDetailScreen() {
                     }
                 />
             )}
-            {/* <Pressable
+            <Pressable
                 onPress={handleUpload}
                 style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
             >
                 <Ionicons name="cloud-upload" size={24} color="#FFFFFF" />
-            </Pressable> */}
+            </Pressable>
         </View>
     )
 }
