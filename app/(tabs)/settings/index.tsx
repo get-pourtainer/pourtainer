@@ -24,6 +24,8 @@ export default function SettingsScreen() {
     })
 
     const handleLogout = async () => {
+        router.replace('/login')
+
         storage.clearAll()
 
         for (const instance of instances) {
@@ -32,7 +34,6 @@ export default function SettingsScreen() {
 
         queryClient.clear()
         WidgetKitModule.clearAllInstances()
-        router.replace('/login')
     }
 
     const handleForceRefresh = () => {
