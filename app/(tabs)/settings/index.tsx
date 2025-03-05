@@ -62,13 +62,16 @@ export default function SettingsScreen() {
                             <Text style={styles.errorText}>Failed to load endpoints</Text>
                         </View>
                     ) : (
-                        endpoints?.map((endpoint) => (
+                        endpoints?.map((endpoint, endpointIndex) => (
                             <Pressable
                                 key={endpoint.Id}
                                 onPress={() => setCurrentEndpointId(endpoint.Id.toString())}
                                 style={({ pressed }) => [
                                     styles.endpointItem,
                                     pressed && { opacity: 0.7 },
+                                    endpointIndex === endpoints.length - 1 && {
+                                        borderBottomWidth: 0,
+                                    },
                                 ]}
                             >
                                 <View style={styles.endpointContent}>
