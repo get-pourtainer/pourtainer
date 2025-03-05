@@ -1,6 +1,7 @@
 package com.pourtainer.mobile
 
 import Container
+import LogLine
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -22,7 +23,19 @@ import androidx.glance.background
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
+import androidx.glance.layout.height
 import androidx.core.net.toUri
+import androidx.glance.LocalSize
+import androidx.glance.unit.ColorProvider
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.DpSize
+
+// Define transparent text color (70% opacity)
+val textColorWithOpacity = ColorProvider(
+    Color.Black.copy(alpha = 0.7f)
+)
 
 @Composable
 fun StatusView(title: String, description: String, context: Context) {
@@ -82,17 +95,48 @@ fun ContainerStatusView(status: String) {
 }
 
 @Composable
-fun ContainerView(container: Container) {
+fun LogLineView(log: LogLine) {
+    Text(
+        text = log.content,
+        style = TextStyle(
+            fontSize = 12.sp,
+            color = textColorWithOpacity
+        ),
+        maxLines = 2
+    )
+}
+
+@Composable
+fun ContainerView(container: Container?, logs: List<LogLine> = emptyList()) {
+    // Check if container exists
+    if (container == null) {
+        StatusView("Container not found", "Configure your widget and select new container", LocalContext.current)
+        return
+    }
+    
+    val maxLogLines = 20
+    
+    // Determine visible log lines based on widget size
+    val visibleLogLines = if (logs.isNotEmpty()) {
+        logs.takeLast(maxLogLines)
+    } else {
+        emptyList()
+    }
+	
+    // Create deeplink intent
     val customUri = "pourtainer://container/${container.Id}"
     val intent = Intent(Intent.ACTION_VIEW, customUri.toUri())
-
+    
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(2.dp)
+            .padding(8.dp)
             .clickable(actionStartActivity(intent))
     ) {
+        // Container status indicator (running, exited, etc.)
         ContainerStatusView(container.State.Status)
+        
+        // Container name with truncation for long names
         Text(
             text = container.Name,
             style = TextStyle(
@@ -100,7 +144,32 @@ fun ContainerView(container: Container) {
                 fontSize = 16.sp,
                 color = GlanceTheme.colors.onSurface
             ),
-            maxLines = 3
+            maxLines = 1
         )
+		
+		// widget size
+		//   Text(
+        //     	text = "${LocalSize.current.width}x${LocalSize.current.height}",
+        //     style = TextStyle(
+        //         fontWeight = FontWeight.Bold,
+        //         fontSize = 12.sp,
+        //         color = GlanceTheme.colors.onSurface
+        //     ),
+        //     maxLines = 1
+        // )
+        
+        // Add some space before showing logs
+        if (logs.isNotEmpty() && LocalSize.current.height > 56.dp) {
+            Spacer(modifier = GlanceModifier.height(4.dp))
+            
+            // Display log lines
+            Column(
+                modifier = GlanceModifier.padding(top = 2.dp)
+            ) {
+                logs.forEach { logLine ->
+                    LogLineView(logLine)
+                }
+            }
+        }
     }
 }

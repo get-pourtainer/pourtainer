@@ -23,7 +23,7 @@ import androidx.core.content.edit
 import savedInstancesKey
 import savedWidgetStateKey
 
-class PourtainerAppWidgetConfigurationActivity : AppCompatActivity() {
+class PourtainerAppWidgetConfigurationActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -104,7 +104,7 @@ class PourtainerAppWidgetConfigurationActivity : AppCompatActivity() {
         onContainerSelected: (selectedContainer: ContainerListItem?) -> Unit
     ) {
         PourtainerMaterialTheme {
-            WidgetConfigurationView(
+            ContainerWidgetConfigurationView(
                 isAuthorized,
                 state,
                 selectedContainer,
@@ -112,7 +112,7 @@ class PourtainerAppWidgetConfigurationActivity : AppCompatActivity() {
                 onContainerSelected,
                 onDone = {
                     val glanceId = GlanceAppWidgetManager(applicationContext).getGlanceIdBy(appWidgetId)
-                    PourtainerWidgetReceiver().onContainerSelected(applicationContext, glanceId, selectedContainer)
+                    ContainerWidgetReceiver().onContainerSelected(applicationContext, glanceId, selectedContainer)
 
                     val resultValue = Intent().apply {
                         putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
