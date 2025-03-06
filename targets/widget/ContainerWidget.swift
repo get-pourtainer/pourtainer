@@ -41,12 +41,12 @@ struct Provider: AppIntentTimelineProvider {
         var entries: [WidgetEntry] = []
 
         let currentDate = Date()
-        let instances = self.getInstances()
+        let connections = self.getConnections()
         let hasContainers = self.hasContainers()
         
         // Early return if container configuration is incomplete
         guard let containerId = configuration.container?.id,
-              let instance = configuration.container?.instance,
+              let connection = configuration.container?.connection,
               let endpoint = configuration.container?.endpoint else {
             // No container selected, use the original timeline approach
             let refreshPolicy: TimelineReloadPolicy = .atEnd
@@ -58,7 +58,7 @@ struct Provider: AppIntentTimelineProvider {
 
                 let entry = WidgetEntry(
                     date: entryDate, 
-                    hasInstances: !instances.isEmpty, 
+                    hasConnections: !connections.isEmpty, 
                     hasContainers: hasContainers, 
                     selectedContainer: nil,
                     logLines: []
@@ -77,7 +77,7 @@ struct Provider: AppIntentTimelineProvider {
             // User-initiated priority is appropriate for foreground operations
             let containerTask = Task(priority: .userInitiated) {
                 try await fetchContainer(
-                    instance: instance, 
+                    connection: connection, 
                     endpoint: endpoint, 
                     containerId: containerId
                 )
@@ -130,7 +130,7 @@ struct Provider: AppIntentTimelineProvider {
                 // Create a task for fetching logs with lower priority
                 let logsTask = Task(priority: .utility) {
                     try await fetchLogs(
-                        instance: instance,
+                        connection: connection,
                         endpoint: endpoint,
                         containerId: containerId
                     )
@@ -169,7 +169,7 @@ struct Provider: AppIntentTimelineProvider {
         // Create a single entry with the smart refresh policy
         let entry = WidgetEntry(
             date: currentDate,
-            hasInstances: !instances.isEmpty, 
+            hasConnections: !connections.isEmpty, 
             hasContainers: hasContainers, 
             selectedContainer: container,
             logLines: logLines
@@ -179,18 +179,18 @@ struct Provider: AppIntentTimelineProvider {
     }
 
     /**
-     * Gets stored instances from UserDefaults
-     * Retrieves saved Pourtainer instances from shared app group storage
+     * Gets stored connections from UserDefaults
+     * Retrieves saved Pourtainer connections from shared app group storage
      * 
-     * @return Array of Instance objects, or empty array if none found
+     * @return Array of Connection objects, or empty array if none found
      */
-    private func getInstances() -> [Instance] {
+    private func getConnections() -> [Connection] {
         guard let sharedDefaults = UserDefaults(suiteName: appGroupName),
-              let rawExistingInstances = sharedDefaults.data(forKey: instancesKey) else {
+              let rawExistingConnections = sharedDefaults.data(forKey: connectionsKey) else {
             return []
         }
 
-        return (try? JSONDecoder().decode([Instance].self, from: rawExistingInstances)) ?? []
+        return (try? JSONDecoder().decode([Connection].self, from: rawExistingConnections)) ?? []
     }
 
     /**
@@ -233,8 +233,8 @@ struct ContainerWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { widget in
             // Switch on the widget state to display the appropriate view
-            switch (widget.hasInstances, widget.hasContainers, self.getWidgetState(), widget.selectedContainer) {
-            // Case: No instances - user needs to sign in
+            switch (widget.hasConnections, widget.hasContainers, self.getWidgetState(), widget.selectedContainer) {
+            // Case: No connections - user needs to sign in
             case (false, _, _, _):
                 EntryView(
                     title: "Unauthorized", 
@@ -300,7 +300,7 @@ struct ContainerWidget: Widget {
     // Unauthorized state
     WidgetEntry(
         date: .now, 
-        hasInstances: false, 
+        hasConnections: false, 
         hasContainers: false, 
         selectedContainer: nil,
         logLines: []
@@ -308,7 +308,7 @@ struct ContainerWidget: Widget {
     // Signed in but no containers
     WidgetEntry(
         date: .now, 
-        hasInstances: true, 
+        hasConnections: true, 
         hasContainers: false, 
         selectedContainer: nil,
         logLines: []
@@ -316,7 +316,7 @@ struct ContainerWidget: Widget {
     // Has containers but none selected
     WidgetEntry(
         date: .now, 
-        hasInstances: true, 
+        hasConnections: true, 
         hasContainers: true, 
         selectedContainer: nil,
         logLines: []
@@ -324,7 +324,7 @@ struct ContainerWidget: Widget {
     // Container running state
     WidgetEntry(
         date: .now,
-        hasInstances: true,
+        hasConnections: true,
         hasContainers: true,
         selectedContainer: Container(
             Id: "1", 
@@ -342,7 +342,7 @@ struct ContainerWidget: Widget {
     // Container exited state
     WidgetEntry(
         date: .now,
-        hasInstances: true,
+        hasConnections: true,
         hasContainers: true,
         selectedContainer: Container(
             Id: "1", 
@@ -354,7 +354,7 @@ struct ContainerWidget: Widget {
     // Container unknown state
     WidgetEntry(
         date: .now,
-        hasInstances: true,
+        hasConnections: true,
         hasContainers: true,
         selectedContainer: Container(
             Id: "1", 

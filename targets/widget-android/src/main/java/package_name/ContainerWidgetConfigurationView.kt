@@ -1,6 +1,6 @@
 package com.pourtainer.mobile
 
-import ContainerListItem
+import Container
 import WidgetIntentState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,9 +16,9 @@ import androidx.compose.ui.unit.dp
 fun ContainerWidgetConfigurationView(
     isAuthorized: Boolean,
     state: WidgetIntentState,
-    selectedContainer: ContainerListItem?,
-    containers: List<ContainerListItem>,
-    onContainerSelected: (ContainerListItem) -> Unit,
+    selectedContainer: Container?,
+    containers: List<Container>,
+    onContainerSelected: (Container) -> Unit,
     onDone: () -> Unit,
     openApp: () -> Unit
 ) {
@@ -80,7 +80,7 @@ fun ContainerWidgetConfigurationView(
 
 @Composable
 fun ContainerItem(
-    container: ContainerListItem,
+    container: Container,
     isSelected: Boolean,
     onSelect: () -> Unit
 ) {
@@ -95,7 +95,7 @@ fun ContainerItem(
         )
     ) {
         Text(
-            text = container.containerName,
+            text = container.name,
             modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.bodyLarge,
             color = if (isSelected) whiteColor else MaterialTheme.colorScheme.onSurface

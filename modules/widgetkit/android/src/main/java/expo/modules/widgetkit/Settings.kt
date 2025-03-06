@@ -3,7 +3,7 @@ package expo.modules.widgetkit
 import expo.modules.kotlin.records.Field
 import expo.modules.kotlin.records.Record
 
-class Instance : Record {
+class Connection: Record {
     @Field
     var url: String? = null
 
@@ -11,5 +11,5 @@ class Instance : Record {
     var accessToken: String? = null
 
     @Field
-    var instanceId: String? = null
+    var id: String? = null
 }

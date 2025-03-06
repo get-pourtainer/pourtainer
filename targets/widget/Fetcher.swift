@@ -13,7 +13,7 @@ enum HTTPMethod: String {
 struct FetchParams {
     let method: HTTPMethod  // HTTP method to use (GET, POST, etc.)
     let url: String         // API endpoint path (must start with /)
-    let instance: Instance  // Instance containing server URL and authentication information
+    let connection: Connection  // Connection containing server URL and authentication information
 }
 
 /**
@@ -46,8 +46,8 @@ private func fetch(params: FetchParams, completion: @escaping (Result<Data, Erro
         ))
     }
 
-    // Build the full URL by combining instance URL and endpoint path
-    let fullUrlString = "\(params.instance.url)\(params.url)"
+    // Build the full URL by combining connection URL and endpoint path
+    let fullUrlString = "\(params.connection.url)\(params.url)"
 
     guard let fullUrl = URL(string: fullUrlString) else {
         return completion(.failure(
@@ -63,7 +63,7 @@ private func fetch(params: FetchParams, completion: @escaping (Result<Data, Erro
     var request = URLRequest(url: fullUrl)
     request.httpMethod = params.method.rawValue
     request.addValue("application/json", forHTTPHeaderField: "Accept")
-    request.addValue(params.instance.accessToken, forHTTPHeaderField: "x-api-key")
+    request.addValue(params.connection.accessToken, forHTTPHeaderField: "x-api-key")
 
     // Create session with SSL delegate for self-signed certificates
     let session = URLSession(

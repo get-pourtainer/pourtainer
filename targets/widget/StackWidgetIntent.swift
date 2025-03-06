@@ -4,13 +4,13 @@ import WidgetKit
 
 /**
  * Represents a stack entity for selection in widget configuration
- * Includes stack name and instance/endpoint information
+ * Includes stack name and connection/endpoint information
  */
 struct StackEntity: AppEntity, Decodable {
     var id: String
     var name: String
     var containerCount: Int
-    var instance: Instance
+    var connection: Connection
     var endpoint: Endpoint
     
     static var typeDisplayRepresentation: TypeDisplayRepresentation = "Stack"
@@ -26,11 +26,11 @@ struct StackEntity: AppEntity, Decodable {
 
 /**
  * Query to provide stack entities for selection
- * Presents available stacks from all endpoints and instances
+ * Presents available stacks from all endpoints and connections
  */
 struct StackQuery: EntityQuery {
     /**
-     * Fetches available stacks from all instances and endpoints
+     * Fetches available stacks from all connections and endpoints
      * Updates the widget state based on the result
      * Filters out stacks with only 1 container and "Stackless" stacks
      *
@@ -40,28 +40,28 @@ struct StackQuery: EntityQuery {
         // Set widget state to loading while fetching data
         setWidgetState(state: .loading)
 
-        // Retrieve stored instances from UserDefaults
+        // Retrieve stored connections from UserDefaults
         guard let sharedDefaults = UserDefaults(suiteName: appGroupName),
-              let rawInstances = sharedDefaults.data(forKey: instancesKey) else {
+              let rawConnections = sharedDefaults.data(forKey: connectionsKey) else {
             setWidgetState(state: .apiFailed)
             return []
         }
 
-        // Decode the instances from JSON data
-        let instances = (try? JSONDecoder().decode([Instance].self, from: rawInstances)) ?? []
+        // Decode the connections from JSON data
+        let connections = (try? JSONDecoder().decode([Connection].self, from: rawConnections)) ?? []
         
-        // No instances available
-        if instances.isEmpty {
+        // No connections available
+        if connections.isEmpty {
             setWidgetState(state: .apiFailed)
             return []
         }
 
-        // Use the first instance for now
-        let instance = instances[0]
+        // Use the first connection for now
+        let connection = connections[0]
         
         do {
             // Fetch endpoints using CacheManager
-            let endpoints = try await CacheManager.shared.fetchCachedEndpoints(instance: instance)
+            let endpoints = try await CacheManager.shared.fetchCachedEndpoints(connection: connection)
             guard !endpoints.isEmpty else { 
                 setWidgetState(state: .noContainers)
                 return [] 
@@ -71,7 +71,7 @@ struct StackQuery: EntityQuery {
             let endpoint = endpoints[0]
             
             // Get stacks with container counts
-            let stacks = try await fetchStacksWithContainerCounts(instance: instance, endpoint: endpoint)
+            let stacks = try await fetchStacksWithContainerCounts(connection: connection, endpoint: endpoint)
             
             // Filter out stacks with only 1 container and "Stackless" stacks
             let filteredStacks = stacks.filter { 
@@ -87,7 +87,7 @@ struct StackQuery: EntityQuery {
                     id: stack.id,
                     name: stack.name,
                     containerCount: stack.containerCount,
-                    instance: instance,
+                    connection: connection,
                     endpoint: endpoint
                 )
             }

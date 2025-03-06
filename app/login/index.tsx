@@ -1,36 +1,32 @@
-import React from 'react'
 import { guestClient } from '@/lib/guest-client'
-import { useAuthStore } from '@/stores/auth'
+import { usePersistedStore } from '@/stores/persisted'
 import type { Endpoint } from '@/types/endpoint'
+import WidgetKitModule from '@/widgetkit'
 import { router } from 'expo-router'
 import { useCallback, useRef, useState } from 'react'
-import Animated, { interpolate, useAnimatedKeyboard, useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import { Alert, Button, Image, Linking, Pressable, Text, TextInput, View } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import Animated, {
+    interpolate,
+    useAnimatedKeyboard,
+    useAnimatedStyle,
+    withTiming,
+} from 'react-native-reanimated'
 import { StyleSheet } from 'react-native-unistyles'
-import WidgetKitModule from '@/widgetkit'
-import {
-    Alert,
-    Button,
-    Image,
-    Linking,
-    Pressable,
-    Text,
-    TextInput,
-    View,
-} from 'react-native'
-
 const sanitizeUrl = (url: string) => {
     return url.replace(/\/+$/, '')
 }
 
 export default function LoginScreen() {
-    const { setCurrentEndpointId, addInstance } = useAuthStore()
+    const addConnection = usePersistedStore((state) => state.addConnection)
+    const switchConnection = usePersistedStore((state) => state.switchConnection)
+
     const [isLoading, setIsLoading] = useState(false)
     const baseUrlRef = useRef<string>('')
     const apiTokenRef = useRef<string>('')
     const keyboard = useAnimatedKeyboard({
         isStatusBarTranslucentAndroid: true,
-        isNavigationBarTranslucentAndroid: true
+        isNavigationBarTranslucentAndroid: true,
     })
 
     const helpBoxAnimatedStyles = useAnimatedStyle(() => {
@@ -38,12 +34,11 @@ export default function LoginScreen() {
 
         return {
             opacity: withTiming(isKeyboardVisible ? 0 : 1),
-            bottom: withTiming(isKeyboardVisible ? -300 : 0)
+            bottom: withTiming(isKeyboardVisible ? -300 : 0),
         }
     })
 
-
-    const validateInstance = useCallback(async (sanitizedUrl: string, apiToken: string) => {
+    const validateConnection = useCallback(async (sanitizedUrl: string, apiToken: string) => {
         try {
             // Try to authenticate with the API token and check system status
             const userResponse = await guestClient(sanitizedUrl, '/api/users/me', apiToken)
@@ -64,13 +59,11 @@ export default function LoginScreen() {
                 'Error',
                 'Could not connect to server. Please check your server address and API token.'
             )
-            return false
         } catch {
             Alert.alert(
                 'Error',
                 'Could not connect to server. Please check your server address and API token.'
             )
-            return false
         }
     }, [])
 
@@ -86,7 +79,7 @@ export default function LoginScreen() {
         setIsLoading(true)
 
         const sanitizedUrl = sanitizeUrl(baseUrl)
-        const instanceId = await validateInstance(sanitizedUrl, apiToken)
+        const instanceId = await validateConnection(sanitizedUrl, apiToken)
 
         if (instanceId) {
             const endpointsResponse = await guestClient(
@@ -109,20 +102,25 @@ export default function LoginScreen() {
                 return
             }
 
-            setCurrentEndpointId(firstId.toString())
-            addInstance({ id: instanceId, apiToken, baseUrl: sanitizedUrl })
+            addConnection({
+                id: instanceId,
+                apiToken,
+                baseUrl: sanitizedUrl,
+                currentEndpointId: firstId.toString(),
+            })
+            switchConnection(instanceId)
 
-            WidgetKitModule.registerInstance({
-                instanceId,
+            WidgetKitModule.registerConnection({
+                id: instanceId,
                 url: sanitizedUrl,
-                accessToken: apiToken
+                accessToken: apiToken,
             })
 
             router.replace('/')
         }
 
         setIsLoading(false)
-    }, [addInstance, setCurrentEndpointId, validateInstance])
+    }, [addConnection, switchConnection, validateConnection])
 
     const openApiDocs = () => {
         Linking.openURL('https://docs.portainer.io/api/access')
@@ -167,6 +165,9 @@ export default function LoginScreen() {
                             onChangeText={(text) => {
                                 apiTokenRef.current = text
                             }}
+                            returnKeyLabel="Connect"
+                            returnKeyType="go"
+                            onSubmitEditing={handleLogin}
                         />
                         <View style={styles.buttonContainer}>
                             <Button
@@ -195,7 +196,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background.app,
-        paddingTop: rt.insets.top
+        paddingTop: rt.insets.top,
     },
     content: {
         flex: 1,
@@ -208,11 +209,11 @@ const styles = StyleSheet.create((theme, rt) => ({
     logo: {
         width: {
             xs: 200,
-            sm: 250
+            sm: 250,
         },
         height: {
             xs: 200,
-            sm: 250
+            sm: 250,
         },
         alignSelf: 'center',
         marginBottom: theme.spacing.sm,
@@ -282,7 +283,6 @@ const styles = StyleSheet.create((theme, rt) => ({
         left: 0,
         right: 0,
         bottom: 0,
-
     },
     helpTitle: StyleSheet.flatten([
         theme.typography.subtitle,

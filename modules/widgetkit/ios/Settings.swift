@@ -1,6 +1,6 @@
 import ExpoModulesCore
 
-struct Instance: Record, Encodable, Decodable {
+struct Connection: Record, Encodable, Decodable {
     init() {}
     
     @Field
@@ -10,10 +10,10 @@ struct Instance: Record, Encodable, Decodable {
     var accessToken: String?
     
     @Field
-    var instanceId: String?
+    var id: String?
     
     enum CodingKeys: String, CodingKey {
-        case url, accessToken, instanceId
+        case url, accessToken, id
     }
     
     init(from decoder: Decoder) throws {
@@ -21,7 +21,7 @@ struct Instance: Record, Encodable, Decodable {
         
         url = try client.decodeIfPresent(String.self, forKey: .url)
         accessToken = try client.decodeIfPresent(String.self, forKey: .accessToken)
-        instanceId = try client.decodeIfPresent(String.self, forKey: .instanceId)
+        id = try client.decodeIfPresent(String.self, forKey: .id)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -29,6 +29,6 @@ struct Instance: Record, Encodable, Decodable {
         
         try client.encodeIfPresent(url, forKey: .url)
         try client.encodeIfPresent(accessToken, forKey: .accessToken)
-        try client.encodeIfPresent(instanceId, forKey: .instanceId)
+        try client.encodeIfPresent(id, forKey: .id)
     }
 }

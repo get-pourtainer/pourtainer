@@ -1,7 +1,6 @@
 package com.pourtainer.mobile
 
 import Container
-import ContainerListItem
 import LogLine
 import android.content.Context
 import androidx.glance.GlanceId
@@ -23,14 +22,18 @@ class ContainerWidgetDataWorker(context: Context, workerParams: WorkerParameters
         }
 
         return try {
-            // Fetch container data
-            val containerData = fetchContainerData()
-            val container = containerData.first
+            // // Fetch container data
+            // val containerData = fetchContainerData()
+            // val container = containerData.first
+			val rawContainer = inputData.getString(containerKey) ?: "null"
+        	val container = Gson().fromJson(rawContainer, Container::class.java) 
+            	?: throw Exception("Missing selected container")
+
             
             // Fetch logs if container is available
             val logs = if (container != null) {
                 try {
-                    fetchContainerLogs(containerData.second)
+                    fetchContainerLogs(container)
                 } catch (e: Exception) {
                     emptyList<LogLine>()
                 }
@@ -50,48 +53,61 @@ class ContainerWidgetDataWorker(context: Context, workerParams: WorkerParameters
     /**
      * Fetches container data from the API
      * 
-     * @return Pair of Container and ContainerListItem, where Container might be null if fetch fails
+     * @return Pair of Container and Container, where Container might be null if fetch fails
      * @throws Exception if selected container info is missing
      */
-    private suspend fun fetchContainerData(): Pair<Container?, ContainerListItem> = withContext(Dispatchers.IO) {
-        val rawContainer = inputData.getString(containerKey) ?: "null"
-        val selectedContainer = Gson().fromJson(rawContainer, ContainerListItem::class.java) 
-            ?: throw Exception("Missing selected container")
+    // private suspend fun fetchContainerData(): Pair<Container?, Container> = withContext(Dispatchers.IO) {
+    //     val rawContainer = inputData.getString(containerKey) ?: "null"
+    //     val selectedContainer = Gson().fromJson(rawContainer, Container::class.java) 
+    //         ?: throw Exception("Missing selected container")
 
-        try {
-            val container = fetchContainer(
-                selectedContainer.instance,
-                selectedContainer.endpoint,
-                selectedContainer.id
-            )
+    //     try {
+    //         val container = fetchContainer(
+    //             selectedContainer.connection,
+    //             selectedContainer.endpoint,
+    //             selectedContainer.Id
+    //         )
             
-            // If container name starts with '/', create a new container with the modified name
-            val cleanedContainer = if (container != null && container.Name.startsWith("/")) {
-                Container(
-                    Id = container.Id,
-                    Name = container.Name.substring(1),
-                    State = container.State
-                )
-            } else {
-                container
-            }
+    //         val cleanedContainer = if (container != null) {
+    //             // Clean Name if it starts with '/'
+    //             val cleanedName = if (container.Name.startsWith("/")) {
+    //                 container.Name.substring(1)
+    //             } else {
+    //                 container.Name
+    //             }
+	
+    //             if (cleanedName != container.Name) {
+    //                 Container(
+    //                     Id = container.Id,
+    //                     Name = cleanedName,
+    //                     State = container.State,
+	// 					stackName = container.stackName,
+    //                     connection = container.connection,
+    //                     endpoint = container.endpoint
+    //                 )
+    //             } else {
+    //                 container
+    //             }
+    //         } else {
+    //             container
+    //         }
             
-            Pair(cleanedContainer, selectedContainer)
-        } catch (e: Exception) {
-            Pair(null, selectedContainer)
-        }
-    }
+    //         Pair(cleanedContainer, selectedContainer)
+    //     } catch (e: Exception) {
+    //         Pair(null, selectedContainer)
+    //     }
+    // }
     
     /**
      * Fetches container logs from the API
      * 
-     * @param containerItem The container item containing instance and endpoint info
+     * @param containerItem The container item containing connection and endpoint info
      * @return List of LogLine objects containing the container logs
      */
-    private suspend fun fetchContainerLogs(containerItem: ContainerListItem): List<LogLine> = withContext(Dispatchers.IO) {
+    private suspend fun fetchContainerLogs(containerItem: Container): List<LogLine> = withContext(Dispatchers.IO) {
         try {
             val logs = fetchLogs(
-                containerItem.instance,
+                containerItem.connection,
                 containerItem.endpoint,
                 containerItem.id
             )

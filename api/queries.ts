@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api-client'
-import { useAuthStore } from '@/stores/auth'
+import { usePersistedStore } from '@/stores/persisted'
 import type { Container } from '@/types/container'
 import type { Endpoint } from '@/types/endpoint'
 import type { Image } from '@/types/image'
@@ -11,10 +11,12 @@ import WidgetKitModule from '@/widgetkit'
 
 export async function fetchNetworks(): Promise<Network[]> {
     console.log('Fetching NETWORKS from API...')
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await apiClient(`/api/endpoints/${currentEndpointId}/docker/networks`)
+        const response = await apiClient(
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/networks`
+        )
 
         if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
             throw new Error(`Network response was not ok: ${response.respInfo.status}`)
@@ -33,7 +35,8 @@ export async function fetchNetworks(): Promise<Network[]> {
 
 export async function fetchVolumes(): Promise<Volume[]> {
     console.log('Fetching VOLUMES from API...')
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
+
     try {
         // Create URLSearchParams objects for each request
         const danglingParams = new URLSearchParams()
@@ -43,11 +46,11 @@ export async function fetchVolumes(): Promise<Volume[]> {
         activeParams.append('filters', JSON.stringify({ dangling: ['false'] }))
 
         const dangling = apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/volumes?${danglingParams.toString()}`
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/volumes?${danglingParams.toString()}`
         )
 
         const active = apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/volumes?${activeParams.toString()}`
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/volumes?${activeParams.toString()}`
         )
 
         const [danglingRes, activeRes] = await Promise.all([dangling, active])
@@ -84,7 +87,8 @@ export async function fetchVolumes(): Promise<Volume[]> {
 
 export async function fetchVolumeContent(name: string, path: string): Promise<VolumeEntity[]> {
     console.log('Fetching VOLUME CONTENT from API...')
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
+
     try {
         const params = new URLSearchParams({
             path: path,
@@ -92,7 +96,7 @@ export async function fetchVolumeContent(name: string, path: string): Promise<Vo
         })
 
         const response = await apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/v2/browse/ls?${params.toString()}`
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/v2/browse/ls?${params.toString()}`
         )
 
         if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
@@ -111,10 +115,12 @@ export async function fetchVolumeContent(name: string, path: string): Promise<Vo
 
 export async function fetchImages(): Promise<Image[]> {
     console.log('Fetching IMAGES from API...')
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await apiClient(`/api/docker/${currentEndpointId}/images?withUsage=true`)
+        const response = await apiClient(
+            `/api/docker/${currentConnection?.currentEndpointId}/images?withUsage=true`
+        )
 
         if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
             throw new Error(`Network response was not ok: ${response.respInfo.status}`)
@@ -132,7 +138,7 @@ export async function fetchImages(): Promise<Image[]> {
 
 export async function fetchContainers(): Promise<Container[]> {
     console.log('Fetching CONTAINERS from API...')
-    const { currentEndpointId, instances, currentInstanceId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
         const params = new URLSearchParams({
@@ -140,7 +146,7 @@ export async function fetchContainers(): Promise<Container[]> {
         })
 
         const response = await apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/containers/json?${params.toString()}`
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/json?${params.toString()}`
         )
 
         if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
@@ -149,15 +155,12 @@ export async function fetchContainers(): Promise<Container[]> {
 
         // todo remove me sometime in the future
         // register instance for users who were already signed in
-        if (WidgetKitModule.getInstances().length === 0) {
-            const currentInstance = instances
-                .find(instance => instance.id === currentInstanceId)
-
-            if (currentInstance && currentInstanceId) {
-                WidgetKitModule.registerInstance({
-                    url: currentInstance.baseUrl,
-                    accessToken: currentInstance.apiToken,
-                    instanceId: currentInstanceId,
+        if (WidgetKitModule.getConnections().length === 0) {
+            if (currentConnection) {
+                WidgetKitModule.registerConnection({
+                    id: currentConnection.id,
+                    url: currentConnection.baseUrl,
+                    accessToken: currentConnection.apiToken,
                 })
             }
         }
@@ -165,7 +168,7 @@ export async function fetchContainers(): Promise<Container[]> {
         const data = await response.json()
 
         // Sort containers by their first name (removing leading slash)
-        return (data as Container[]).sort((a, b) => {
+        return (data as Container[])?.sort((a, b) => {
             const nameA = a.Names[0].replace(/^\//, '')
             const nameB = b.Names[0].replace(/^\//, '')
             return nameA.localeCompare(nameB)
@@ -186,7 +189,7 @@ export async function fetchLogs(
     }
 ): Promise<string> {
     console.log('Fetching logs for container:', id, options)
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
         const params = new URLSearchParams({
@@ -198,7 +201,7 @@ export async function fetchLogs(
         })
 
         const response = await apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/containers/${id}/logs?${params.toString()}`,
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/${id}/logs?${params.toString()}`,
             {
                 headers: {
                     'Accept': 'application/json, text/plain, */*',
@@ -243,7 +246,7 @@ export async function fetchLogs(
             position += length
         }
 
-        console.log('result', result)
+        // console.log('result', result)
 
         return result
     } catch (error) {

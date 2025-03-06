@@ -1,4 +1,3 @@
-import React from 'react'
 import {
     killContainer,
     pauseContainer,
@@ -8,19 +7,39 @@ import {
     unpauseContainer,
 } from '@/api/mutations'
 import { fetchContainers } from '@/api/queries'
+import { usePersistedStore } from '@/stores/persisted'
 import type { Container } from '@/types/container'
 import { Ionicons } from '@expo/vector-icons'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocalSearchParams } from 'expo-router'
 import { useRouter } from 'expo-router'
 import { Stack } from 'expo-router'
+import { useEffect } from 'react'
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
 
 export default function ContainerDetailScreen() {
-    const { id } = useLocalSearchParams<{ id: string }>()
+    const { id, connectionId, endpointId } = useLocalSearchParams<{
+        id: string
+        connectionId?: string
+        endpointId?: string
+    }>()
+    const currentConnection = usePersistedStore((state) => state.currentConnection)
+    const switchConnection = usePersistedStore((state) => state.switchConnection)
+    const switchEndpoint = usePersistedStore((state) => state.switchEndpoint)
+
     const router = useRouter()
     const queryClient = useQueryClient()
+
+    useEffect(() => {
+        // when navigating from widget and the container is on a different connection/endpoint
+        if (connectionId && connectionId !== currentConnection?.id) {
+            switchConnection(connectionId)
+        }
+        if (endpointId && endpointId !== currentConnection?.currentEndpointId) {
+            switchEndpoint(endpointId)
+        }
+    }, [connectionId, endpointId, currentConnection, switchConnection, switchEndpoint])
 
     const containersQuery = useQuery<Container[]>({
         queryKey: ['containers'],
@@ -87,7 +106,11 @@ export default function ContainerDetailScreen() {
         },
     })
 
-    if (containersQuery.isLoading) {
+    if (
+        containersQuery.isLoading ||
+        (connectionId && connectionId !== currentConnection?.id) ||
+        (endpointId && endpointId !== currentConnection?.currentEndpointId)
+    ) {
         return (
             <View
                 style={{
@@ -479,10 +502,10 @@ export default function ContainerDetailScreen() {
 const styles = StyleSheet.create((theme, rt) => ({
     scrollView: {
         flex: 1,
-        backgroundColor: theme.colors.background.list
+        backgroundColor: theme.colors.background.list,
     },
     scrollViewContent: {
-        paddingBottom: rt.insets.bottom
+        paddingBottom: rt.insets.bottom,
     },
     card: {
         backgroundColor: theme.colors.background.card,

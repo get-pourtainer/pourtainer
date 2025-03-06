@@ -1,7 +1,5 @@
-import React from 'react'
 import { startTerminalSession } from '@/api/mutations'
-import { useAuth } from '@/hooks/useAuth'
-import { useAuthStore } from '@/stores/auth'
+import { usePersistedStore } from '@/stores/persisted'
 import { useMutation } from '@tanstack/react-query'
 import { useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { Stack } from 'expo-router'
@@ -20,6 +18,8 @@ import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
 import WebSocketWithSelfSignedCert from 'react-native-websocket-self-signed'
 
 export default function ContainerTerminalScreen() {
+    const currentConnection = usePersistedStore((state) => state.currentConnection)
+
     const { id } = useLocalSearchParams<{ id: string }>()
     const [command, setCommand] = useState('')
     const [selectedShell, setSelectedShell] = useState<'bash' | 'sh'>('bash')
@@ -30,8 +30,6 @@ export default function ContainerTerminalScreen() {
     const scrollViewRef = useRef<ScrollView>(null)
     const [isConnected, setIsConnected] = useState(false)
     const theme = UnistylesRuntime.getTheme()
-    const { currentInstance } = useAuth()
-    const { currentEndpointId } = useAuthStore()
 
     const startSessionMutation = useMutation({
         mutationFn: async () => {
@@ -91,10 +89,10 @@ export default function ContainerTerminalScreen() {
             setOutput((prev) => [...prev, `🔴 Error: ${err}`])
         })
 
-        const fullUrl = `wss://${currentInstance!.baseUrl.replace('https://', '').replace('http://', '')}/api/websocket/exec?endpointId=${currentEndpointId}&id=${sessionId}`
+        const fullUrl = `wss://${currentConnection!.baseUrl.replace('https://', '').replace('http://', '')}/api/websocket/exec?endpointId=${currentConnection!.currentEndpointId}&id=${sessionId}`
 
         ws.connect(fullUrl, {
-            'x-api-key': currentInstance!.apiToken,
+            'x-api-key': currentConnection!.apiToken,
         })
             .then((data) => {
                 console.log('Connected to WebSocketWithSelfSignedCert', data)

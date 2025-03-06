@@ -3,42 +3,42 @@ import WidgetKit
 
 public class WidgetKitModule: Module {
     let _groupName: String = "group.com.pourtainer.mobile"
-    let _instancesKey: String = "pourtainer::instances"
+    let _connectionsKey: String = "pourtainer::connections"
 
-    private func getInstances() -> [Instance] {
+    private func getConnections() -> [Connection] {
         guard let sharedDefaults = UserDefaults(suiteName: _groupName),
-              let rawExistingInstances = sharedDefaults.data(forKey: _instancesKey) else {
+              let rawExistingConnections = sharedDefaults.data(forKey: _connectionsKey) else {
             return []
         }
 
-        return (try? JSONDecoder().decode([Instance].self, from: rawExistingInstances)) ?? []
+        return (try? JSONDecoder().decode([Connection].self, from: rawExistingConnections)) ?? []
     }
 
     public func definition() -> ModuleDefinition {
         Name("PourtainerWidgetKit")
 
-        Function("getInstances") {
-            return self.getInstances()
+        Function("getConnections") {
+            return self.getConnections()
         }
 
-        Function("registerInstance") { (instance: Instance) in
+        Function("registerConnection") { (connection: Connection) in
             guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
                 return
             }
 
             do {
-                var instances = self.getInstances()
+                var connections = self.getConnections()
 
-                // add or update instance
-                if let index = instances.firstIndex(where: { $0.instanceId == instance.instanceId }) {
-                    instances[index] = instance
+                // add or update Connection
+                if let index = connections.firstIndex(where: { $0.id == connection.id }) {
+                    connections[index] = connection
                 } else {
-                    instances.append(instance)
+                    connections.append(connection)
                 }
 
-                let encodedInstances = try JSONEncoder().encode(instances)
+                let encodedConnections = try JSONEncoder().encode(connections)
 
-                sharedDefaults.set(encodedInstances, forKey: _instancesKey)
+                sharedDefaults.set(encodedConnections, forKey: _connectionsKey)
                 sharedDefaults.synchronize()
 
                 if #available(iOS 16.0, *) {
@@ -51,7 +51,7 @@ public class WidgetKitModule: Module {
             }
         }
 
-        Function("clearAllInstances") {
+        Function("clearAllConnections") {
             guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
                 return
             }

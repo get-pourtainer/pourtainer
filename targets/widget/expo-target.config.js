@@ -1,5 +1,5 @@
 /** @type {import('@bacons/apple-targets/app.plugin').ConfigFunction} */
-module.exports = config => ({
+module.exports = (config) => ({
     type: 'widget',
     icon: './icon.png',
     entitlements: {},
@@ -7,6 +7,6 @@ module.exports = config => ({
         $success: '#4ade80',
         $error: '#ef4444',
         $warning: '#f59e0b',
-        // dark/light colors are handled form Xcode
-    }
+        // dark/light colors are handled from Xcode
+    },
 })

@@ -1,10 +1,10 @@
 import { NativeModule, requireNativeModule } from 'expo'
-import type { Instance } from './WidgetKit.types'
+import type { Connection } from './WidgetKit.types'
 
 declare class WidgetKitModule extends NativeModule {
-    getInstances(): Instance[]
-    registerInstance(instance: Instance): void
-    clearAllInstances(): void
+    getConnections(): Connection[]
+    registerConnection(connection: Connection): void
+    clearAllConnections(): void
 }
 
 export default requireNativeModule<WidgetKitModule>('PourtainerWidgetKit')

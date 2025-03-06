@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import java.io.ByteArrayOutputStream
 import com.google.gson.Gson
-import expo.modules.widgetkit.Instance
+import expo.modules.widgetkit.Connection
 import kotlin.math.pow
 
 enum class HTTPMethod(val value: String) {
@@ -25,7 +25,7 @@ enum class HTTPMethod(val value: String) {
 data class FetchParams(
     val method: HTTPMethod,
     val url: String,
-    val instance: Instance
+    val connection: Connection
 )
 
 fun enableUnsafeSSL() {
@@ -52,7 +52,7 @@ suspend fun fetch(params: FetchParams): ByteArray = withContext(Dispatchers.IO) 
         throw Exception("URL should start with /")
     }
 
-    val fullUrlString = params.instance.url + params.url
+    val fullUrlString = params.connection.url + params.url
     val url = URL(fullUrlString)
 
     enableUnsafeSSL()
@@ -60,7 +60,7 @@ suspend fun fetch(params: FetchParams): ByteArray = withContext(Dispatchers.IO) 
     val connection = (url.openConnection() as HttpURLConnection).apply {
         requestMethod = params.method.value
         setRequestProperty("Accept", "application/json")
-        setRequestProperty("x-api-key", params.instance.accessToken)
+        setRequestProperty("x-api-key", params.connection.accessToken)
         connectTimeout = 15000
         readTimeout = 15000
     }

@@ -3,7 +3,7 @@ import { fetchVolumeContent } from '@/api/queries'
 import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
 import { formatBytes } from '@/lib/utils'
 import { downloadFile } from '@/lib/utils'
-import { useAuthStore } from '@/stores/auth'
+import { usePersistedStore } from '@/stores/persisted'
 import type { VolumeEntity } from '@/types/volume'
 import { Ionicons } from '@expo/vector-icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -18,6 +18,8 @@ import { StyleSheet } from 'react-native-unistyles'
 import { UnistylesRuntime } from 'react-native-unistyles'
 
 export default function VolumeDetailScreen() {
+    const currentConnection = usePersistedStore((state) => state.currentConnection)
+
     const { id, path = '/' } = useLocalSearchParams<{ id: string; path: string }>()
     const router = useRouter()
     const queryClient = useQueryClient()
@@ -25,7 +27,6 @@ export default function VolumeDetailScreen() {
     const [searchQuery, setSearchQuery] = useState('')
     const [isSearchVisible, setIsSearchVisible] = useState(false)
     const theme = UnistylesRuntime.getTheme()
-    const { currentEndpointId } = useAuthStore()
 
     const { data: entities, isLoading } = useQuery({
         queryKey: ['volume-content', id, path],
@@ -125,7 +126,7 @@ export default function VolumeDetailScreen() {
                                 volumeName: id,
                                 filePath: `${path}/${item.Name}`.replace('//', '/'),
                                 fileName: item.Name,
-                                endpointId: currentEndpointId!,
+                                endpointId: currentConnection?.currentEndpointId!,
                             })
                         } catch (error) {
                             console.error('Error opening file:', error)
@@ -194,7 +195,7 @@ export default function VolumeDetailScreen() {
 
             showActionSheet(item.Name, actions)
         },
-        [path, deleteMutation, renameMutation, currentEndpointId, id]
+        [path, deleteMutation, renameMutation, currentConnection?.currentEndpointId, id]
     )
 
     const handlePress = useCallback(
@@ -329,7 +330,11 @@ export default function VolumeDetailScreen() {
                 onPress={handleUpload}
                 style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
             >
-                <Ionicons name="cloud-upload" size={24} color="#FFFFFF" />
+                {uploadMutation.isPending || deleteMutation.isPending ? (
+                    <ActivityIndicator size="small" />
+                ) : (
+                    <Ionicons name="cloud-upload" size={24} color="#FFFFFF" />
+                )}
             </Pressable>
         </View>
     )

@@ -1,7 +1,7 @@
 package com.pourtainer.mobile
 
+import Endpoint
 import Container
-import ContainerState
 import LogLine
 import WidgetIntentState
 import android.content.Context
@@ -24,7 +24,7 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import com.google.gson.Gson
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.currentState
-import expo.modules.widgetkit.Instance
+import expo.modules.widgetkit.Connection
 import java.util.UUID
 import androidx.glance.layout.size
 import androidx.glance.LocalSize
@@ -62,9 +62,9 @@ fun WidgetContent() {
 
     val rawWidgetState = state[ContainerWidgetReceiver.widgetStateKey] ?: "null"
     val widgetState = Gson().fromJson(rawWidgetState, WidgetIntentState::class.java) ?: WidgetIntentState.LOADING
-    val rawInstances = state[ContainerWidgetReceiver.instancesKey] ?: "[]"
-    val instances = Gson().fromJson(rawInstances, Array<Instance>::class.java) ?: emptyArray()
-    val isAuthorized = instances.isNotEmpty()
+    val rawConnections = state[ContainerWidgetReceiver.connectionsKey] ?: "[]"
+    val connections = Gson().fromJson(rawConnections, Array<Connection>::class.java) ?: emptyArray()
+    val isAuthorized = connections.isNotEmpty()
 
     Column(
         modifier = GlanceModifier
@@ -72,7 +72,7 @@ fun WidgetContent() {
             .padding(16.dp)
             .background(GlanceTheme.colors.background)
     ) {
-        // No instances - user needs to sign in
+        // No connections - user needs to sign in
         if (!isAuthorized) {
             StatusView("Unauthorized", "Sign in with Pourtainer app", context)
             return@Column
@@ -138,12 +138,11 @@ fun ContentPreview3() {
 @Composable
 fun ContentPreview4() {
     val container = Container(
-        Id = "1",
-        Name = "Pourtainer",
-        State = ContainerState(
-            StartedAt = "",
-            Status = "running"
-        )
+        id = "1",
+        name = "Pourtainer",
+        state = "running",
+        connection = Connection(),
+        endpoint = Endpoint(Id = 1, Name = "Endpoint 1")
     )
     
     val logs = listOf(
@@ -161,12 +160,11 @@ fun ContentPreview4() {
 @Composable
 fun ContentPreview5() {
     val container = Container(
-        Id = "1",
-        Name = "Pourtainer",
-        State = ContainerState(
-            StartedAt = "",
-            Status = "exited"
-        )
+        id = "1",
+        name = "Pourtainer",
+        state = "running",
+        connection = Connection(),
+        endpoint = Endpoint(Id = 1, Name = "Endpoint 1")
     )
     
     val logs = listOf(
@@ -181,12 +179,11 @@ fun ContentPreview5() {
 @Composable
 fun ContentPreview6() {
     val container = Container(
-        Id = "1",
-        Name = "Pourtainer",
-        State = ContainerState(
-            StartedAt = "",
-            Status = "unknown"
-        )
+        id = "1",
+        name = "Pourtainer",
+        state = "running",
+        connection = Connection(),
+        endpoint = Endpoint(Id = 1, Name = "Endpoint 1")
     )
     
     val logs = listOf(

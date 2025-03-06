@@ -40,16 +40,16 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
         
         let currentDate = Date()
         
-        // Load instances from shared UserDefaults
+        // Load connections from shared UserDefaults
         guard let sharedDefaults = UserDefaults(suiteName: appGroupName),
-              let rawExistingInstances = sharedDefaults.data(forKey: instancesKey),
-              let instances = try? JSONDecoder().decode([Instance].self, from: rawExistingInstances),
-              !instances.isEmpty
+              let rawExistingConnections = sharedDefaults.data(forKey: connectionsKey),
+              let connections = try? JSONDecoder().decode([Connection].self, from: rawExistingConnections),
+              !connections.isEmpty
         else {
             return Timeline(
                 entries: [StackWidgetEntry(
                     date: currentDate,
-                    hasInstances: false,
+                    hasConnections: false,
                     hasContainers: false,
                     selectedStack: nil,
                     containers: []
@@ -60,12 +60,12 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
         
         // Get the selected stack or default to nil
         guard let stackEntity = configuration.stack,
-              let instance = configuration.stack?.instance,
+              let connection = configuration.stack?.connection,
               let endpoint = configuration.stack?.endpoint else {
             return Timeline(
                 entries: [StackWidgetEntry(
                     date: currentDate,
-                    hasInstances: true,
+                    hasConnections: true,
                     hasContainers: false,
                     selectedStack: nil,
                     containers: []
@@ -80,7 +80,7 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
             // Create a high-priority task for fetching containers
             let containerTask = Task(priority: .userInitiated) {
                 try await fetchContainersForStack(
-                    instance: instance,
+                    connection: connection,
                     endpoint: endpoint,
                     stackName: stackEntity.name
                 )
@@ -93,7 +93,7 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
                 return Timeline(
                     entries: [StackWidgetEntry(
                         date: currentDate,
-                        hasInstances: true,
+                        hasConnections: true,
                         hasContainers: false,
                         selectedStack: stackEntity.name,
                         containers: []
@@ -128,7 +128,7 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
                             do {
                                 let logsTask = Task(priority: .utility) {
                                     try await fetchLogs(
-                                        instance: instance,
+                                        connection: connection,
                                         endpoint: endpoint,
                                         containerId: rawContainer.Id
                                     )
@@ -177,7 +177,7 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
             return Timeline(
                 entries: [StackWidgetEntry(
                     date: currentDate,
-                    hasInstances: true,
+                    hasConnections: true,
                     hasContainers: false,
                     selectedStack: stackEntity.name,
                     containers: []
@@ -200,7 +200,7 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
         
         let entry = StackWidgetEntry(
             date: currentDate,
-            hasInstances: true,
+            hasConnections: true,
             hasContainers: true,
             selectedStack: stackEntity.name,
             containers: containers
@@ -222,7 +222,7 @@ struct StackWidgetEntryView: View {
     @Environment(\.widgetFamily) var family
     
     var body: some View {
-        if !entry.hasInstances {
+        if !entry.hasConnections {
             placeholderView(
                 title: "Unauthorized",
                 description: "Sign in with Pourtainer app."

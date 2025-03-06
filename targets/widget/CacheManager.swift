@@ -2,48 +2,48 @@ import Foundation
 
 /**
  * Manages caching of API responses to improve performance and reduce API calls
- * Uses a singleton pattern to provide a shared instance throughout the app
+ * Uses a singleton pattern to provide a shared connection throughout the app
  * Cache expires after 60 seconds to ensure data is relatively fresh
  * Implemented as an actor for thread safety in concurrent environments
  */
 actor CacheManager {
-    // Singleton instance for global access
+    // Singleton connection for global access
     static let shared = CacheManager()
 
     // Private initializer to enforce singleton pattern
     private init() {}
 
-    // Cache key structure to uniquely identify instance+endpoint combinations
+    // Cache key structure to uniquely identify connection+endpoint combinations
     private struct ContainerCacheKey: Hashable {
-        let instanceId: String
+        let connectionId: String
         let endpointId: Int
     }
 
-    // Container cache dictionary that stores containers per instance+endpoint
-    // Maps a unique instance+endpoint key to the corresponding container data and timestamp
+    // Container cache dictionary that stores containers per connection+endpoint
+    // Maps a unique connection+endpoint key to the corresponding container data and timestamp
     private struct ContainerCacheEntry {
         let containers: [RawContainer]
         let timestamp: Date
     }
 
-    // Dictionary to store containers per instance+endpoint combination
+    // Dictionary to store containers per connection+endpoint combination
     private var containerCacheEntries: [ContainerCacheKey: ContainerCacheEntry] = [:]
 
-    // Dictionary to store endpoints per instance to avoid invalidating all endpoints
+    // Dictionary to store endpoints per connection to avoid invalidating all endpoints
     private var endpointCacheEntries: [String: (endpoints: [Endpoint], timestamp: Date)] = [:]
 
     // Cache expiration time in seconds
     private let cacheExpirationSeconds: TimeInterval = 60
 
     /**
-     * Checks if the cached endpoints are valid for a specific instance
+     * Checks if the cached endpoints are valid for a specific connection
      * Returns false if no cache exists or if cache has expired
      * 
-     * @param instanceId The ID of the Pourtainer instance to check
-     * @return Whether valid cached endpoints exist for the instance
+     * @param connectionId The ID of the Pourtainer connection to check
+     * @return Whether valid cached endpoints exist for the connection
      */
-    private func hasValidEndpointCache(for instanceId: String) -> Bool {
-        guard let cacheEntry = endpointCacheEntries[instanceId] else {
+    private func hasValidEndpointCache(for connectionId: String) -> Bool {
+        guard let cacheEntry = endpointCacheEntries[connectionId] else {
             return false
         }
         
@@ -51,10 +51,10 @@ actor CacheManager {
     }
 
     /**
-     * Checks if the cached containers are valid for a specific instance+endpoint
+     * Checks if the cached containers are valid for a specific connection+endpoint
      * Returns false if no cache exists or if cache has expired
      * 
-     * @param key The unique cache key for the instance+endpoint combination
+     * @param key The unique cache key for the connection+endpoint combination
      * @return Whether valid cached containers exist for the key
      */
     private func hasValidContainerCache(for key: ContainerCacheKey) -> Bool {
@@ -68,27 +68,27 @@ actor CacheManager {
     /**
      * Fetches endpoints from cache if available, otherwise from API
      * Uses a 60-second cache to reduce API calls while keeping data fresh
-     * Endpoints are cached per-instance
+     * Endpoints are cached per-connection
      * Thread-safe due to actor isolation
      *
-     * @param instance The authenticated Pourtainer instance
+     * @param connection The authenticated Pourtainer connection
      * @return Array of Endpoint objects representing Docker environments
      * @throws Error if API call fails or response cannot be decoded
      */
-    func fetchCachedEndpoints(instance: Instance) async throws -> Array<Endpoint> {
+    func fetchCachedEndpoints(connection: Connection) async throws -> Array<Endpoint> {
         // Check for task cancellation
         try Task.checkCancellation()
         
         // Return cached endpoints if available and still valid
-        if hasValidEndpointCache(for: instance.instanceId) {
-            return endpointCacheEntries[instance.instanceId]!.endpoints
+        if hasValidEndpointCache(for: connection.id) {
+            return endpointCacheEntries[connection.id]!.endpoints
         }
 
         // Fetch from API if cache is invalid or expired
-        let endpoints = try await fetchEndpoints(instance: instance)
+        let endpoints = try await fetchEndpoints(connection: connection)
 
         // Update cache with fresh data
-        endpointCacheEntries[instance.instanceId] = (endpoints: endpoints, timestamp: .now)
+        endpointCacheEntries[connection.id] = (endpoints: endpoints, timestamp: .now)
 
         return endpoints
     }
@@ -96,20 +96,20 @@ actor CacheManager {
     /**
      * Fetches containers from cache if available, otherwise from API
      * Uses a 60-second cache to reduce API calls while keeping data fresh
-     * Containers are cached per instance+endpoint combination
+     * Containers are cached per connection+endpoint combination
      * Thread-safe due to actor isolation
      *
-     * @param instance The authenticated Pourtainer instance
+     * @param connection The authenticated Pourtainer connection
      * @param endpoint The endpoint to fetch containers from
      * @return Array of RawContainer objects
      * @throws Error if API call fails
      */
-    func fetchCachedContainers(instance: Instance, endpoint: Endpoint) async throws -> Array<RawContainer> {
+    func fetchCachedContainers(connection: Connection, endpoint: Endpoint) async throws -> Array<RawContainer> {
         // Check for task cancellation
         try Task.checkCancellation()
         
-        // Create a unique key for this instance+endpoint combination
-        let cacheKey = ContainerCacheKey(instanceId: instance.instanceId, endpointId: endpoint.Id)
+        // Create a unique key for this connection+endpoint combination
+        let cacheKey = ContainerCacheKey(connectionId: connection.id, endpointId: endpoint.Id)
         
         // Return cached containers if available and still valid
         if hasValidContainerCache(for: cacheKey) {
@@ -118,7 +118,7 @@ actor CacheManager {
 
         // Fetch from API if cache is invalid or expired
         let containers = try await fetchContainers(
-            instance: instance, 
+            connection: connection, 
             endpoint: endpoint
         )
  

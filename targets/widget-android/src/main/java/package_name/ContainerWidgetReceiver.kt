@@ -1,7 +1,6 @@
 package com.pourtainer.mobile
 
 import Container
-import ContainerListItem
 import LogLine
 import WidgetIntentState
 import android.content.Context
@@ -24,7 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import savedInstancesKey
+import savedConnectionsKey
 import savedWidgetStateKey
 import java.util.concurrent.TimeUnit
 
@@ -36,7 +35,7 @@ class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
         val selectedContainerKey = stringPreferencesKey("selectedContainer")
         val widgetStateKey = stringPreferencesKey("state")
         val containerMetadataKey = stringPreferencesKey("containerMetadata")
-        val instancesKey = stringPreferencesKey("instances")
+        val connectionsKey = stringPreferencesKey("connections")
         val containerLogsKey = stringPreferencesKey("containerLogs")
     }
 
@@ -53,14 +52,14 @@ class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
                         glanceId = glanceId
                     ) { prefs ->
                         val rawContainer = prefs[selectedContainerKey] ?: "null"
-                        val container = Gson().fromJson(rawContainer, ContainerListItem::class.java)
+                        val container = Gson().fromJson(rawContainer, Container::class.java)
 
                         if (container != null) {
                             schedulePeriodicWork(context, glanceId, container)
                         }
 
                         prefs.toMutablePreferences().apply {
-                            this[instancesKey] = sharedPrefs.getString(savedInstancesKey, "null").toString()
+                            this[connectionsKey] = sharedPrefs.getString(savedConnectionsKey, "null").toString()
                             this[widgetStateKey] = sharedPrefs.getInt(savedWidgetStateKey, WidgetIntentState.LOADING.value).toString()
                         }
                     }
@@ -83,7 +82,7 @@ class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
         }
     }
 
-    fun onContainerSelected(context: Context, glanceId: GlanceId, container: ContainerListItem?) {
+    fun onContainerSelected(context: Context, glanceId: GlanceId, container: Container?) {
         if (container == null) {
             return
         }
@@ -182,7 +181,7 @@ class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
      * Schedules periodic work to update the widget with container data
      * Initial schedule with 15-minute interval
      */
-    private fun schedulePeriodicWork(context: Context, glanceId: GlanceId, container: ContainerListItem) {
+    private fun schedulePeriodicWork(context: Context, glanceId: GlanceId, container: Container) {
         val workManager = WorkManager.getInstance(context)
 
         // cancel previous jobs if present
@@ -216,7 +215,7 @@ class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
         val workManager = WorkManager.getInstance(context)
         
         // Get the refresh interval based on container status
-        val refreshMinutes = when (container.State.Status) {
+        val refreshMinutes = when (container.state) {
             "running" -> 5     // Active containers update more frequently (5 minutes)
             "exited" -> 30     // Inactive containers update less frequently (30 minutes)
             else -> 15         // Unknown status - use a moderate refresh rate (15 minutes)

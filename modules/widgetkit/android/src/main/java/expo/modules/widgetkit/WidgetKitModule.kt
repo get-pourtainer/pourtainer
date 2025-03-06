@@ -10,7 +10,7 @@ import androidx.core.content.edit
 class WidgetKitModule : Module() {
     companion object {
         const val groupName = "group.com.pourtainer.mobile"
-        const val instancesKey = "pourtainer::instances"
+        const val connectionsKey = "pourtainer::connections"
     }
 
     private fun notifyAllWidgets() {
@@ -21,13 +21,13 @@ class WidgetKitModule : Module() {
         appContext.reactContext?.sendBroadcast(intent)
     }
 
-    private fun getInstances(): List<Instance> {
-        val rawInstances = appContext.reactContext
+    private fun getConnections(): List<Connection> {
+        val rawConnections = appContext.reactContext
             ?.getSharedPreferences(groupName, Context.MODE_PRIVATE)
-            ?.getString(instancesKey, "[]")
+            ?.getString(connectionsKey, "[]")
 
-        return rawInstances?.let {
-            Gson().fromJson(it, Array<Instance>::class.java).toList()
+        return rawConnections?.let {
+            Gson().fromJson(it, Array<Connection>::class.java).toList()
         } ?: emptyList()
     }
 
@@ -35,31 +35,31 @@ class WidgetKitModule : Module() {
 
         Name("PourtainerWidgetKit")
 
-        Function("getInstances") {
-            return@Function this@WidgetKitModule.getInstances().map {
+        Function("getConnections") {
+            return@Function this@WidgetKitModule.getConnections().map {
                 mapOf(
                     "accessToken" to it.accessToken,
-                    "instanceId" to it.instanceId,
+                    "id" to it.id,
                     "url" to it.url,
                 )
             }
         }
 
-        Function("registerInstance") { instance: Instance ->
+        Function("registerConnection") { connection: Connection ->
             appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
-                val instances = this@WidgetKitModule.getInstances().toMutableList()
+                val connections = this@WidgetKitModule.getConnections().toMutableList()
 
-                // Add or update instance
-                val index = instances.indexOfFirst { it.instanceId == instance.instanceId }
+                // Add or update connection
+                val index = connections.indexOfFirst { it.id == connection.id }
 
                 if (index != -1) {
-                    instances[index] = instance
+                    connections[index] = connection
                 } else {
-                    instances.add(instance)
+                    connections.add(connection)
                 }
 
                 prefs.edit() {
-                    putString(instancesKey, Gson().toJson(instances))
+                    putString(connectionsKey, Gson().toJson(connections))
                     apply()
                 }
 
@@ -67,7 +67,7 @@ class WidgetKitModule : Module() {
             }
         }
 
-        Function("clearAllInstances") {
+        Function("clearAllConnections") {
             appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
                 prefs.edit() {
                     clear()

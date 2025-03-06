@@ -2,23 +2,24 @@ package com.pourtainer.mobile
 
 import Container
 import Endpoint
-import RawContainer
+import RawContainerResponse
+import RawContainerDetailsResponse
 import Stack
 import LogLine
-import expo.modules.widgetkit.Instance
+import expo.modules.widgetkit.Connection
 import java.nio.ByteBuffer
 
 /**
- * Fetches available endpoints from the Pourtainer instance
+ * Fetches available endpoints from the Pourtainer connection
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @return Array of Endpoint objects
  */
-suspend fun fetchEndpoints(instance: Instance): Array<Endpoint> {
+suspend fun fetchEndpoints(connection: Connection): Array<Endpoint> {
     val params = FetchParams(
         method = HTTPMethod.GET,
         url = "/api/endpoints?excludeSnapshots=true",
-        instance = instance
+        connection = connection
     )
 
     return httpRequestWithRetry(params)
@@ -27,15 +28,15 @@ suspend fun fetchEndpoints(instance: Instance): Array<Endpoint> {
 /**
  * Fetches containers list from a specific endpoint
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint to fetch containers from
- * @return Array of RawContainer objects
+ * @return Array of RawContainerResponse objects
  */
-suspend fun fetchContainers(instance: Instance, endpoint: Endpoint): Array<RawContainer> {
+suspend fun fetchContainers(connection: Connection, endpoint: Endpoint): Array<RawContainerResponse> {
     val params = FetchParams(
         method = HTTPMethod.GET,
         url = "/api/endpoints/${endpoint.Id}/docker/containers/json?all=true",
-        instance = instance
+        connection = connection
     )
 
     return httpRequestWithRetry(params)
@@ -44,14 +45,14 @@ suspend fun fetchContainers(instance: Instance, endpoint: Endpoint): Array<RawCo
 /**
  * Fetches containers belonging to a specific stack
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint to fetch containers from
  * @param stackName The name of the stack to filter containers by
- * @return Array of RawContainer objects from the specified stack
+ * @return Array of RawContainerResponse objects from the specified stack
  */
-suspend fun fetchContainersForStack(instance: Instance, endpoint: Endpoint, stackName: String): Array<RawContainer> {
+suspend fun fetchContainersForStack(connection: Connection, endpoint: Endpoint, stackName: String): Array<RawContainerResponse> {
     // Fetch all containers
-    val containers = fetchContainers(instance, endpoint)
+    val containers = fetchContainers(connection, endpoint)
     
     // Filter containers by stack name
     return containers.filter { container ->
@@ -63,13 +64,13 @@ suspend fun fetchContainersForStack(instance: Instance, endpoint: Endpoint, stac
 /**
  * Builds a list of stacks with container counts
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint to fetch containers from
  * @return Array of Stack objects with container counts
  */
-suspend fun fetchStacksWithContainerCounts(instance: Instance, endpoint: Endpoint): Array<Stack> {
+suspend fun fetchStacksWithContainerCounts(connection: Connection, endpoint: Endpoint): Array<Stack> {
     // Fetch all containers
-    val containers = fetchContainers(instance, endpoint)
+    val containers = fetchContainers(connection, endpoint)
     
     // Group containers by stack name and count them
     val stackCounts = mutableMapOf<String, Int>()
@@ -93,13 +94,13 @@ suspend fun fetchStacksWithContainerCounts(instance: Instance, endpoint: Endpoin
  * Extracts unique stack names from containers
  * Uses the same logic as the app's container grouping
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint to fetch containers from
  * @return Array of unique stack names
  */
-suspend fun fetchStacks(instance: Instance, endpoint: Endpoint): Array<String> {
+suspend fun fetchStacks(connection: Connection, endpoint: Endpoint): Array<String> {
     // Fetch all containers
-    val containers = fetchContainers(instance, endpoint)
+    val containers = fetchContainers(connection, endpoint)
     
     // Group containers by stack name
     val stackNames = mutableSetOf<String>()
@@ -121,32 +122,50 @@ suspend fun fetchStacks(instance: Instance, endpoint: Endpoint): Array<String> {
 /**
  * Fetches detailed information about a specific container
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint where the container exists
  * @param containerId The ID of the container to fetch
  * @return Container object if found
  */
-suspend fun fetchContainer(instance: Instance, endpoint: Endpoint, containerId: String): Container? {
+/**
+ * Fetches a container without the connection field, which will be added by ContainerWidgetDataWorker
+ * because Container.connection is not part of the API response.
+ */
+suspend fun fetchContainer(connection: Connection, endpoint: Endpoint, containerId: String): Container? {
     val params = FetchParams(
         method = HTTPMethod.GET,
         url = "/api/endpoints/${endpoint.Id}/docker/containers/${containerId}/json",
-        instance = instance
+        connection = connection
     )
 
-    return httpRequestWithRetry(params)
+    try {
+        val response = httpRequestWithRetry<RawContainerDetailsResponse>(params)
+        
+        // Create a Container with the connection, endpoint and stack name added
+        return Container(
+            id = response.Id,
+            name = response.Name,
+            state = response.State.Status,
+			stackName = response.Config.Labels?.get("com.docker.compose.project.name"),
+            connection = connection,
+			endpoint = endpoint
+        )
+    } catch (e: Exception) {
+        return null
+    }
 }
 
 /**
  * Fetches container logs from a specific container
  * Processes and returns the raw log data as a string
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint where the container exists
  * @param containerId The ID of the container to fetch logs from
  * @return String containing the processed logs
  */
 suspend fun fetchLogs(
-    instance: Instance, 
+    connection: Connection, 
     endpoint: Endpoint, 
     containerId: String
 ): String {
@@ -164,7 +183,7 @@ suspend fun fetchLogs(
     val params = FetchParams(
         method = HTTPMethod.GET,
         url = "/api/endpoints/${endpoint.Id}/docker/containers/${containerId}/logs?$queryParams",
-        instance = instance
+        connection = connection
     )
     
     // Fetch raw binary data

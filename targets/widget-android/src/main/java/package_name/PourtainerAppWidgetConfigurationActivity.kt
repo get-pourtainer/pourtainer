@@ -1,6 +1,6 @@
 package com.pourtainer.mobile
 
-import ContainerListItem
+import Container
 import WidgetIntentState
 import android.appwidget.AppWidgetManager
 import android.content.Context
@@ -18,14 +18,14 @@ import androidx.compose.runtime.setValue
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import appGroupName
 import com.google.gson.Gson
-import expo.modules.widgetkit.Instance
+import expo.modules.widgetkit.Connection
 import androidx.core.content.edit
-import savedInstancesKey
+import savedConnectionsKey
 import savedWidgetStateKey
 
 class PourtainerAppWidgetConfigurationActivity: AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onCreate(savedConnectionState: Bundle?) {
+        super.onCreate(savedConnectionState)
 
         setResult(RESULT_CANCELED)
 
@@ -41,35 +41,45 @@ class PourtainerAppWidgetConfigurationActivity: AppCompatActivity() {
         }
 
         val prefs = getSharedPreferences(appGroupName, Context.MODE_PRIVATE)
-        val rawInstances = prefs.getString(savedInstancesKey, "[]")
-        val instances = Gson().fromJson(rawInstances, Array<Instance>::class.java) ?: emptyArray()
+        val rawConnections = prefs.getString(savedConnectionsKey, "[]")
+        val connections = Gson().fromJson(rawConnections, Array<Connection>::class.java) ?: emptyArray()
 
         setWidgetState(WidgetIntentState.LOADING)
 
         setContent {
             var widgetState = remember { mutableStateOf(WidgetIntentState.LOADING) }
-            val options = remember { mutableStateListOf<ContainerListItem>() }
-            var selectedContainer by remember { mutableStateOf<ContainerListItem?>(null) }
+            val options = remember { mutableStateListOf<Container>() }
+            var selectedContainer by remember { mutableStateOf<Container?>(null) }
 
             LaunchedEffect(Unit) {
-                for (instance in instances) {
+                for (connection in connections) {
                     try {
-                        val endpoints = fetchEndpoints(instance)
+                        val endpoints = fetchEndpoints(connection)
 
                         for (endpoint in endpoints) {
-                            val containers = fetchContainers(instance, endpoint)
+                            val containers = fetchContainers(connection, endpoint)
 
                             options.addAll(containers.map { container ->
-                                ContainerListItem(
+                                // Clean container name by removing leading slash if present
+                                val containerName = container.Names.firstOrNull() ?: "Unknown"
+                                val cleanedName = if (containerName.startsWith("/")) {
+                                    containerName.substring(1)
+                                } else {
+                                    containerName
+                                }
+                                
+                                Container(
                                     id = container.Id,
-                                    containerName = container.Names.firstOrNull() ?: "Unknown",
-                                    instance = instance,
-                                    endpoint = endpoint
+                                    name = cleanedName,
+									state = container.State,
+                                    connection = connection,
+                                    endpoint = endpoint,
+                                    stackName = container.Labels?.get("com.docker.compose.project.name")
                                 )
                             })
                         }
 
-                        val nextState = if (instances.isEmpty()) WidgetIntentState.NO_CONTAINERS else WidgetIntentState.HAS_CONTAINERS
+                        val nextState = if (connections.isEmpty()) WidgetIntentState.NO_CONTAINERS else WidgetIntentState.HAS_CONTAINERS
 
                         setWidgetState(nextState)
                         widgetState.value = nextState
@@ -82,7 +92,7 @@ class PourtainerAppWidgetConfigurationActivity: AppCompatActivity() {
             }
 
             setupUI(
-                instances.isNotEmpty(),
+                connections.isNotEmpty(),
                 widgetState.value,
                 selectedContainer,
                 options,
@@ -98,10 +108,10 @@ class PourtainerAppWidgetConfigurationActivity: AppCompatActivity() {
     private fun setupUI(
         isAuthorized: Boolean,
         state: WidgetIntentState,
-        selectedContainer: ContainerListItem?,
-        containers: List<ContainerListItem>,
+        selectedContainer: Container?,
+        containers: List<Container>,
         appWidgetId: Int,
-        onContainerSelected: (selectedContainer: ContainerListItem?) -> Unit
+        onContainerSelected: (selectedContainer: Container?) -> Unit
     ) {
         PourtainerMaterialTheme {
             ContainerWidgetConfigurationView(

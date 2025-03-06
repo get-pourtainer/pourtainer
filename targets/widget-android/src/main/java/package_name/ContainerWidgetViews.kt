@@ -32,11 +32,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 
-// Define transparent text color (70% opacity)
-val textColorWithOpacity = ColorProvider(
-    Color.Black.copy(alpha = 0.7f)
-)
-
 @Composable
 fun StatusView(title: String, description: String, context: Context) {
     Column(
@@ -100,7 +95,7 @@ fun LogLineView(log: LogLine) {
         text = log.content,
         style = TextStyle(
             fontSize = 12.sp,
-            color = textColorWithOpacity
+            color = GlanceTheme.colors.onSurface
         ),
         maxLines = 2
     )
@@ -123,8 +118,8 @@ fun ContainerView(container: Container?, logs: List<LogLine> = emptyList()) {
         emptyList()
     }
 	
-    // Create deeplink intent
-    val customUri = "pourtainer://container/${container.Id}"
+    // Create deeplink intent (container ID already cleaned in data worker)
+    val customUri = "pourtainer://container/${container.id}?connectionId=${container.connection.id}&endpointId=${container.endpoint.Id}"
     val intent = Intent(Intent.ACTION_VIEW, customUri.toUri())
     
     Column(
@@ -134,11 +129,11 @@ fun ContainerView(container: Container?, logs: List<LogLine> = emptyList()) {
             .clickable(actionStartActivity(intent))
     ) {
         // Container status indicator (running, exited, etc.)
-        ContainerStatusView(container.State.Status)
+        ContainerStatusView(container.state)
         
         // Container name with truncation for long names
         Text(
-            text = container.Name,
+            text = container.name,
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,

@@ -1,16 +1,16 @@
 import Foundation
 
 /**
- * Fetches available endpoints from the Pourtainer instance
+ * Fetches available endpoints from the Pourtainer connection
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @return Array of Endpoint objects
  */
-func fetchEndpoints(instance: Instance) async throws -> Array<Endpoint> {
+func fetchEndpoints(connection: Connection) async throws -> Array<Endpoint> {
     let params = FetchParams(
         method: HTTPMethod.GET,
         url: "/api/endpoints?excludeSnapshots=true",
-        instance: instance
+        connection: connection
     )
 
     return try await httpRequestWithRetry(params: params)
@@ -19,15 +19,15 @@ func fetchEndpoints(instance: Instance) async throws -> Array<Endpoint> {
 /**
  * Fetches containers list from a specific endpoint
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint to fetch containers from
  * @return Array of RawContainer objects
  */
-func fetchContainers(instance: Instance, endpoint: Endpoint) async throws -> Array<RawContainer> {
+func fetchContainers(connection: Connection, endpoint: Endpoint) async throws -> Array<RawContainer> {
     let params = FetchParams(
         method: HTTPMethod.GET,
         url: "/api/endpoints/\(endpoint.Id)/docker/containers/json?all=true",
-        instance: instance
+        connection: connection
     )
 
     return try await httpRequestWithRetry(params: params)
@@ -36,14 +36,14 @@ func fetchContainers(instance: Instance, endpoint: Endpoint) async throws -> Arr
 /**
  * Fetches containers belonging to a specific stack
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint to fetch containers from
  * @param stackName The name of the stack to filter containers by
  * @return Array of RawContainer objects from the specified stack
  */
-func fetchContainersForStack(instance: Instance, endpoint: Endpoint, stackName: String) async throws -> [RawContainer] {
+func fetchContainersForStack(connection: Connection, endpoint: Endpoint, stackName: String) async throws -> [RawContainer] {
     // Fetch all containers
-    let containers = try await fetchContainers(instance: instance, endpoint: endpoint)
+    let containers = try await fetchContainers(connection: connection, endpoint: endpoint)
     
     // Filter containers by stack name
     return containers.filter { container in
@@ -55,13 +55,13 @@ func fetchContainersForStack(instance: Instance, endpoint: Endpoint, stackName: 
 /**
  * Builds a list of stacks with container counts
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint to fetch containers from
  * @return Array of Stack objects with container counts
  */
-func fetchStacksWithContainerCounts(instance: Instance, endpoint: Endpoint) async throws -> [Stack] {
+func fetchStacksWithContainerCounts(connection: Connection, endpoint: Endpoint) async throws -> [Stack] {
     // Fetch all containers
-    let containers = try await fetchContainers(instance: instance, endpoint: endpoint)
+    let containers = try await fetchContainers(connection: connection, endpoint: endpoint)
     
     // Group containers by stack name and count them
     var stackCounts: [String: Int] = [:]
@@ -87,13 +87,13 @@ func fetchStacksWithContainerCounts(instance: Instance, endpoint: Endpoint) asyn
  * Extracts unique stack names from containers
  * Uses the same logic as the app's container grouping
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint to fetch containers from
  * @return Array of unique stack names
  */
-func fetchStacks(instance: Instance, endpoint: Endpoint) async throws -> [String] {
+func fetchStacks(connection: Connection, endpoint: Endpoint) async throws -> [String] {
     // Fetch all containers
-    let containers = try await fetchContainers(instance: instance, endpoint: endpoint)
+    let containers = try await fetchContainers(connection: connection, endpoint: endpoint)
     
     // Group containers by stack name
     var stackNames = Set<String>()
@@ -117,16 +117,16 @@ func fetchStacks(instance: Instance, endpoint: Endpoint) async throws -> [String
 /**
  * Fetches detailed information about a specific container
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint where the container exists
  * @param containerId The ID of the container to fetch
  * @return Container object if found, nil otherwise
  */
-func fetchContainer(instance: Instance, endpoint: Endpoint, containerId: String) async throws -> Container? {
+func fetchContainer(connection: Connection, endpoint: Endpoint, containerId: String) async throws -> Container? {
     let params = FetchParams(
         method: HTTPMethod.GET,
         url: "/api/endpoints/\(endpoint.Id)/docker/containers/\(containerId)/json",
-        instance: instance
+        connection: connection
     )
 
     return try await httpRequestWithRetry(params: params)
@@ -136,14 +136,14 @@ func fetchContainer(instance: Instance, endpoint: Endpoint, containerId: String)
  * Fetches container logs from a specific container
  * Processes and returns the raw log data as a string
  * 
- * @param instance The authenticated Pourtainer instance
+ * @param connection The authenticated Pourtainer connection
  * @param endpoint The endpoint where the container exists
  * @param containerId The ID of the container to fetch logs from
  * @param options Configuration for log retrieval (timestamps, tail, since)
  * @return String containing the processed logs
  */
 func fetchLogs(
-    instance: Instance, 
+    connection: Connection, 
     endpoint: Endpoint, 
     containerId: String
 ) async throws -> String {
@@ -166,7 +166,7 @@ func fetchLogs(
     let params = FetchParams(
         method: HTTPMethod.GET,
         url: "/api/endpoints/\(endpoint.Id)/docker/containers/\(containerId)/logs?\(queryString)",
-        instance: instance
+        connection: connection
     )
     
     // Fetch raw binary data

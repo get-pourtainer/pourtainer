@@ -1,13 +1,17 @@
-import { useAuth } from '@/hooks/useAuth'
+import { usePersistedStore } from '@/stores/persisted'
 import { Redirect } from 'expo-router'
 
 export default function App() {
-    const { isAuthenticated, currentInstance } = useAuth()
+    const connections = usePersistedStore((state) => state.connections)
+    const currentConnection = usePersistedStore((state) => state.currentConnection)
 
-    console.log('currentInstance', currentInstance)
-
-    if (!isAuthenticated) {
+    if (connections.length === 0) {
         return <Redirect href="/login" />
+    }
+
+    if (!currentConnection) {
+        usePersistedStore.setState({ currentConnection: connections[0] })
+        throw new Error('Found connections but not current connection id.')
     }
 
     return <Redirect href="/(tabs)/containers" />

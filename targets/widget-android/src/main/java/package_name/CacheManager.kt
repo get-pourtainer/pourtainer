@@ -1,47 +1,47 @@
 package com.pourtainer.mobile
 
 import Endpoint
-import RawContainer
-import expo.modules.widgetkit.Instance
+import RawContainerResponse
+import expo.modules.widgetkit.Connection
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.Date
-import safeInstanceId  // Import the extension property
+import safeConnectionId  // Import the extension property
 
 /**
  * Manages caching of API responses to improve performance and reduce API calls
- * Uses a singleton pattern to provide a shared instance throughout the app
+ * Uses a singleton pattern to provide a shared connection throughout the app
  * Cache expires after 60 seconds to ensure data is relatively fresh
  * Uses Mutex for thread safety in concurrent environments (Kotlin alternative to Swift Actor)
  */
 class CacheManager private constructor() {
-    // Singleton instance for global access
+    // Singleton connection for global access
     companion object {
         val shared = CacheManager()
     }
 
-    // Cache key structure to uniquely identify instance+endpoint combinations
+    // Cache key structure to uniquely identify connection+endpoint combinations
     private data class ContainerCacheKey(
-        val instanceId: String,
+        val connectionId: String,
         val endpointId: Int
     )
 
-    // Container cache entry that stores containers per instance+endpoint
+    // Container cache entry that stores containers per connection+endpoint
     private data class ContainerCacheEntry(
-        val containers: Array<RawContainer>,
+        val containers: Array<RawContainerResponse>,
         val timestamp: Date
     )
 
-    // Endpoint cache entry that stores endpoints per instance
+    // Endpoint cache entry that stores endpoints per connection
     private data class EndpointCacheEntry(
         val endpoints: Array<Endpoint>,
         val timestamp: Date
     )
 
-    // Dictionary to store containers per instance+endpoint combination
+    // Dictionary to store containers per connection+endpoint combination
     private val containerCacheEntries = mutableMapOf<ContainerCacheKey, ContainerCacheEntry>()
 
-    // Dictionary to store endpoints per instance
+    // Dictionary to store endpoints per connection
     private val endpointCacheEntries = mutableMapOf<String, EndpointCacheEntry>()
 
     // Cache expiration time in seconds
@@ -51,24 +51,24 @@ class CacheManager private constructor() {
     private val mutex = Mutex()
 
     /**
-     * Checks if the cached endpoints are valid for a specific instance
+     * Checks if the cached endpoints are valid for a specific connection
      * Returns false if no cache exists or if cache has expired
      * 
-     * @param instanceId The ID of the Pourtainer instance to check
-     * @return Whether valid cached endpoints exist for the instance
+     * @param connectionId The ID of the Pourtainer connection to check
+     * @return Whether valid cached endpoints exist for the connection
      */
-    private fun hasValidEndpointCache(instanceId: String): Boolean {
-        val cacheEntry = endpointCacheEntries[instanceId] ?: return false
+    private fun hasValidEndpointCache(connectionId: String): Boolean {
+        val cacheEntry = endpointCacheEntries[connectionId] ?: return false
         
         val now = Date()
         return (now.time - cacheEntry.timestamp.time) / 1000 < cacheExpirationSeconds
     }
 
     /**
-     * Checks if the cached containers are valid for a specific instance+endpoint
+     * Checks if the cached containers are valid for a specific connection+endpoint
      * Returns false if no cache exists or if cache has expired
      * 
-     * @param key The unique cache key for the instance+endpoint combination
+     * @param key The unique cache key for the connection+endpoint combination
      * @return Whether valid cached containers exist for the key
      */
     private fun hasValidContainerCache(key: ContainerCacheKey): Boolean {
@@ -81,25 +81,25 @@ class CacheManager private constructor() {
     /**
      * Fetches endpoints from cache if available, otherwise from API
      * Uses a 60-second cache to reduce API calls while keeping data fresh
-     * Endpoints are cached per-instance
+     * Endpoints are cached per-connection
      * Thread-safe due to mutex locking
      *
-     * @param instance The authenticated Pourtainer instance
+     * @param connection The authenticated Pourtainer connection
      * @return Array of Endpoint objects representing Docker environments
      * @throws Exception if API call fails or response cannot be decoded
      */
-    suspend fun fetchCachedEndpoints(instance: Instance): Array<Endpoint> {
+    suspend fun fetchCachedEndpoints(connection: Connection): Array<Endpoint> {
         return mutex.withLock {
             // Return cached endpoints if available and still valid
-            if (hasValidEndpointCache(instance.safeInstanceId)) {
-                return@withLock endpointCacheEntries[instance.safeInstanceId]!!.endpoints
+            if (hasValidEndpointCache(connection.safeConnectionId)) {
+                return@withLock endpointCacheEntries[connection.safeConnectionId]!!.endpoints
             }
 
             // Fetch from API if cache is invalid or expired
-            val endpoints = fetchEndpoints(instance)
+            val endpoints = fetchEndpoints(connection)
 
             // Update cache with fresh data
-            endpointCacheEntries[instance.safeInstanceId] = EndpointCacheEntry(
+            endpointCacheEntries[connection.safeConnectionId] = EndpointCacheEntry(
                 endpoints = endpoints,
                 timestamp = Date()
             )
@@ -111,18 +111,18 @@ class CacheManager private constructor() {
     /**
      * Fetches containers from cache if available, otherwise from API
      * Uses a 60-second cache to reduce API calls while keeping data fresh
-     * Containers are cached per instance+endpoint combination
+     * Containers are cached per connection+endpoint combination
      * Thread-safe due to mutex locking
      *
-     * @param instance The authenticated Pourtainer instance
+     * @param connection The authenticated Pourtainer connection
      * @param endpoint The endpoint to fetch containers from
-     * @return Array of RawContainer objects
+     * @return Array of RawContainerResponse objects
      * @throws Exception if API call fails
      */
-    suspend fun fetchCachedContainers(instance: Instance, endpoint: Endpoint): Array<RawContainer> {
+    suspend fun fetchCachedContainers(connection: Connection, endpoint: Endpoint): Array<RawContainerResponse> {
         return mutex.withLock {
-            // Create a unique key for this instance+endpoint combination
-            val cacheKey = ContainerCacheKey(instanceId = instance.safeInstanceId, endpointId = endpoint.Id)
+            // Create a unique key for this connection+endpoint combination
+            val cacheKey = ContainerCacheKey(connectionId = connection.safeConnectionId, endpointId = endpoint.Id)
             
             // Return cached containers if available and still valid
             if (hasValidContainerCache(cacheKey)) {
@@ -130,7 +130,7 @@ class CacheManager private constructor() {
             }
 
             // Fetch from API if cache is invalid or expired
-            val containers = fetchContainers(instance, endpoint)
+            val containers = fetchContainers(connection, endpoint)
     
             // Update cache with fresh data
             containerCacheEntries[cacheKey] = ContainerCacheEntry(

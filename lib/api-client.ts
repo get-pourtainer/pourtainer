@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/auth'
+import { usePersistedStore } from '@/stores/persisted'
 import ReactNativeBlobUtil, { type FetchBlobResponse } from 'react-native-blob-util'
 
 type RequestConfig = {
@@ -22,22 +22,19 @@ export async function apiClient(
     config: RequestConfig = {},
     isFileUpload: boolean = false
 ): Promise<FetchBlobResponse> {
-    const { instances, currentInstanceId } = useAuthStore.getState()
-    const currentInstance = instances.find((instance) => instance.id === currentInstanceId)
+    const currentConnection = usePersistedStore.getState().currentConnection
 
-    // console.log('currentInstance', currentInstance)
-
-    if (!currentInstance) {
-        throw new Error('No instance selected')
+    if (!currentConnection) {
+        throw new Error('No connection selected')
     }
 
     const headers: Record<string, string> = config.headers || {}
 
-    headers['x-api-key'] = currentInstance.apiToken
+    headers['x-api-key'] = currentConnection.apiToken
 
     // console.log('headers', headers)
 
-    const fullUrl = `${currentInstance.baseUrl}${path}`
+    const fullUrl = `${currentConnection.baseUrl}${path}`
 
     // const fullUrl = 'http://192.168.100.70:3000' + path
 

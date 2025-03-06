@@ -1,14 +1,14 @@
 import { apiClient } from '@/lib/api-client'
-import { useAuthStore } from '@/stores/auth'
+import { usePersistedStore } from '@/stores/persisted'
 import ReactNativeBlobUtil from 'react-native-blob-util'
 
 export async function restartContainer(id: string): Promise<void> {
     console.log('Restarting container:', id)
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
         const response = await apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/containers/${id}/restart`,
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/${id}/restart`,
             {
                 method: 'POST',
             }
@@ -25,11 +25,11 @@ export async function restartContainer(id: string): Promise<void> {
 
 export async function stopContainer(id: string): Promise<void> {
     console.log('Stopping container:', id)
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
         const response = await apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/containers/${id}/stop`,
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/${id}/stop`,
             {
                 method: 'POST',
             }
@@ -46,11 +46,11 @@ export async function stopContainer(id: string): Promise<void> {
 
 export async function startContainer(id: string): Promise<void> {
     console.log('Starting container:', id)
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
         const response = await apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/containers/${id}/start`,
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/${id}/start`,
             {
                 method: 'POST',
             }
@@ -67,11 +67,11 @@ export async function startContainer(id: string): Promise<void> {
 
 export async function pauseContainer(id: string): Promise<void> {
     console.log('Pausing container:', id)
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
         const response = await apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/containers/${id}/pause`,
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/${id}/pause`,
             {
                 method: 'POST',
             }
@@ -88,11 +88,11 @@ export async function pauseContainer(id: string): Promise<void> {
 
 export async function unpauseContainer(id: string): Promise<void> {
     console.log('Unpausing container:', id)
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
         const response = await apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/containers/${id}/unpause`,
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/${id}/unpause`,
             {
                 method: 'POST',
             }
@@ -109,11 +109,11 @@ export async function unpauseContainer(id: string): Promise<void> {
 
 export async function killContainer(id: string): Promise<void> {
     console.log('Killing container:', id)
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
         const response = await apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/containers/${id}/kill`,
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/${id}/kill`,
             {
                 method: 'POST',
             }
@@ -134,7 +134,7 @@ export async function startTerminalSession(
     user?: string
 ): Promise<{ Id: string }> {
     console.log('Starting terminal session for container:', id)
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     const session = {
         'id': id,
@@ -150,7 +150,7 @@ export async function startTerminalSession(
 
     try {
         const response = await apiClient(
-            `/api/endpoints/${currentEndpointId}/docker/containers/${id}/exec`,
+            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/${id}/exec`,
             {
                 method: 'POST',
                 body: session,
@@ -180,14 +180,14 @@ export async function deleteImage(
     { force = false }: { force?: boolean } = {}
 ): Promise<void> {
     console.log('Deleting image:', id)
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     const params = new URLSearchParams({
         force: force.toString(),
     })
 
     const response = await apiClient(
-        `/api/endpoints/${currentEndpointId}/docker/images/${id}?${params.toString()}`,
+        `/api/endpoints/${currentConnection?.currentEndpointId}/docker/images/${id}?${params.toString()}`,
         {
             method: 'DELETE',
         }
@@ -207,11 +207,14 @@ export async function deleteImage(
 
 export async function deleteVolume(name: string): Promise<void> {
     console.log('Deleting volume:', name)
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
-    const response = await apiClient(`/api/endpoints/${currentEndpointId}/docker/volumes/${name}`, {
-        method: 'DELETE',
-    }).catch((error) => {
+    const response = await apiClient(
+        `/api/endpoints/${currentConnection?.currentEndpointId}/docker/volumes/${name}`,
+        {
+            method: 'DELETE',
+        }
+    ).catch((error) => {
         console.error('Error deleting volume:', error)
         throw error
     })
@@ -232,7 +235,7 @@ export async function uploadFile(
     localPath: string
 ) {
     console.log('Uploading file to:', filePath)
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     const params = new URLSearchParams({
         volumeID: volumeId,
@@ -255,7 +258,7 @@ export async function uploadFile(
     ]
 
     const response = await apiClient(
-        `/api/endpoints/${currentEndpointId}/docker/v2/browse/put?${params.toString()}`,
+        `/api/endpoints/${currentConnection?.currentEndpointId}/docker/v2/browse/put?${params.toString()}`,
         {
             method: 'POST',
             body,
@@ -278,7 +281,7 @@ export async function uploadFile(
 }
 
 export async function deleteFile(volumeId: string, path: string): Promise<void> {
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     const params = new URLSearchParams({
         path: path,
@@ -286,7 +289,7 @@ export async function deleteFile(volumeId: string, path: string): Promise<void> 
     })
 
     const response = await apiClient(
-        `/api/endpoints/${currentEndpointId}/docker/v2/browse/delete?${params.toString()}`,
+        `/api/endpoints/${currentConnection?.currentEndpointId}/docker/v2/browse/delete?${params.toString()}`,
         {
             method: 'DELETE',
         }
@@ -302,7 +305,7 @@ export async function deleteFile(volumeId: string, path: string): Promise<void> 
 }
 
 export async function renameFile(volumeId: string, path: string, newName: string): Promise<void> {
-    const { currentEndpointId } = useAuthStore.getState()
+    const currentConnection = usePersistedStore.getState().currentConnection
 
     // Get the directory path
     const dirPath = path.split('/').slice(0, -1).join('/') // Get directory path without filename
@@ -312,7 +315,7 @@ export async function renameFile(volumeId: string, path: string, newName: string
     const newFilePath = `${dirPath}/${newName}`.replace('//', '/')
 
     const response = await apiClient(
-        `/api/endpoints/${currentEndpointId}/docker/v2/browse/rename?volumeID=${volumeId}`,
+        `/api/endpoints/${currentConnection?.currentEndpointId}/docker/v2/browse/rename?volumeID=${volumeId}`,
         {
             method: 'PUT',
             headers: {

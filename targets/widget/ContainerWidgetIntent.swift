@@ -27,7 +27,7 @@ struct ContainerListItem: AppEntity, Decodable {
     let id: String              // Container ID (used for fetching container data)
     let containerName: String   // Display name of the container
     let stackName: String?      // Stack name the container belongs to (optional)
-    let instance: Instance      // Instance where the container exists
+    let connection: Connection      // Connection where the container exists
     let endpoint: Endpoint      // Endpoint where the container exists
 }
 
@@ -38,7 +38,7 @@ struct ContainerListItem: AppEntity, Decodable {
  */
 struct ContainerQuery: EntityQuery {
     /**
-     * Fetches available containers from all instances and endpoints
+     * Fetches available containers from all connections and endpoints
      * Updates the widget state based on the result
      * This is the main method called when configuring the widget
      * Enhanced with parallel fetching using task groups
@@ -50,25 +50,25 @@ struct ContainerQuery: EntityQuery {
         // Set widget state to loading while fetching data
         setWidgetState(state: .loading)
 
-        // Retrieve stored instances from UserDefaults
+        // Retrieve stored connections from UserDefaults
         guard let sharedDefaults = UserDefaults(suiteName: appGroupName),
-              let rawInstances = sharedDefaults.data(forKey: instancesKey) else {
+              let rawConnections = sharedDefaults.data(forKey: connectionsKey) else {
             setWidgetState(state: .apiFailed)
             return []
         }
 
-        // Decode the instances from JSON data
-        let instances = (try? JSONDecoder().decode([Instance].self, from: rawInstances)) ?? []
+        // Decode the connections from JSON data
+        let connections = (try? JSONDecoder().decode([Connection].self, from: rawConnections)) ?? []
         
-        // No instances available
-        if instances.isEmpty {
+        // No connections available
+        if connections.isEmpty {
             setWidgetState(state: .apiFailed)
             return []
         }
 
         // Use task group to fetch containers from multiple endpoints in parallel
         do {
-            let options = try await fetchContainersInParallel(instances: instances)
+            let options = try await fetchContainersInParallel(connections: connections)
             
             // Update widget state based on container availability
             setWidgetState(state: options.isEmpty ? .noContainers : .hasContainers)
@@ -82,18 +82,18 @@ struct ContainerQuery: EntityQuery {
     }
     
     /**
-     * Fetches containers from all instances and endpoints in parallel using task groups
+     * Fetches containers from all connections and endpoints in parallel using task groups
      * Significantly improves performance by making concurrent API requests
      *
-     * @param instances Array of authenticated Pourtainer instances
+     * @param connections Array of authenticated Pourtainer connections
      * @return Array of ContainerListItem objects from all endpoints
      * @throws Error if any fetch operation fails
      */
-    private func fetchContainersInParallel(instances: [Instance]) async throws -> [ContainerListItem] {
+    private func fetchContainersInParallel(connections: [Connection]) async throws -> [ContainerListItem] {
         return try await withThrowingTaskGroup(of: [ContainerListItem].self) { group in
-            for instance in instances {
-                // First get endpoints for this instance
-                let endpoints = try await CacheManager.shared.fetchCachedEndpoints(instance: instance)
+            for connection in connections {
+                // First get endpoints for this connection
+                let endpoints = try await CacheManager.shared.fetchCachedEndpoints(connection: connection)
                 
                 // Then create a parallel task for each endpoint to fetch its containers
                 for endpoint in endpoints {
@@ -103,7 +103,7 @@ struct ContainerQuery: EntityQuery {
                         
                         // Get cached containers for this endpoint
                         let containers = try await CacheManager.shared.fetchCachedContainers(
-                            instance: instance, 
+                            connection: connection, 
                             endpoint: endpoint
                         )
                         
@@ -126,7 +126,7 @@ struct ContainerQuery: EntityQuery {
                                 id: container.Id,
                                 containerName: containerName,
                                 stackName: stackName,
-                                instance: instance,
+                                connection: connection,
                                 endpoint: endpoint
                             )
                         }

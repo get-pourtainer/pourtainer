@@ -2,8 +2,9 @@ const { AndroidConfig, withAppBuildGradle, withAndroidManifest } = require('@exp
 const { mergeContents } = require('@expo/config-plugins/build/utils/generateCode')
 const withSourceFiles = require('./withSourceFiles')
 
-const withModifiedAppBuildGradle = (config, opts) => withAppBuildGradle(config, config => {
-    const gradleDependencies = `
+const withModifiedAppBuildGradle = (config, opts) =>
+    withAppBuildGradle(config, (config) => {
+        const gradleDependencies = `
     implementation("androidx.glance:glance:${opts.glanceVersion}")
     implementation("androidx.glance:glance-appwidget:${opts.glanceVersion}")
     implementation("androidx.glance:glance-preview:${opts.glanceVersion}")
@@ -16,7 +17,7 @@ const withModifiedAppBuildGradle = (config, opts) => withAppBuildGradle(config, 
     implementation("androidx.work:work-runtime:2.10.0")
     `
 
-    const gradleAndroidConfig = `
+        const gradleAndroidConfig = `
 android {
     buildFeatures {
         compose = true
@@ -28,89 +29,90 @@ android {
 }
 `
 
-    let newFileContents = config.modResults.contents
+        let newFileContents = config.modResults.contents
 
-    newFileContents = mergeContents({
-        src: newFileContents,
-        newSrc: gradleDependencies,
-        tag: 'GlanceDependencies',
-        anchor: /implementation\("com.facebook.react:react-android"\)/,
-        offset: 1,
-        comment: '//'
-    }).contents
+        newFileContents = mergeContents({
+            src: newFileContents,
+            newSrc: gradleDependencies,
+            tag: 'GlanceDependencies',
+            anchor: /implementation\("com.facebook.react:react-android"\)/,
+            offset: 1,
+            comment: '//',
+        }).contents
 
-    newFileContents = mergeContents({
-        src: newFileContents,
-        newSrc: gradleAndroidConfig,
-        tag: 'GlanceAndroidConfig',
-        anchor: /dependencies \{/,
-        offset: -1,
-        comment: '//'
-    }).contents
+        newFileContents = mergeContents({
+            src: newFileContents,
+            newSrc: gradleAndroidConfig,
+            tag: 'GlanceAndroidConfig',
+            anchor: /dependencies \{/,
+            offset: -1,
+            comment: '//',
+        }).contents
 
-    config.modResults.contents = newFileContents
+        config.modResults.contents = newFileContents
 
-    return config
-})
-
-const withModifiedAndroidManifest = (config, opts) => withAndroidManifest(config, config => {
-    const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(config.modResults)
-    mainApplication.receiver = {
-        $: {
-            "android:name": `.${opts.receiverName}`,
-            "android:exported": 'true',
-            "android:label": "@string/app_name"
-        },
-        "intent-filter": [
-            {
-                action: [
-                    {
-                        $: {
-                            "android:name": "android.appwidget.action.APPWIDGET_UPDATE",
-                        },
-                    },
-                ],
-            },
-            {
-                action: [
-                    {
-                        $: {
-                            "android:name": "android.appwidget.action.APPWIDGET_CONFIGURE",
-                        },
-                    }
-                ]
-            }
-        ],
-        "meta-data": [
-            {
-                $: {
-                    "android:name": "android.appwidget.provider",
-                    "android:resource": "@xml/pourtainer_widget_info",
-                    "android:description": "@string/widget_description"
-                },
-            },
-        ],
-    }
-    mainApplication.activity.push({
-        $: {
-            "android:name": `.PourtainerAppWidgetConfigurationActivity`,
-            "android:exported": 'true'
-        },
-        "intent-filter": [
-            {
-                action: [
-                    {
-                        $: {
-                            "android:name": "android.appwidget.action.APPWIDGET_CONFIGURE",
-                        },
-                    }
-                ]
-            }
-        ],
+        return config
     })
 
-    return config
-})
+const withModifiedAndroidManifest = (config, opts) =>
+    withAndroidManifest(config, (config) => {
+        const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(config.modResults)
+        mainApplication.receiver = {
+            $: {
+                'android:name': `.${opts.receiverName}`,
+                'android:exported': 'true',
+                'android:label': '@string/app_name',
+            },
+            'intent-filter': [
+                {
+                    action: [
+                        {
+                            $: {
+                                'android:name': 'android.appwidget.action.APPWIDGET_UPDATE',
+                            },
+                        },
+                    ],
+                },
+                {
+                    action: [
+                        {
+                            $: {
+                                'android:name': 'android.appwidget.action.APPWIDGET_CONFIGURE',
+                            },
+                        },
+                    ],
+                },
+            ],
+            'meta-data': [
+                {
+                    $: {
+                        'android:name': 'android.appwidget.provider',
+                        'android:resource': '@xml/pourtainer_widget_info',
+                        'android:description': '@string/widget_description',
+                    },
+                },
+            ],
+        }
+        mainApplication.activity.push({
+            $: {
+                'android:name': `.PourtainerAppWidgetConfigurationActivity`,
+                'android:exported': 'true',
+            },
+            'intent-filter': [
+                {
+                    action: [
+                        {
+                            $: {
+                                'android:name': 'android.appwidget.action.APPWIDGET_CONFIGURE',
+                            },
+                        },
+                    ],
+                },
+            ],
+        })
+
+        return config
+    })
 
 const withAndroidWidget = (config, opts) => {
     config = withModifiedAppBuildGradle(config, opts)

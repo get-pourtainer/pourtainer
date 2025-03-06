@@ -4,14 +4,14 @@ import WidgetKit
 // App group ID for sharing data between the app and the widget
 let appGroupName: String = "group.com.pourtainer.mobile"
 // UserDefaults keys for sharing data across app/widget
-let instancesKey: String = "pourtainer::instances"
+let connectionsKey: String = "pourtainer::connections"
 let widgetStateKey: String = "pourtainer::widgetState"
 
-// Represents a Pourtainer server instance with authentication credentials
-struct Instance: Decodable {
+// Represents a Pourtainer server connection with authentication credentials
+struct Connection: Decodable {
     let url: String
     let accessToken: String
-    let instanceId: String
+    let id: String
 }
 
 // Represents a Docker endpoint in Pourtainer
@@ -80,7 +80,7 @@ struct LogLine: Identifiable, Hashable {
 // Widget timeline entry data structure used to provide data to the widget views
 struct WidgetEntry: TimelineEntry {
     let date: Date                   // Required for timeline entries
-    let hasInstances: Bool          
+    let hasConnections: Bool          
     let hasContainers: Bool         
     let selectedContainer: Container?
     let logLines: [LogLine]          // Array of log lines for the selected container
@@ -89,7 +89,7 @@ struct WidgetEntry: TimelineEntry {
 // Default placeholder widget for previews and initial loading states
 let placeholderWidget: WidgetEntry = WidgetEntry(
     date: .now,
-    hasInstances: true,
+    hasConnections: true,
     hasContainers: true,
     selectedContainer: Container(Id: "1", Name: "Pourtainer", State: ContainerState(StartedAt: "", Status: "running")),
     logLines: [
@@ -99,16 +99,6 @@ let placeholderWidget: WidgetEntry = WidgetEntry(
         LogLine(content: "Received first request")
     ]
 )
-
-/**
- * Options for container log requests
- * Controls timestamps, number of lines, and time range
- */
-struct LogOptions {
-    let timestamps: Bool   // Whether to show timestamps in logs
-    let tail: Int          // Number of log lines to return (from the end)
-    let since: Int         // Show logs since timestamp (Unix epoch seconds)
-}
 
 /**
  * Represents a Docker Compose stack or container group
@@ -141,7 +131,7 @@ struct ContainerWithLogs: Identifiable {
  */
 struct StackWidgetEntry: TimelineEntry {
     let date: Date
-    let hasInstances: Bool
+    let hasConnections: Bool
     let hasContainers: Bool
     let selectedStack: String?
     let containers: [ContainerWithLogs]
@@ -150,7 +140,7 @@ struct StackWidgetEntry: TimelineEntry {
 // Default placeholder for the stack widget
 let placeholderStackWidget: StackWidgetEntry = StackWidgetEntry(
     date: .now,
-    hasInstances: true,
+    hasConnections: true,
     hasContainers: true,
     selectedStack: "Frontend",
     containers: [

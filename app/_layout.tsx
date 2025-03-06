@@ -1,21 +1,20 @@
 import { queryClient } from '@/lib/query'
 import { storage } from '@/lib/storage'
 import * as Sentry from '@sentry/react-native'
-import { SystemBars } from 'react-native-edge-to-edge'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { isRunningInExpoGo } from 'expo'
 import { Stack, useNavigationContainerRef } from 'expo-router'
-import React, { useEffect } from 'react'
 import * as SplashScreen from 'expo-splash-screen'
+import { useEffect } from 'react'
+import { SystemBars } from 'react-native-edge-to-edge'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { useUnistyles } from 'react-native-unistyles'
 
 const navigationIntegration = Sentry.reactNavigationIntegration({
     enableTimeToInitialDisplay: !isRunningInExpoGo(),
 })
-
 
 Sentry.init({
     dsn: 'https://e22f4e095b63a18d2908414ca1a0b146@o4508503751983104.ingest.de.sentry.io/4508503798775888',
@@ -79,14 +78,11 @@ function RootLayout() {
                         persister: mmkvPersister,
                         dehydrateOptions: {
                             shouldDehydrateQuery: (query) => query.state.data !== undefined,
-                        }
+                        },
                     }}
                 >
                     <Stack>
-                        <Stack.Screen
-                            name="index"
-                            options={{ headerShown: false }}
-                        />
+                        <Stack.Screen name="index" options={{ headerShown: false }} />
                         <Stack.Screen
                             name="login/index"
                             options={{
@@ -101,10 +97,7 @@ function RootLayout() {
                                 headerShown: false,
                             }}
                         />
-                        <Stack.Screen
-                            name="container/[id]/index"
-                            options={commonHeaderStyle}
-                        />
+                        <Stack.Screen name="container/[id]/index" options={commonHeaderStyle} />
                         <Stack.Screen
                             name="container/[id]/logs"
                             options={{

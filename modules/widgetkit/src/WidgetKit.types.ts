@@ -1,5 +1,5 @@
-export type Instance = {
-    url: string,
-    instanceId: string,
+export type Connection = {
+    url: string
+    id: string
     accessToken: string
 }

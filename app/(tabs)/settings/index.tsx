@@ -1,15 +1,19 @@
 import { fetchEndpoints } from '@/api/queries'
 import { storage } from '@/lib/storage'
-import { useAuthStore } from '@/stores/auth'
+import { usePersistedStore } from '@/stores/persisted'
+import WidgetKitModule from '@/widgetkit'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
-import WidgetKitModule from '@/widgetkit'
 
 export default function SettingsScreen() {
+    const connections = usePersistedStore((state) => state.connections)
+    const switchEndpoint = usePersistedStore((state) => state.switchEndpoint)
+    const currentConnection = usePersistedStore((state) => state.currentConnection)
+    const removeConnection = usePersistedStore((state) => state.removeConnection)
+
     const queryClient = useQueryClient()
-    const { instances, removeInstance, currentEndpointId, setCurrentEndpointId } = useAuthStore()
     const theme = UnistylesRuntime.getTheme()
 
     const {
@@ -28,12 +32,12 @@ export default function SettingsScreen() {
 
         storage.clearAll()
 
-        for (const instance of instances) {
-            removeInstance(instance.id)
+        for (const connection of connections) {
+            removeConnection(connection.id)
         }
 
         queryClient.clear()
-        WidgetKitModule.clearAllInstances()
+        WidgetKitModule.clearAllConnections()
     }
 
     const handleForceRefresh = () => {
@@ -65,7 +69,7 @@ export default function SettingsScreen() {
                         endpoints?.map((endpoint, endpointIndex) => (
                             <Pressable
                                 key={endpoint.Id}
-                                onPress={() => setCurrentEndpointId(endpoint.Id.toString())}
+                                onPress={() => switchEndpoint(endpoint.Id.toString())}
                                 style={({ pressed }) => [
                                     styles.endpointItem,
                                     pressed && { opacity: 0.7 },
@@ -79,7 +83,8 @@ export default function SettingsScreen() {
                                     <Text style={styles.endpointUrl}>{endpoint.URL}</Text>
                                 </View>
 
-                                {currentEndpointId === endpoint.Id.toString() && (
+                                {currentConnection?.currentEndpointId ===
+                                    endpoint.Id.toString() && (
                                     <View style={styles.activeIndicator}>
                                         <Text style={styles.checkmark}>✓</Text>
                                     </View>
@@ -117,20 +122,20 @@ export default function SettingsScreen() {
     )
 }
 
-const styles = StyleSheet.create(theme => ({
+const styles = StyleSheet.create((theme) => ({
     scrollView: {
         flex: 1,
-        backgroundColor: theme.colors.background.list
+        backgroundColor: theme.colors.background.list,
     },
     scrollViewContent: {
         padding: theme.spacing.md,
         gap: theme.spacing.lg,
         position: 'relative',
         borderTopWidth: 1,
-        borderTopColor: theme.colors.primaryLight
+        borderTopColor: theme.colors.primaryLight,
     },
     section: {
-        gap: theme.spacing.md
+        gap: theme.spacing.md,
     },
     sectionTitle: StyleSheet.flatten([
         theme.typography.title,
