@@ -1,9 +1,12 @@
 import { fetchContainers } from '@/api/queries'
+import { usePersistedStore } from '@/stores/persisted'
 import type { Container } from '@/types/container'
 import { useQuery } from '@tanstack/react-query'
 import { router, useNavigation } from 'expo-router'
 import { SquircleButton } from 'expo-squircle-view'
-import { useLayoutEffect, useMemo, useState } from 'react'
+import * as StoreReview from 'expo-store-review'
+import ms from 'ms'
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native'
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
 
@@ -12,20 +15,43 @@ type GroupedContainers = {
 }
 
 function ContainerBox({ container }: { container: Container }) {
+    const countToReviewPrompt = usePersistedStore((state) => state.countToReviewPrompt)
+    const setCountToReviewPrompt = usePersistedStore((state) => state.setCountToReviewPrompt)
+    const lastShownReviewPrompt = usePersistedStore((state) => state.lastShownReviewPrompt)
+    const setLastShownReviewPrompt = usePersistedStore((state) => state.setLastShownReviewPrompt)
+
     const colors = UnistylesRuntime.getTheme().colors
     const status = container.State.toLowerCase()
     const statusColor =
         status === 'running'
             ? colors.status.success
             : status === 'exited'
-                ? colors.status.error
-                : colors.status.warning
+              ? colors.status.error
+              : colors.status.warning
+
+    const handlePress = useCallback(() => {
+        router.push(`/container/${container.Id}`)
+
+        if (countToReviewPrompt === 0) {
+            // make sure at least 1 day has passed
+            if (!lastShownReviewPrompt || lastShownReviewPrompt < Date.now() - ms('1d')) {
+                setLastShownReviewPrompt(Date.now())
+                setCountToReviewPrompt(12)
+                StoreReview.requestReview()
+            }
+        } else {
+            setCountToReviewPrompt(countToReviewPrompt - 1)
+        }
+    }, [
+        countToReviewPrompt,
+        lastShownReviewPrompt,
+        setCountToReviewPrompt,
+        setLastShownReviewPrompt,
+        container.Id,
+    ])
 
     return (
-        <SquircleButton
-            onPress={() => router.push(`/container/${container.Id}`)}
-            style={styles.containerBox}
-        >
+        <SquircleButton onPress={handlePress} style={styles.containerBox}>
             <View style={styles.containerBoxInner}>
                 <View>
                     <Text style={styles.containerName} numberOfLines={2}>
@@ -151,7 +177,7 @@ export default function ContainersScreen() {
     )
 }
 
-const styles = StyleSheet.create(theme => ({
+const styles = StyleSheet.create((theme) => ({
     containerBox: StyleSheet.flatten([
         {
             width: 160,
