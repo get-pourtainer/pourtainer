@@ -75,7 +75,8 @@
                     "kotlinExtensionVersion": "1.5.15",
                     "receiverName": "ContainerWidgetReceiver"
                 }
-            ]
+            ],
+            "./plugins/withEdgeToEdgeFix"
         ],
         "experiments": {
             "typedRoutes": true
