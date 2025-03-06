@@ -76,7 +76,7 @@ function ImageRow({
 }
 
 export default function ImagesScreen() {
-    const [searchQuery, setSearchQuery] = useState('')
+    const [searchString, setSearchString] = useState('')
     const navigation = useNavigation()
     const queryClient = useQueryClient()
 
@@ -95,7 +95,7 @@ export default function ImagesScreen() {
                 barTintColor: theme.colors.searchBar.background,
                 textColor: theme.colors.searchBar.text,
                 placeholderTextColor: theme.colors.searchBar.placeholder,
-                onChangeText: (event: any) => setSearchQuery(event.nativeEvent.text),
+                onChangeText: (event: any) => setSearchString(event.nativeEvent.text),
             },
         })
     }, [navigation])
@@ -119,7 +119,7 @@ export default function ImagesScreen() {
     }
 
     const filteredImages = imagesQuery.data?.filter((image) => {
-        const query = searchQuery.toLowerCase()
+        const query = searchString.toLowerCase()
         const imageName = (image.tags?.[0] || image.id).toLowerCase()
         return imageName.includes(query)
     })
@@ -205,7 +205,7 @@ export default function ImagesScreen() {
     )
 }
 
-const styles = StyleSheet.create(theme => ({
+const styles = StyleSheet.create((theme) => ({
     imageRow: {
         padding: theme.spacing.md,
     },
