@@ -216,7 +216,7 @@ struct Provider: AppIntentTimelineProvider {
  * Entry point for the widget's lifecycle and rendering
  */
 struct ContainerWidget: Widget {
-    let kind: String = "widget"
+    let kind: String = "ContainerWidget"
 	
     /**
      * Gets the current widget state from UserDefaults
