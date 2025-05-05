@@ -6,8 +6,8 @@ Pod::Spec.new do |s|
   s.author         = ''
   s.homepage       = 'https://docs.expo.dev/modules/'
   s.platforms      = {
-    :ios => '16.0',
-    :tvos => '16.0'
+    :ios => '15.1',
+    :tvos => '15.1'
   }
   s.source         = { git: '' }
   s.static_framework = true
