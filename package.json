@@ -43,6 +43,7 @@
     "expo-splash-screen": "~0.29.18",
     "expo-squircle-view": "^1.1.0",
     "expo-status-bar": "~2.0.0",
+    "expo-store-review": "~8.0.1",
     "expo-symbols": "~0.2.0",
     "expo-system-ui": "~4.0.6",
     "expo-web-browser": "~14.0.1",
@@ -56,18 +57,15 @@
     "react-native-gesture-handler": "^2.21.2",
     "react-native-keyboard-controller": "^1.15.2",
     "react-native-mmkv": "^3.2.0",
-    "react-native-nitro-modules": "0.22.1",
     "react-native-reanimated": "^3.16.7",
     "react-native-safe-area-context": "5.0.0",
     "react-native-screens": "~4.4.0",
     "react-native-svg": "15.10.1",
-    "react-native-unistyles": "3.0.0-beta.7",
     "react-native-web": "~0.19.13",
     "react-native-websocket-self-signed": "^0.3.0",
     "use-async-effect": "^2.2.7",
     "use-debounce": "^10.0.4",
-    "zustand": "^5.0.2",
-    "expo-store-review": "~8.0.1"
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",

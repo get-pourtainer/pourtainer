@@ -1,10 +1,8 @@
+import { COLORS } from '@/theme'
 import { Stack } from 'expo-router'
-import { useUnistyles } from 'react-native-unistyles'
 import { Platform } from 'react-native'
 
 export default function VolumesLayout() {
-    const { theme } = useUnistyles()
-
     return (
         <Stack
             screenOptions={{
@@ -12,15 +10,15 @@ export default function VolumesLayout() {
                 headerTransparent: Platform.OS === 'ios',
                 headerBlurEffect: 'regular',
                 headerLargeStyle: {
-                    backgroundColor: theme.colors.background.list,
+                    backgroundColor: COLORS.background.list,
                 },
                 headerLargeTitleStyle: {
-                    color: theme.colors.text.white,
+                    color: COLORS.text.white,
                 },
                 headerStyle: {
-                    backgroundColor: theme.colors.background.list
+                    backgroundColor: COLORS.background.list,
                 },
-                headerTintColor: theme.colors.text.white,
+                headerTintColor: COLORS.text.white,
                 // change the colors of the small header text
                 // navigationBarColor: 'red',
                 // headerSearchBarOptions: {

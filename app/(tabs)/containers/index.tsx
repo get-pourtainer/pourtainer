@@ -1,5 +1,6 @@
 import { fetchContainers } from '@/api/queries'
 import { usePersistedStore } from '@/stores/persisted'
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import type { Container } from '@/types/container'
 import { useQuery } from '@tanstack/react-query'
 import { router, useNavigation } from 'expo-router'
@@ -7,8 +8,8 @@ import { SquircleButton } from 'expo-squircle-view'
 import * as StoreReview from 'expo-store-review'
 import ms from 'ms'
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
+import { StyleSheet } from 'react-native'
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native'
-import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
 
 type GroupedContainers = {
     [key: string]: Container[]
@@ -20,14 +21,13 @@ function ContainerBox({ container }: { container: Container }) {
     const lastShownReviewPrompt = usePersistedStore((state) => state.lastShownReviewPrompt)
     const setLastShownReviewPrompt = usePersistedStore((state) => state.setLastShownReviewPrompt)
 
-    const colors = UnistylesRuntime.getTheme().colors
     const status = container.State.toLowerCase()
     const statusColor =
         status === 'running'
-            ? colors.status.success
+            ? COLORS.status.success
             : status === 'exited'
-              ? colors.status.error
-              : colors.status.warning
+              ? COLORS.status.error
+              : COLORS.status.warning
 
     const handlePress = useCallback(() => {
         router.push(`/container/${container.Id}`)
@@ -80,15 +80,13 @@ export default function ContainersScreen() {
     })
 
     useLayoutEffect(() => {
-        const theme = UnistylesRuntime.getTheme()
-
         navigation.setOptions({
             headerSearchBarOptions: {
                 placeholder: 'Search stacks or containers...',
                 hideWhenScrolling: true,
-                barTintColor: theme.colors.searchBar.background,
-                textColor: theme.colors.searchBar.text,
-                placeholderTextColor: theme.colors.searchBar.placeholder,
+                barTintColor: COLORS.searchBar.background,
+                textColor: COLORS.searchBar.text,
+                placeholderTextColor: COLORS.searchBar.placeholder,
                 onChangeText: (event: any) => setSearchQuery(event.nativeEvent.text),
             },
         })
@@ -177,87 +175,87 @@ export default function ContainersScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create({
     containerBox: StyleSheet.flatten([
         {
             width: 160,
             height: 150,
-            padding: theme.spacing.md,
-            borderRadius: theme.borderRadius.lg,
-            backgroundColor: theme.colors.background.card,
-            margin: theme.spacing.sm,
+            padding: SPACING.md,
+            borderRadius: BORDER_RADIUS.lg,
+            backgroundColor: COLORS.background.card,
+            margin: SPACING.sm,
         },
-        theme.shadows.small,
+        SHADOWS.small,
     ]),
     containerBoxInner: {
         flex: 1,
         justifyContent: 'space-between',
     },
     containerName: StyleSheet.flatten([
-        theme.typography.subtitle,
+        TYPOGRAPHY.subtitle,
         {
-            color: theme.colors.text.primary,
+            color: COLORS.text.primary,
         },
     ]),
     statusContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: theme.spacing.xs,
+        gap: SPACING.xs,
     },
     statusDot: {
-        width: theme.spacing.sm,
-        height: theme.spacing.sm,
-        borderRadius: theme.borderRadius.circle(theme.spacing.sm),
+        width: SPACING.sm,
+        height: SPACING.sm,
+        borderRadius: BORDER_RADIUS.circle(SPACING.sm),
     },
     statusText: StyleSheet.flatten([
-        theme.typography.small,
+        TYPOGRAPHY.small,
         {
-            color: theme.colors.text.secondary,
+            color: COLORS.text.secondary,
         },
     ]),
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: theme.colors.background.list,
+        backgroundColor: COLORS.background.list,
     },
     loadingIndicator: {
-        color: theme.colors.text.white,
+        color: COLORS.text.white,
     },
     errorText: {
-        color: theme.colors.text.primary,
+        color: COLORS.text.primary,
     },
     scrollView: {
         flex: 1,
-        backgroundColor: theme.colors.background.list,
+        backgroundColor: COLORS.background.list,
     },
     scrollViewContent: {
-        padding: theme.spacing.md,
-        gap: theme.spacing.lg,
+        padding: SPACING.md,
+        gap: SPACING.lg,
         position: 'relative',
         borderTopWidth: 1,
-        borderTopColor: theme.colors.primaryLight,
+        borderTopColor: COLORS.primaryLight,
     },
     noResultsContainer: {
         alignItems: 'center',
-        padding: theme.spacing.lg,
+        padding: SPACING.lg,
     },
     noResultsText: {
-        fontSize: theme.typography.subtitle.fontSize,
-        color: theme.colors.text.light,
+        fontSize: TYPOGRAPHY.subtitle.fontSize,
+        color: COLORS.text.light,
     },
     stackName: StyleSheet.flatten([
-        theme.typography.title,
-        theme.shadows.text,
+        TYPOGRAPHY.title,
+        SHADOWS.text,
         {
-            color: theme.colors.text.white,
-            marginBottom: theme.spacing.sm,
+            color: COLORS.text.white,
+            marginBottom: SPACING.sm,
         },
     ]),
     containersGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        marginHorizontal: -theme.spacing.sm,
+        marginHorizontal: -SPACING.sm,
         justifyContent: 'flex-start',
     },
-}))
+})

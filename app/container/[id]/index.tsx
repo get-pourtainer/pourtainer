@@ -8,6 +8,7 @@ import {
 } from '@/api/mutations'
 import { fetchContainers } from '@/api/queries'
 import { usePersistedStore } from '@/stores/persisted'
+import { COLORS } from '@/theme'
 import type { Container } from '@/types/container'
 import { Ionicons } from '@expo/vector-icons'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -15,8 +16,9 @@ import { useLocalSearchParams } from 'expo-router'
 import { useRouter } from 'expo-router'
 import { Stack } from 'expo-router'
 import { useEffect } from 'react'
+import { StyleSheet } from 'react-native'
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native'
-import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function ContainerDetailScreen() {
     const { id, connectionId, endpointId } = useLocalSearchParams<{
@@ -27,6 +29,8 @@ export default function ContainerDetailScreen() {
     const currentConnection = usePersistedStore((state) => state.currentConnection)
     const switchConnection = usePersistedStore((state) => state.switchConnection)
     const switchEndpoint = usePersistedStore((state) => state.switchEndpoint)
+
+    const { bottom: bottomInset } = useSafeAreaInsets()
 
     const router = useRouter()
     const queryClient = useQueryClient()
@@ -143,8 +147,6 @@ export default function ContainerDetailScreen() {
         )
     }
 
-    const theme = UnistylesRuntime.getTheme()
-
     return (
         <>
             <Stack.Screen
@@ -152,11 +154,11 @@ export default function ContainerDetailScreen() {
                     headerTitle: container.Names[0].replace(/^\//, ''),
                     headerLargeTitle: true,
                     headerStyle: {
-                        backgroundColor: theme.colors.background.list,
+                        backgroundColor: COLORS.background.list,
                     },
-                    headerTintColor: theme.colors.text.white,
+                    headerTintColor: COLORS.text.white,
                     headerLargeTitleStyle: {
-                        color: theme.colors.text.white,
+                        color: COLORS.text.white,
                     },
                     headerShadowVisible: false,
                     headerBackTitle: 'Back',
@@ -164,7 +166,9 @@ export default function ContainerDetailScreen() {
             />
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollViewContent}
+                contentContainerStyle={{
+                    paddingBottom: bottomInset,
+                }}
                 contentInsetAdjustmentBehavior="automatic"
             >
                 <View style={{ padding: 16, gap: 12 }}>
@@ -172,7 +176,7 @@ export default function ContainerDetailScreen() {
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                         <TouchableOpacity
                             style={{
-                                backgroundColor: theme.colors.badge.blue.background,
+                                backgroundColor: COLORS.badge.blue.background,
                                 padding: 12,
                                 borderRadius: 12,
                                 flex: 1,
@@ -186,16 +190,16 @@ export default function ContainerDetailScreen() {
                             <Ionicons
                                 name="document-text-outline"
                                 size={20}
-                                color={theme.colors.badge.blue.text}
+                                color={COLORS.badge.blue.text}
                             />
-                            <Text style={{ color: theme.colors.badge.blue.text, fontSize: 17 }}>
+                            <Text style={{ color: COLORS.badge.blue.text, fontSize: 17 }}>
                                 Logs
                             </Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             style={{
-                                backgroundColor: theme.colors.badge.purple.background,
+                                backgroundColor: COLORS.badge.purple.background,
                                 padding: 12,
                                 borderRadius: 12,
                                 flex: 1,
@@ -209,9 +213,9 @@ export default function ContainerDetailScreen() {
                             <Ionicons
                                 name="terminal-outline"
                                 size={20}
-                                color={theme.colors.badge.purple.text}
+                                color={COLORS.badge.purple.text}
                             />
-                            <Text style={{ color: theme.colors.badge.purple.text, fontSize: 17 }}>
+                            <Text style={{ color: COLORS.badge.purple.text, fontSize: 17 }}>
                                 Terminal
                             </Text>
                         </TouchableOpacity>
@@ -238,10 +242,10 @@ export default function ContainerDetailScreen() {
                                             borderRadius: 4,
                                             backgroundColor:
                                                 container.State === 'running'
-                                                    ? theme.colors.status.success
+                                                    ? COLORS.status.success
                                                     : container.State === 'paused'
-                                                      ? theme.colors.status.warning
-                                                      : theme.colors.status.error,
+                                                      ? COLORS.status.warning
+                                                      : COLORS.status.error,
                                         }}
                                     />
                                     <Text style={styles.statusText}>{container.State}</Text>
@@ -274,8 +278,8 @@ export default function ContainerDetailScreen() {
                                                 size={28}
                                                 color={
                                                     stopMutation.isPending
-                                                        ? theme.colors.text.light
-                                                        : theme.colors.actions.error
+                                                        ? COLORS.text.light
+                                                        : COLORS.actions.error
                                                 }
                                             />
                                         </TouchableOpacity>
@@ -302,8 +306,8 @@ export default function ContainerDetailScreen() {
                                                 size={28}
                                                 color={
                                                     killMutation.isPending
-                                                        ? theme.colors.text.light
-                                                        : theme.colors.actions.error
+                                                        ? COLORS.text.light
+                                                        : COLORS.actions.error
                                                 }
                                             />
                                         </TouchableOpacity>
@@ -329,8 +333,8 @@ export default function ContainerDetailScreen() {
                                                 size={28}
                                                 color={
                                                     pauseMutation.isPending
-                                                        ? theme.colors.text.light
-                                                        : theme.colors.actions.warning
+                                                        ? COLORS.text.light
+                                                        : COLORS.actions.warning
                                                 }
                                             />
                                         </TouchableOpacity>
@@ -357,8 +361,8 @@ export default function ContainerDetailScreen() {
                                                 size={28}
                                                 color={
                                                     restartMutation.isPending
-                                                        ? theme.colors.text.light
-                                                        : theme.colors.actions.neutral
+                                                        ? COLORS.text.light
+                                                        : COLORS.actions.neutral
                                                 }
                                             />
                                         </TouchableOpacity>
@@ -374,8 +378,8 @@ export default function ContainerDetailScreen() {
                                             size={28}
                                             color={
                                                 startMutation.isPending || unpauseMutation.isPending
-                                                    ? theme.colors.text.light
-                                                    : theme.colors.actions.success
+                                                    ? COLORS.text.light
+                                                    : COLORS.actions.success
                                             }
                                         />
                                     </TouchableOpacity>
@@ -390,8 +394,8 @@ export default function ContainerDetailScreen() {
                                             size={28}
                                             color={
                                                 startMutation.isPending
-                                                    ? theme.colors.text.light
-                                                    : theme.colors.actions.success
+                                                    ? COLORS.text.light
+                                                    : COLORS.actions.success
                                             }
                                         />
                                     </TouchableOpacity>
@@ -499,16 +503,13 @@ export default function ContainerDetailScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme, rt) => ({
+const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
-        backgroundColor: theme.colors.background.list,
-    },
-    scrollViewContent: {
-        paddingBottom: rt.insets.bottom,
+        backgroundColor: COLORS.background.list,
     },
     card: {
-        backgroundColor: theme.colors.background.card,
+        backgroundColor: COLORS.background.card,
         padding: 16,
         borderRadius: 16,
         shadowColor: '#000',
@@ -519,23 +520,23 @@ const styles = StyleSheet.create((theme, rt) => ({
     },
     cardLabel: {
         fontSize: 15,
-        color: theme.colors.text.secondary,
+        color: COLORS.text.secondary,
         marginBottom: 4,
     },
     cardText: {
         fontSize: 17,
-        color: theme.colors.text.primary,
+        color: COLORS.text.primary,
     },
     statusText: {
         fontSize: 17,
         fontWeight: '500',
         textTransform: 'capitalize',
-        color: theme.colors.text.primary,
+        color: COLORS.text.primary,
     },
     monospaceText: {
         fontSize: 15,
         fontFamily: 'monospace',
-        color: theme.colors.text.primary,
+        color: COLORS.text.primary,
     },
     divider: {
         borderBottomWidth: 1,
@@ -545,6 +546,6 @@ const styles = StyleSheet.create((theme, rt) => ({
     },
     labelKey: {
         fontSize: 13,
-        color: theme.colors.text.secondary,
+        color: COLORS.text.secondary,
     },
-}))
+})

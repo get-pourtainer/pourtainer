@@ -1,7 +1,7 @@
-import React from 'react'
 import { fetchNetworks } from '@/api/queries'
 import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
 import { Badge } from '@/components/Badge'
+import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import type { Network } from '@/types/network'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { useQuery } from '@tanstack/react-query'
@@ -15,7 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native'
 
 function NetworkRow({
     network,
@@ -106,15 +106,13 @@ export default function NetworksScreen() {
     })
 
     useLayoutEffect(() => {
-        const theme = UnistylesRuntime.getTheme()
-
         navigation.setOptions({
             headerSearchBarOptions: {
                 placeholder: 'Search networks...',
                 hideWhenScrolling: true,
-                barTintColor: theme.colors.searchBar.background,
-                textColor: theme.colors.searchBar.text,
-                placeholderTextColor: theme.colors.searchBar.placeholder,
+                barTintColor: COLORS.searchBar.background,
+                textColor: COLORS.searchBar.text,
+                placeholderTextColor: COLORS.searchBar.placeholder,
                 onChangeText: (event: any) => setSearchQuery(event.nativeEvent.text),
             },
         })
@@ -195,26 +193,26 @@ export default function NetworksScreen() {
     )
 }
 
-const styles = StyleSheet.create(theme => ({
+const styles = StyleSheet.create({
     networkRow: {
-        padding: theme.spacing.md,
+        padding: SPACING.md,
     },
     rowBorder: {
         borderBottomWidth: 1,
-        borderBottomColor: theme.colors.primaryLight,
+        borderBottomColor: COLORS.primaryLight,
     },
     networkName: StyleSheet.flatten([
-        theme.typography.subtitle,
-        theme.shadows.text,
+        TYPOGRAPHY.subtitle,
+        SHADOWS.text,
         {
-            color: theme.colors.text.white,
-            marginBottom: theme.spacing.sm,
+            color: COLORS.text.white,
+            marginBottom: SPACING.sm,
         },
     ]),
     badgeContainer: {
         flexDirection: 'row',
-        marginTop: theme.spacing.sm,
-        gap: theme.spacing.sm,
+        marginTop: SPACING.sm,
+        gap: SPACING.sm,
         flexWrap: 'wrap',
         alignItems: 'flex-start',
         width: '100%',
@@ -223,26 +221,26 @@ const styles = StyleSheet.create(theme => ({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: theme.colors.background.list,
+        backgroundColor: COLORS.background.list,
     },
     loadingIndicator: {
-        color: theme.colors.text.white,
+        color: COLORS.text.white,
     },
     noResultsContainer: {
         alignItems: 'center',
-        padding: theme.spacing.lg,
+        padding: SPACING.lg,
     },
     noResultsText: {
-        fontSize: theme.typography.subtitle.fontSize,
-        color: theme.colors.text.light,
+        fontSize: TYPOGRAPHY.subtitle.fontSize,
+        color: COLORS.text.light,
     },
     listContainer: {
-        backgroundColor: theme.colors.background.list,
+        backgroundColor: COLORS.background.list,
         position: 'relative',
         borderTopWidth: 1,
-        borderTopColor: theme.colors.primaryLight,
+        borderTopColor: COLORS.primaryLight,
     },
     list: {
-        backgroundColor: theme.colors.background.list
+        backgroundColor: COLORS.background.list,
     },
-}))
+})

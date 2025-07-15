@@ -1,11 +1,12 @@
 import { fetchEndpoints } from '@/api/queries'
 import { storage } from '@/lib/storage'
 import { usePersistedStore } from '@/stores/persisted'
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import WidgetKitModule from '@/widgetkit'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
+import { StyleSheet } from 'react-native'
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
-import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
 
 export default function SettingsScreen() {
     const connections = usePersistedStore((state) => state.connections)
@@ -14,7 +15,6 @@ export default function SettingsScreen() {
     const removeConnection = usePersistedStore((state) => state.removeConnection)
 
     const queryClient = useQueryClient()
-    const theme = UnistylesRuntime.getTheme()
 
     const {
         data: endpoints,
@@ -59,7 +59,7 @@ export default function SettingsScreen() {
                 <View style={styles.card}>
                     {isLoading ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="small" color={theme.colors.text.primary} />
+                            <ActivityIndicator size="small" color={COLORS.text.primary} />
                         </View>
                     ) : error ? (
                         <View style={styles.errorContainer}>
@@ -122,102 +122,102 @@ export default function SettingsScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
-        backgroundColor: theme.colors.background.list,
+        backgroundColor: COLORS.background.list,
     },
     scrollViewContent: {
-        padding: theme.spacing.md,
-        gap: theme.spacing.lg,
+        padding: SPACING.md,
+        gap: SPACING.lg,
         position: 'relative',
         borderTopWidth: 1,
-        borderTopColor: theme.colors.primaryLight,
+        borderTopColor: COLORS.primaryLight,
     },
     section: {
-        gap: theme.spacing.md,
+        gap: SPACING.md,
     },
     sectionTitle: StyleSheet.flatten([
-        theme.typography.title,
+        TYPOGRAPHY.title,
         {
-            color: theme.colors.text.white,
+            color: COLORS.text.white,
         },
     ]),
     card: StyleSheet.flatten([
         {
-            backgroundColor: theme.colors.background.card,
-            borderRadius: theme.borderRadius.lg,
+            backgroundColor: COLORS.background.card,
+            borderRadius: BORDER_RADIUS.lg,
             overflow: 'hidden',
         },
-        theme.shadows.small,
+        SHADOWS.small,
     ]),
     loadingContainer: {
-        padding: theme.spacing.lg,
+        padding: SPACING.lg,
         alignItems: 'center',
         justifyContent: 'center',
     },
     errorContainer: {
-        padding: theme.spacing.lg,
+        padding: SPACING.lg,
         alignItems: 'center',
         justifyContent: 'center',
     },
     endpointItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: theme.spacing.md,
+        padding: SPACING.md,
         borderBottomWidth: 1,
-        borderBottomColor: theme.colors.form.input.border,
+        borderBottomColor: COLORS.form.input.border,
     },
     endpointContent: {
         flex: 1,
-        gap: theme.spacing.xs,
+        gap: SPACING.xs,
     },
     endpointName: StyleSheet.flatten([
-        theme.typography.subtitle,
+        TYPOGRAPHY.subtitle,
         {
-            color: theme.colors.text.primary,
+            color: COLORS.text.primary,
         },
     ]),
     endpointUrl: StyleSheet.flatten([
-        theme.typography.small,
+        TYPOGRAPHY.small,
         {
-            color: theme.colors.text.secondary,
+            color: COLORS.text.secondary,
         },
     ]),
     activeIndicator: {
         width: 24,
         height: 24,
-        borderRadius: theme.borderRadius.circle(24),
-        backgroundColor: theme.colors.primary,
+        borderRadius: BORDER_RADIUS.circle(24),
+        backgroundColor: COLORS.primary,
         justifyContent: 'center',
         alignItems: 'center',
     },
     checkmark: {
-        color: theme.colors.text.white,
+        color: COLORS.text.white,
         fontSize: 14,
         fontWeight: 'bold',
     },
     actionButton: {
-        padding: theme.spacing.md,
+        padding: SPACING.md,
         borderBottomWidth: 1,
-        borderBottomColor: theme.colors.form.input.border,
+        borderBottomColor: COLORS.form.input.border,
     },
     actionButtonText: StyleSheet.flatten([
-        theme.typography.subtitle,
+        TYPOGRAPHY.subtitle,
         {
-            color: theme.colors.text.primary,
+            color: COLORS.text.primary,
         },
     ]),
     logoutButton: {
         borderBottomWidth: 0,
     },
     logoutText: {
-        color: theme.colors.status.error,
+        color: COLORS.status.error,
     },
     errorText: StyleSheet.flatten([
-        theme.typography.subtitle,
+        TYPOGRAPHY.subtitle,
         {
-            color: theme.colors.status.error,
+            color: COLORS.status.error,
         },
     ]),
-}))
+})

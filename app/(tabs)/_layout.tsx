@@ -1,5 +1,6 @@
 import { fetchEndpoints } from '@/api/queries'
 import { usePersistedStore } from '@/stores/persisted'
+import { COLORS } from '@/theme'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import Entypo from '@expo/vector-icons/Entypo'
 import Feather from '@expo/vector-icons/Feather'
@@ -7,13 +8,13 @@ import { useQuery } from '@tanstack/react-query'
 import { Tabs } from 'expo-router'
 import { useEffect } from 'react'
 import { useMemo } from 'react'
-import { useUnistyles } from 'react-native-unistyles'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function TabLayout() {
-    const { theme, rt } = useUnistyles()
-
     const currentConnection = usePersistedStore((state) => state.currentConnection)
     const switchEndpoint = usePersistedStore((state) => state.switchEndpoint)
+
+    const { bottom: bottomInset } = useSafeAreaInsets()
 
     const currentEndpointId = useMemo(
         () => currentConnection?.currentEndpointId,
@@ -59,13 +60,13 @@ export default function TabLayout() {
             screenOptions={{
                 headerShown: false,
                 tabBarStyle: {
-                    backgroundColor: theme.colors.background.list,
-                    borderTopColor: theme.colors.primaryLight,
+                    backgroundColor: COLORS.background.list,
+                    borderTopColor: COLORS.primaryLight,
                     borderTopWidth: 1,
-                    paddingBottom: rt.insets.bottom,
+                    paddingBottom: bottomInset,
                 },
-                tabBarActiveTintColor: theme.colors.text.white,
-                tabBarInactiveTintColor: theme.colors.tabInactive,
+                tabBarActiveTintColor: COLORS.text.white,
+                tabBarInactiveTintColor: COLORS.tabInactive,
             }}
         >
             <Tabs.Screen

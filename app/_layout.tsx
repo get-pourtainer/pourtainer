@@ -1,5 +1,6 @@
 import { queryClient } from '@/lib/query'
 import { storage } from '@/lib/storage'
+import { COLORS } from '@/theme'
 import * as Sentry from '@sentry/react-native'
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
@@ -10,7 +11,6 @@ import { useEffect } from 'react'
 import { SystemBars } from 'react-native-edge-to-edge'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
-import { useUnistyles } from 'react-native-unistyles'
 
 const navigationIntegration = Sentry.reactNavigationIntegration({
     enableTimeToInitialDisplay: !isRunningInExpoGo(),
@@ -48,7 +48,6 @@ const mmkvPersister = createSyncStoragePersister({
 function RootLayout() {
     // clearStorage()
     const ref = useNavigationContainerRef()
-    const { theme } = useUnistyles()
 
     useEffect(() => {
         if (ref?.current) {
@@ -62,9 +61,9 @@ function RootLayout() {
 
     const commonHeaderStyle = {
         headerStyle: {
-            backgroundColor: theme.colors.background.list,
+            backgroundColor: COLORS.background.list,
         },
-        headerTintColor: theme.colors.text.white,
+        headerTintColor: COLORS.text.white,
         headerShadowVisible: false,
     }
 

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useLocalSearchParams } from 'expo-router'
 import debounce from 'lodash/debounce'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { StyleSheet } from 'react-native'
 import {
     ActivityIndicator,
     Animated,
@@ -18,7 +19,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import { StyleSheet } from 'react-native-unistyles'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 type LogOptions = {
     timestamps: boolean
@@ -48,6 +49,9 @@ const sinceMap: Record<string, number> = {
 
 export default function ContainerLogsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>()
+
+    const { bottom: bottomInset } = useSafeAreaInsets()
+
     const [options, setOptions] = useState<LogOptions>({
         timestamps: true,
         tail: 1000,
@@ -228,6 +232,9 @@ export default function ContainerLogsScreen() {
                     style={[
                         styles.controls,
                         {
+                            paddingBottom: Math.max(bottomInset, 25),
+                        },
+                        {
                             opacity: controlsOpacity,
                             position: 'absolute',
                             bottom: 0,
@@ -326,7 +333,7 @@ export default function ContainerLogsScreen() {
     )
 }
 
-const styles = StyleSheet.create((_, rt) => ({
+const styles = StyleSheet.create({
     // Layout containers
     controls: {
         backgroundColor: '#2a2a2a',
@@ -338,7 +345,6 @@ const styles = StyleSheet.create((_, rt) => ({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
-        paddingBottom: Math.max(rt.insets.bottom, 25)
     },
     controlsRow: {
         flexDirection: 'row',
@@ -398,4 +404,4 @@ const styles = StyleSheet.create((_, rt) => ({
         fontSize: 14,
         textAlign: 'center',
     },
-}))
+})

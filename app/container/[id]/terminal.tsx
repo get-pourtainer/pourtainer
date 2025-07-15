@@ -1,9 +1,11 @@
 import { startTerminalSession } from '@/api/mutations'
 import { usePersistedStore } from '@/stores/persisted'
+import { COLORS, SHADOWS } from '@/theme'
 import { useMutation } from '@tanstack/react-query'
 import { useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { Stack } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { StyleSheet } from 'react-native'
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -14,7 +16,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
 import WebSocketWithSelfSignedCert from 'react-native-websocket-self-signed'
 
 export default function ContainerTerminalScreen() {
@@ -29,7 +30,6 @@ export default function ContainerTerminalScreen() {
     const wsRef = useRef<any | null>(null)
     const scrollViewRef = useRef<ScrollView>(null)
     const [isConnected, setIsConnected] = useState(false)
-    const theme = UnistylesRuntime.getTheme()
 
     const startSessionMutation = useMutation({
         mutationFn: async () => {
@@ -146,9 +146,9 @@ export default function ContainerTerminalScreen() {
                 options={{
                     headerTitle: 'Terminal',
                     headerStyle: {
-                        backgroundColor: theme.colors.background.list,
+                        backgroundColor: COLORS.background.list,
                     },
-                    headerTintColor: theme.colors.text.white,
+                    headerTintColor: COLORS.text.white,
                     headerShadowVisible: false,
                 }}
             />
@@ -199,19 +199,14 @@ export default function ContainerTerminalScreen() {
                     </View>
                 </KeyboardAvoidingView>
             ) : (
-                <View
-                    style={[
-                        styles.setupContainer,
-                        { backgroundColor: theme.colors.background.list },
-                    ]}
-                >
+                <View style={[styles.setupContainer, { backgroundColor: COLORS.background.list }]}>
                     <View style={[styles.setupCard]}>
-                        <Text style={[styles.setupTitle, { color: theme.colors.text.primary }]}>
+                        <Text style={[styles.setupTitle, { color: COLORS.text.primary }]}>
                             Terminal Settings
                         </Text>
 
                         <View style={styles.section}>
-                            <Text style={[styles.label, { color: theme.colors.text.secondary }]}>
+                            <Text style={[styles.label, { color: COLORS.text.secondary }]}>
                                 Command
                             </Text>
                             <View style={styles.commandButtons}>
@@ -219,12 +214,10 @@ export default function ContainerTerminalScreen() {
                                     style={[
                                         styles.commandButton,
                                         {
-                                            borderColor: theme.colors.form.input.border,
+                                            borderColor: COLORS.form.input.border,
                                             backgroundColor:
                                                 selectedShell === 'bash'
-                                                    ? UnistylesRuntime.themeName === 'dark'
-                                                        ? theme.colors.background.list
-                                                        : theme.colors.primary
+                                                    ? COLORS.background.list
                                                     : 'transparent',
                                         },
                                     ]}
@@ -236,8 +229,8 @@ export default function ContainerTerminalScreen() {
                                             {
                                                 color:
                                                     selectedShell === 'bash'
-                                                        ? theme.colors.text.white
-                                                        : theme.colors.text.secondary,
+                                                        ? COLORS.text.white
+                                                        : COLORS.text.secondary,
                                             },
                                         ]}
                                     >
@@ -248,12 +241,10 @@ export default function ContainerTerminalScreen() {
                                     style={[
                                         styles.commandButton,
                                         {
-                                            borderColor: theme.colors.form.input.border,
+                                            borderColor: COLORS.form.input.border,
                                             backgroundColor:
                                                 selectedShell === 'sh'
-                                                    ? UnistylesRuntime.themeName === 'dark'
-                                                        ? theme.colors.background.list
-                                                        : theme.colors.primary
+                                                    ? COLORS.background.list
                                                     : 'transparent',
                                         },
                                     ]}
@@ -265,8 +256,8 @@ export default function ContainerTerminalScreen() {
                                             {
                                                 color:
                                                     selectedShell === 'sh'
-                                                        ? theme.colors.text.white
-                                                        : theme.colors.text.secondary,
+                                                        ? COLORS.text.white
+                                                        : COLORS.text.secondary,
                                             },
                                         ]}
                                     >
@@ -277,41 +268,35 @@ export default function ContainerTerminalScreen() {
                         </View>
 
                         <View style={styles.section}>
-                            <Text style={[styles.label, { color: theme.colors.text.secondary }]}>
+                            <Text style={[styles.label, { color: COLORS.text.secondary }]}>
                                 User
                             </Text>
                             <TextInput
                                 style={[
                                     styles.userInput,
                                     {
-                                        borderColor: theme.colors.form.input.border,
-                                        backgroundColor: theme.colors.form.input.background,
-                                        color: theme.colors.form.input.text,
+                                        borderColor: COLORS.form.input.border,
+                                        backgroundColor: COLORS.form.input.background,
+                                        color: COLORS.form.input.text,
                                     },
                                 ]}
                                 value={user}
                                 onChangeText={setUser}
                                 placeholder="Enter username"
-                                placeholderTextColor={theme.colors.form.input.placeholder}
+                                placeholderTextColor={COLORS.form.input.placeholder}
                             />
                         </View>
 
                         <TouchableOpacity
-                            style={[
-                                styles.connectButton,
-                                { backgroundColor: theme.colors.primary },
-                            ]}
+                            style={[styles.connectButton, { backgroundColor: COLORS.primary }]}
                             onPress={() => startSessionMutation.mutate()}
                             disabled={startSessionMutation.isPending}
                         >
                             {startSessionMutation.isPending ? (
-                                <ActivityIndicator color={theme.colors.text.white} />
+                                <ActivityIndicator color={COLORS.text.white} />
                             ) : (
                                 <Text
-                                    style={[
-                                        styles.connectButtonText,
-                                        { color: theme.colors.text.white },
-                                    ]}
+                                    style={[styles.connectButtonText, { color: COLORS.text.white }]}
                                 >
                                     Connect
                                 </Text>
@@ -324,7 +309,7 @@ export default function ContainerTerminalScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create({
     setupContainer: {
         flex: 1,
         padding: 16,
@@ -332,11 +317,11 @@ const styles = StyleSheet.create((theme) => ({
     },
     setupCard: StyleSheet.flatten([
         {
-            backgroundColor: theme.colors.background.card,
+            backgroundColor: COLORS.background.card,
             borderRadius: 16,
             padding: 16,
         },
-        theme.shadows.small,
+        SHADOWS.small,
     ]),
     setupTitle: {
         fontSize: 20,
@@ -416,4 +401,4 @@ const styles = StyleSheet.create((theme) => ({
         backgroundColor: '#1a1a1a',
         borderRadius: 6,
     },
-}))
+})

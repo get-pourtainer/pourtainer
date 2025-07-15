@@ -1,10 +1,21 @@
 import { guestClient } from '@/lib/guest-client'
 import { usePersistedStore } from '@/stores/persisted'
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import type { Endpoint } from '@/types/endpoint'
 import WidgetKitModule from '@/widgetkit'
 import { router } from 'expo-router'
 import { useCallback, useRef, useState } from 'react'
-import { Alert, Button, Image, Linking, Pressable, Text, TextInput, View } from 'react-native'
+import {
+    Alert,
+    Button,
+    Image,
+    Linking,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import Animated, {
     interpolate,
@@ -12,7 +23,7 @@ import Animated, {
     useAnimatedStyle,
     withTiming,
 } from 'react-native-reanimated'
-import { StyleSheet } from 'react-native-unistyles'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 const sanitizeUrl = (url: string) => {
     return url.replace(/\/+$/, '')
 }
@@ -20,6 +31,8 @@ const sanitizeUrl = (url: string) => {
 export default function LoginScreen() {
     const addConnection = usePersistedStore((state) => state.addConnection)
     const switchConnection = usePersistedStore((state) => state.switchConnection)
+
+    const { bottom: bottomInset, top: topInset } = useSafeAreaInsets()
 
     const [isLoading, setIsLoading] = useState(false)
     const baseUrlRef = useRef<string>('')
@@ -131,7 +144,11 @@ export default function LoginScreen() {
             <KeyboardAwareScrollView
                 bottomOffset={20}
                 keyboardShouldPersistTaps="handled"
-                style={styles.container}
+                style={{
+                    flex: 1,
+                    backgroundColor: COLORS.background.app,
+                    paddingTop: topInset,
+                }}
             >
                 <View style={styles.content}>
                     <Image
@@ -181,7 +198,15 @@ export default function LoginScreen() {
                 </View>
             </KeyboardAwareScrollView>
             <Animated.View style={[helpBoxAnimatedStyles]}>
-                <Pressable style={styles.helpBox} onPress={openApiDocs}>
+                <Pressable
+                    style={[
+                        styles.helpBox,
+                        {
+                            marginBottom: Math.max(bottomInset, 25),
+                        },
+                    ]}
+                    onPress={openApiDocs}
+                >
                     <Text style={styles.helpTitle}>Need help finding your API key?</Text>
                     <Text style={styles.helpText}>
                         Tap to learn how to generate a Portainer API key.
@@ -192,109 +217,99 @@ export default function LoginScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme, rt) => ({
-    container: {
-        flex: 1,
-        backgroundColor: theme.colors.background.app,
-        paddingTop: rt.insets.top,
-    },
+const styles = StyleSheet.create({
     content: {
         flex: 1,
         justifyContent: 'center',
-        paddingHorizontal: theme.spacing.lg,
+        paddingHorizontal: SPACING.lg,
         maxWidth: 400,
         width: '100%',
         alignSelf: 'center',
     },
     logo: {
-        width: {
-            xs: 200,
-            sm: 250,
-        },
-        height: {
-            xs: 200,
-            sm: 250,
-        },
+        width: 250,
+        height: 250,
         alignSelf: 'center',
-        marginBottom: theme.spacing.sm,
+        marginBottom: SPACING.sm,
         marginLeft: 40,
     },
     title: StyleSheet.flatten([
-        theme.typography.title,
+        TYPOGRAPHY.title,
         {
             textAlign: 'center',
-            color: theme.colors.text.primary,
-            marginBottom: theme.spacing.xs,
+            color: COLORS.text.primary,
+            marginBottom: SPACING.xs,
         },
     ]),
     subtitle: StyleSheet.flatten([
-        theme.typography.body,
+        TYPOGRAPHY.body,
         {
             textAlign: 'center',
-            color: theme.colors.text.secondary,
-            marginBottom: theme.spacing.lg,
+            color: COLORS.text.secondary,
+            marginBottom: SPACING.lg,
         },
     ]),
     inputContainer: {
-        marginTop: theme.spacing.lg,
+        marginTop: SPACING.lg,
         width: '100%',
     },
     label: StyleSheet.flatten([
-        theme.typography.small,
+        TYPOGRAPHY.small,
         {
-            color: theme.colors.form.label,
-            marginBottom: theme.spacing.xs,
+            color: COLORS.form.label,
+            marginBottom: SPACING.xs,
             fontWeight: '500',
         },
     ]),
     input: StyleSheet.flatten([
         {
             height: 48,
-            borderColor: theme.colors.form.input.border,
+            borderColor: COLORS.form.input.border,
             borderWidth: 1,
-            marginBottom: theme.spacing.md,
-            paddingHorizontal: theme.spacing.md,
-            borderRadius: theme.borderRadius.md,
-            backgroundColor: theme.colors.form.input.background,
-            color: theme.colors.form.input.text,
+            marginBottom: SPACING.md,
+            paddingHorizontal: SPACING.md,
+            borderRadius: BORDER_RADIUS.md,
+            backgroundColor: COLORS.form.input.background,
+            color: COLORS.form.input.text,
             fontSize: 16,
         },
-        theme.shadows.small,
+        SHADOWS.small,
     ]),
     buttonContainer: {
-        marginTop: theme.spacing.md,
+        marginTop: SPACING.md,
     },
     placeholder: {
-        color: theme.colors.form.input.placeholder,
+        color: COLORS.form.input.placeholder,
     },
     button: {
-        color: theme.colors.primary,
+        color: COLORS.primary,
     },
-    helpBox: {
-        ...theme.shadows.small,
-        backgroundColor: theme.colors.searchBar.background,
-        padding: theme.spacing.lg,
-        marginHorizontal: theme.spacing.lg,
-        marginBottom: Math.max(rt.insets.bottom, 25),
-        borderRadius: theme.borderRadius.lg,
-        borderWidth: 1,
-        borderColor: theme.colors.form.input.border,
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-    },
-    helpTitle: StyleSheet.flatten([
-        theme.typography.subtitle,
+    helpBox: StyleSheet.flatten([
+        SHADOWS.small,
         {
-            color: theme.colors.text.primary,
-            marginBottom: theme.spacing.xs,
+            backgroundColor: COLORS.searchBar.background,
+            padding: SPACING.lg,
+            marginHorizontal: SPACING.lg,
+            borderRadius: BORDER_RADIUS.lg,
+            borderWidth: 1,
+            borderColor: COLORS.form.input.border,
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+        },
+    ]),
+    helpTitle: StyleSheet.flatten([
+        TYPOGRAPHY.subtitle,
+        {
+            color: COLORS.text.primary,
+            marginBottom: SPACING.xs,
         },
     ]),
     helpText: StyleSheet.flatten([
-        theme.typography.small,
+        TYPOGRAPHY.small,
         {
-            color: theme.colors.text.secondary,
+            color: COLORS.text.secondary,
         },
     ]),
-}))
+})

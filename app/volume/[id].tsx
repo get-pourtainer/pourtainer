@@ -4,6 +4,7 @@ import { type ActionSheetOption, showActionSheet } from '@/components/ActionShee
 import { formatBytes } from '@/lib/utils'
 import { downloadFile } from '@/lib/utils'
 import { usePersistedStore } from '@/stores/persisted'
+import { COLORS } from '@/theme'
 import type { VolumeEntity } from '@/types/volume'
 import { Ionicons } from '@expo/vector-icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -13,9 +14,16 @@ import * as DocumentPicker from 'expo-document-picker'
 import type { DocumentPickerAsset } from 'expo-document-picker'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View } from 'react-native'
-import { StyleSheet } from 'react-native-unistyles'
-import { UnistylesRuntime } from 'react-native-unistyles'
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native'
 
 export default function VolumeDetailScreen() {
     const currentConnection = usePersistedStore((state) => state.currentConnection)
@@ -26,7 +34,6 @@ export default function VolumeDetailScreen() {
     const navigation = useNavigation()
     const [searchQuery, setSearchQuery] = useState('')
     const [isSearchVisible, setIsSearchVisible] = useState(false)
-    const theme = UnistylesRuntime.getTheme()
 
     const { data: entities, isLoading } = useQuery({
         queryKey: ['volume-content', id, path],
@@ -224,7 +231,7 @@ export default function VolumeDetailScreen() {
         navigation.setOptions({
             headerLeft: () => (
                 <Pressable onPress={handleBack}>
-                    <Ionicons name="chevron-back" size={24} color={theme.colors.text.white} />
+                    <Ionicons name="chevron-back" size={24} color={COLORS.text.white} />
                 </Pressable>
             ),
             headerRight: () => (
@@ -235,13 +242,13 @@ export default function VolumeDetailScreen() {
                         pressed && styles.headerButtonPressed,
                     ]}
                 >
-                    <Ionicons name="search" size={24} color={theme.colors.text.white} />
+                    <Ionicons name="search" size={24} color={COLORS.text.white} />
                 </Pressable>
             ),
             headerBackVisible: false,
             title: currentFolderName,
         })
-    }, [navigation, handleBack, path, theme.colors.text.white])
+    }, [navigation, handleBack, path])
 
     const renderItem = useCallback(
         ({ item }: { item: VolumeEntity }) => {
@@ -340,33 +347,33 @@ export default function VolumeDetailScreen() {
     )
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background.app,
+        backgroundColor: COLORS.background.app,
     },
     contentLoadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: theme.colors.background.app,
+        backgroundColor: COLORS.background.app,
     },
     pathBar: {
         padding: 12,
-        backgroundColor: theme.colors.volume.item.background,
+        backgroundColor: COLORS.volume.item.background,
         borderBottomWidth: 1,
-        borderBottomColor: theme.colors.primaryLight,
+        borderBottomColor: COLORS.primaryLight,
     },
     pathText: {
         fontSize: 14,
-        color: theme.colors.text.secondary,
+        color: COLORS.text.secondary,
     },
     item: {
         padding: 16,
-        backgroundColor: theme.colors.volume.item.background,
+        backgroundColor: COLORS.volume.item.background,
     },
     itemPressed: {
-        backgroundColor: theme.colors.volume.item.backgroundPressed,
+        backgroundColor: COLORS.volume.item.backgroundPressed,
     },
     itemContent: {
         flexDirection: 'row',
@@ -384,20 +391,20 @@ const styles = StyleSheet.create((theme) => ({
     itemName: {
         marginLeft: 12,
         fontSize: 16,
-        color: theme.colors.text.primary,
+        color: COLORS.text.primary,
     },
     itemDetails: {
         fontSize: 12,
-        color: theme.colors.text.secondary,
+        color: COLORS.text.secondary,
     },
     itemTime: {
         fontSize: 12,
-        color: theme.colors.text.secondary,
+        color: COLORS.text.secondary,
         marginTop: 4,
     },
     separator: {
         height: 1,
-        backgroundColor: theme.colors.volume.item.separator,
+        backgroundColor: COLORS.volume.item.separator,
     },
     fab: {
         position: 'absolute',
@@ -406,7 +413,7 @@ const styles = StyleSheet.create((theme) => ({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: COLORS.primary,
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 4,
@@ -437,31 +444,31 @@ const styles = StyleSheet.create((theme) => ({
     },
     emptyText: {
         fontSize: 16,
-        color: theme.colors.text.secondary,
+        color: COLORS.text.secondary,
     },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 8,
-        backgroundColor: theme.colors.volume.search.background,
+        backgroundColor: COLORS.volume.search.background,
         borderBottomWidth: 1,
-        borderBottomColor: theme.colors.volume.item.separator,
+        borderBottomColor: COLORS.volume.item.separator,
     },
     searchInput: {
         flex: 1,
         height: 36,
-        backgroundColor: theme.colors.volume.search.input,
+        backgroundColor: COLORS.volume.search.input,
         borderRadius: 8,
         paddingHorizontal: 12,
         fontSize: 16,
         marginRight: 8,
-        color: theme.colors.volume.search.text,
+        color: COLORS.volume.search.text,
     },
     searchCancelButton: {
         padding: 8,
     },
     searchCancelText: {
-        color: theme.colors.primary,
+        color: COLORS.primary,
         fontSize: 16,
     },
-}))
+})
