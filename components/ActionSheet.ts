@@ -24,6 +24,7 @@ export function showActionSheet(title: string, options: ActionSheetOption[]) {
                 cancelButtonIndex,
                 destructiveButtonIndex: destructiveButtonIndices,
                 title,
+                userInterfaceStyle: 'dark',
             },
             async (buttonIndex) => {
                 if (buttonIndex !== cancelButtonIndex) {
@@ -44,4 +45,4 @@ export function showActionSheet(title: string, options: ActionSheetOption[]) {
             { cancelable: true }
         )
     }
-} 
+}

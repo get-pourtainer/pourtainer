@@ -23,11 +23,7 @@ function ContainerBox({ container }: { container: Container }) {
 
     const status = container.State.toLowerCase()
     const statusColor =
-        status === 'running'
-            ? COLORS.status.success
-            : status === 'exited'
-              ? COLORS.status.error
-              : COLORS.status.warning
+        status === 'running' ? COLORS.success : status === 'exited' ? COLORS.error : COLORS.warning
 
     const handlePress = useCallback(() => {
         router.push(`/container/${container.Id}`)
@@ -84,10 +80,15 @@ export default function ContainersScreen() {
             headerSearchBarOptions: {
                 placeholder: 'Search stacks or containers...',
                 hideWhenScrolling: true,
-                barTintColor: COLORS.searchBar.background,
-                textColor: COLORS.searchBar.text,
-                placeholderTextColor: COLORS.searchBar.placeholder,
+                barTintColor: COLORS.bgSecondary,
+                textColor: COLORS.text,
+                tintColor: COLORS.primary,
                 onChangeText: (event: any) => setSearchQuery(event.nativeEvent.text),
+
+                //! do not seem to work
+                hintTextColor: 'red',
+                placeholderTextColor: 'red',
+                autoCapitalize: 'none',
             },
         })
     }, [navigation])
@@ -182,7 +183,7 @@ const styles = StyleSheet.create({
             height: 150,
             padding: SPACING.md,
             borderRadius: BORDER_RADIUS.lg,
-            backgroundColor: COLORS.background.card,
+            backgroundColor: COLORS.bgSecondary,
             margin: SPACING.sm,
         },
         SHADOWS.small,
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
     containerName: StyleSheet.flatten([
         TYPOGRAPHY.subtitle,
         {
-            color: COLORS.text.primary,
+            color: COLORS.primary,
         },
     ]),
     statusContainer: {
@@ -210,31 +211,27 @@ const styles = StyleSheet.create({
     statusText: StyleSheet.flatten([
         TYPOGRAPHY.small,
         {
-            color: COLORS.text.secondary,
+            color: COLORS.textMuted,
         },
     ]),
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: COLORS.background.list,
     },
     loadingIndicator: {
-        color: COLORS.text.white,
+        color: COLORS.text,
     },
     errorText: {
-        color: COLORS.text.primary,
+        color: COLORS.primary,
     },
     scrollView: {
         flex: 1,
-        backgroundColor: COLORS.background.list,
     },
     scrollViewContent: {
         padding: SPACING.md,
         gap: SPACING.lg,
         position: 'relative',
-        borderTopWidth: 1,
-        borderTopColor: COLORS.primaryLight,
     },
     noResultsContainer: {
         alignItems: 'center',
@@ -242,13 +239,13 @@ const styles = StyleSheet.create({
     },
     noResultsText: {
         fontSize: TYPOGRAPHY.subtitle.fontSize,
-        color: COLORS.text.light,
+        color: COLORS.textMuted,
     },
     stackName: StyleSheet.flatten([
         TYPOGRAPHY.title,
         SHADOWS.text,
         {
-            color: COLORS.text.white,
+            color: COLORS.text,
             marginBottom: SPACING.sm,
         },
     ]),

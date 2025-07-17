@@ -1,96 +1,56 @@
 export const COLORS = {
-    // Brand colors
-    primary: '#1a98ff',
-    primaryLight: '#38c3ff99',
-    tabInactive: '#cceeff',
+    bgApp: '#141414', // --ui-gray-true-11: #141414;
+    bgSecondary: '#26272b', // --ui-gray-iron-10: #26272b;
 
-    // Text colors
-    text: {
-        primary: '#f8fafc',
-        secondary: '#dadde0',
-        light: '#94a3b8',
-        white: '#ffffff',
-    },
+    text: '#fcfcfd', // --ui-gray-1: #fcfcfd;
+    textMuted: '#98a2b3', // --ui-gray-6: #98a2b3;
 
-    // Status colors - keeping these the same for consistency
-    status: {
-        success: '#4ade80',
-        error: '#ef4444',
-        warning: '#f59e0b',
-    },
+    hr: '#232323', // #232323;
+    hrMuted: '#191a1d', // #191a1d
+    hrPrimary: '#194973', // #194973
 
-    // Badge colors - darker versions
-    badge: {
-        blue: {
-            text: '#7dd3fc',
-            background: '#0c4a6e',
-        },
-        green: {
-            text: '#86efac',
-            background: '#14532d',
-        },
-        gray: {
-            text: '#cbd5e1',
-            background: '#334155',
-        },
-        purple: {
-            text: '#c4b5fd',
-            background: '#4c1d95',
-        },
-        red: {
-            text: '#fca5a5',
-            background: '#7f1d1d',
-        },
-        orange: {
-            text: '#fdba74',
-            background: '#7c2d12',
-        },
-    },
+    primary: '#2d8ce1', // #2d8ce1
+    primaryDark: '#194973', // #194973
+    primaryLight: '#36c5ff', // #36c5ff
+    // #33a3ff
 
-    // Dark mode background colors
-    background: {
-        app: '#0f172a', // Dark slate
-        list: '#0f172a', // Dark slate background
-        card: '#1a98ff', // Use primary blue for cards in dark mode
-    },
+    success: '#4ade80', // #4ade80
+    successDark: '#14532d', // #14532d
+    successLight: '#2ce27e', // #2ce27e
 
-    // Add searchBar colors for dark mode
-    searchBar: {
-        background: '#1e293b',
-        text: '#f8fafc',
-        placeholder: '#64748b',
-    },
+    error: '#b91c1c', // #b91c1c
+    errorDark: '#7f1d1d', // #7f1d1d
+    errorLight: '#ff8385', // #ff8385
+    // #fca5a5
 
-    form: {
-        input: {
-            background: '#1e293b',
-            border: '#334155',
-            text: '#f8fafc',
-            placeholder: '#64748b',
-        },
-        label: '#cbd5e1',
-    },
+    warning: '#e86925', // #e86925
+    warningDark: '#673014', // #673014
+    warningLight: '#ff7c30', // #ff7c30
 
-    // In both light and dark themes, add neutral colors
-    actions: {
-        error: '#fca5a5', // Lighter red for better contrast on blue
-        warning: '#fcd34d', // Lighter amber for better contrast
-        success: '#86efac', // Lighter green for better contrast
-        neutral: '#ffffff', // White for maximum contrast against blue
-    },
+    purple: '#6426c9', // #6426c9
+    purpleDark: '#381671', // #381671
+    purpleLight: '#c4b5fd', // #c4b5fd
 
-    volume: {
-        item: {
-            background: '#1e293b', // Darker blue-gray
-            backgroundPressed: '#334155',
-            separator: '#334155',
-        },
-        search: {
-            background: '#1e293b',
-            input: '#0f172a',
-            text: '#f8fafc',
-        },
-    },
+    white: 'rgb(255, 255, 255)',
+    black: 'rgb(0, 0, 0)',
+
+    whiteWithOpacity: (opacity: number) => `rgba(255, 255, 255, ${opacity})`,
+    blackWithOpacity: (opacity: number) => `rgba(0, 0, 0, ${opacity})`,
+
+    terminalGreen: '#00ff00',
+
+    // primary: 'rgb(0, 145, 226)', // '#0091e2',
+    // primaryLight: 'rgb(12, 165, 236)', // '#0ca5ec',
+    // primaryLighter: 'rgb(26, 152, 255)', //'#1a98ff',
+    // primaryDark: 'rgb(6, 89, 134)',
+    // primaryDarker: 'rgb(28, 41, 57)',
+
+    // primary: 'rgb(0, 145, 226)', // '#0091e2',
+    // primaryLight: 'rgb(26, 152, 255)', //'#1a98ff',
+    // primaryDark: 'rgb(6, 89, 134)',
+    // primaryDarker: 'rgb(28, 41, 57)',
+
+    // hr: 'rgb(56, 56, 56)',
 } as const
 
 export const SHADOWS = {
@@ -118,20 +78,20 @@ export const SPACING = {
 export const TYPOGRAPHY = {
     title: {
         fontSize: 18,
-        fontWeight: '700',
+        fontWeight: 700,
         letterSpacing: 0.3,
     },
     subtitle: {
         fontSize: 16,
-        fontWeight: '700',
+        fontWeight: 700,
     },
     body: {
         fontSize: 15,
-        fontWeight: '400',
+        fontWeight: 400,
     },
     small: {
         fontSize: 12,
-        fontWeight: '400',
+        fontWeight: 400,
     },
 } as const
 

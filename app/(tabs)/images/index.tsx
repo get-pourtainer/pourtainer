@@ -31,8 +31,6 @@ function formatBytes(bytes: number): string {
 function ImageRow({
     image,
     onPress,
-    index,
-    total,
 }: {
     image: Image
     onPress: () => void
@@ -40,36 +38,35 @@ function ImageRow({
     total?: number
 }) {
     return (
-        <TouchableOpacity
-            onPress={onPress}
-            style={[
-                styles.imageRow,
-                index !== undefined &&
-                    total !== undefined &&
-                    index !== total - 1 &&
-                    styles.rowBorder,
-            ]}
-        >
+        <TouchableOpacity onPress={onPress} style={styles.imageRow}>
             <Text style={styles.imageTitle}>{image.tags?.[0] || image.id.substring(7, 19)}</Text>
 
             <View style={styles.badgeContainer}>
                 <Badge
                     label={image.id.substring(7, 17)}
-                    color="#475569"
-                    backgroundColor="#e2e8f0"
+                    color={COLORS.textMuted}
+                    backgroundColor={COLORS.bgSecondary}
                     monospace={true}
                 />
 
-                <Badge label={formatBytes(image.size)} color="#0369a1" backgroundColor="#bae6fd" />
+                <Badge
+                    label={formatBytes(image.size)}
+                    color={COLORS.primaryLight}
+                    backgroundColor={COLORS.primaryDark}
+                />
 
                 <Badge
                     label={new Date(image.created * 1000).toLocaleDateString()}
-                    color="#15803d"
-                    backgroundColor="#bbf7d0"
+                    color={COLORS.successLight}
+                    backgroundColor={COLORS.successDark}
                 />
 
                 {image.used === false && (
-                    <Badge label="Unused" color="#b91c1c" backgroundColor="#fecaca" />
+                    <Badge
+                        label="Unused"
+                        color={COLORS.errorLight}
+                        backgroundColor={COLORS.errorDark}
+                    />
                 )}
             </View>
         </TouchableOpacity>
@@ -91,10 +88,15 @@ export default function ImagesScreen() {
             headerSearchBarOptions: {
                 placeholder: 'Search images...',
                 hideWhenScrolling: true,
-                barTintColor: COLORS.searchBar.background,
-                textColor: COLORS.searchBar.text,
-                placeholderTextColor: COLORS.searchBar.placeholder,
+                barTintColor: COLORS.bgSecondary,
+                textColor: COLORS.text,
+                tintColor: COLORS.primary,
                 onChangeText: (event: any) => setSearchString(event.nativeEvent.text),
+
+                //! do not seem to work
+                hintTextColor: 'red',
+                placeholderTextColor: 'red',
+                autoCapitalize: 'none',
             },
         })
     }, [navigation])
@@ -177,23 +179,16 @@ export default function ImagesScreen() {
     return (
         <FlatList
             data={filteredImages}
-            renderItem={({ item, index }) => (
-                <ImageRow
-                    image={item}
-                    index={index}
-                    total={filteredImages?.length}
-                    onPress={() => handleImagePress(item)}
-                />
+            renderItem={({ item: image }) => (
+                <ImageRow image={image} onPress={() => handleImagePress(image)} />
             )}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(image) => image.id}
             ListEmptyComponent={
                 <View style={styles.noResultsContainer}>
                     <Text style={styles.noResultsText}>No images match your search</Text>
                 </View>
             }
             contentInsetAdjustmentBehavior="automatic"
-            contentContainerStyle={styles.listContainer}
-            style={styles.list}
             refreshControl={
                 <RefreshControl
                     refreshing={imagesQuery.isRefetching}
@@ -207,16 +202,14 @@ export default function ImagesScreen() {
 const styles = StyleSheet.create({
     imageRow: {
         padding: SPACING.md,
-    },
-    rowBorder: {
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.primaryLight,
+        borderBottomColor: COLORS.hr,
     },
     imageTitle: StyleSheet.flatten([
         TYPOGRAPHY.subtitle,
         SHADOWS.text,
         {
-            color: COLORS.text.white,
+            color: COLORS.text,
             marginBottom: SPACING.sm,
         },
     ]),
@@ -228,23 +221,13 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         width: '100%',
     },
-    listContainer: {
-        backgroundColor: COLORS.background.list,
-        position: 'relative',
-        borderTopWidth: 1,
-        borderTopColor: COLORS.primaryLight,
-    },
-    list: {
-        backgroundColor: COLORS.background.list,
-    },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: COLORS.background.list,
     },
     loadingIndicator: {
-        color: COLORS.text.white,
+        color: COLORS.text,
     },
     noResultsContainer: {
         alignItems: 'center',
@@ -252,6 +235,6 @@ const styles = StyleSheet.create({
     },
     noResultsText: {
         fontSize: TYPOGRAPHY.subtitle.fontSize,
-        color: COLORS.text.light,
+        color: COLORS.textMuted,
     },
 })

@@ -146,7 +146,7 @@ export default function LoginScreen() {
                 keyboardShouldPersistTaps="handled"
                 style={{
                     flex: 1,
-                    backgroundColor: COLORS.background.app,
+                    backgroundColor: COLORS.bgApp,
                     paddingTop: topInset,
                 }}
             >
@@ -164,7 +164,7 @@ export default function LoginScreen() {
                         <TextInput
                             style={styles.input}
                             placeholder="https://192.168.1.100:9443"
-                            placeholderTextColor={styles.placeholder.color}
+                            placeholderTextColor={COLORS.textMuted}
                             autoCapitalize="none"
                             autoCorrect={false}
                             onChangeText={(text) => {
@@ -175,7 +175,7 @@ export default function LoginScreen() {
                         <TextInput
                             style={styles.input}
                             placeholder="Enter your API token"
-                            placeholderTextColor={styles.placeholder.color}
+                            placeholderTextColor={COLORS.textMuted}
                             secureTextEntry={true}
                             autoCapitalize="none"
                             autoCorrect={false}
@@ -190,7 +190,7 @@ export default function LoginScreen() {
                             <Button
                                 title={isLoading ? 'Connecting...' : 'Connect'}
                                 onPress={handleLogin}
-                                color={styles.button.color}
+                                color={isLoading ? COLORS.primaryLight : COLORS.primary}
                                 disabled={isLoading}
                             />
                         </View>
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
         TYPOGRAPHY.title,
         {
             textAlign: 'center',
-            color: COLORS.text.primary,
+            color: COLORS.primary,
             marginBottom: SPACING.xs,
         },
     ]),
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
         TYPOGRAPHY.body,
         {
             textAlign: 'center',
-            color: COLORS.text.secondary,
+            color: COLORS.textMuted,
             marginBottom: SPACING.lg,
         },
     ]),
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     label: StyleSheet.flatten([
         TYPOGRAPHY.small,
         {
-            color: COLORS.form.label,
+            color: COLORS.text,
             marginBottom: SPACING.xs,
             fontWeight: '500',
         },
@@ -264,35 +264,31 @@ const styles = StyleSheet.create({
     input: StyleSheet.flatten([
         {
             height: 48,
-            borderColor: COLORS.form.input.border,
+            borderColor: COLORS.hrMuted,
             borderWidth: 1,
             marginBottom: SPACING.md,
             paddingHorizontal: SPACING.md,
             borderRadius: BORDER_RADIUS.md,
-            backgroundColor: COLORS.form.input.background,
-            color: COLORS.form.input.text,
+            backgroundColor: COLORS.bgSecondary,
+            color: COLORS.text,
             fontSize: 16,
+
+            marginTop: SPACING.xs,
         },
         SHADOWS.small,
     ]),
     buttonContainer: {
         marginTop: SPACING.md,
     },
-    placeholder: {
-        color: COLORS.form.input.placeholder,
-    },
-    button: {
-        color: COLORS.primary,
-    },
     helpBox: StyleSheet.flatten([
         SHADOWS.small,
         {
-            backgroundColor: COLORS.searchBar.background,
+            backgroundColor: COLORS.bgSecondary,
             padding: SPACING.lg,
             marginHorizontal: SPACING.lg,
             borderRadius: BORDER_RADIUS.lg,
             borderWidth: 1,
-            borderColor: COLORS.form.input.border,
+            borderColor: COLORS.hrPrimary,
             position: 'absolute',
             left: 0,
             right: 0,
@@ -302,14 +298,14 @@ const styles = StyleSheet.create({
     helpTitle: StyleSheet.flatten([
         TYPOGRAPHY.subtitle,
         {
-            color: COLORS.text.primary,
+            color: COLORS.primary,
             marginBottom: SPACING.xs,
         },
     ]),
     helpText: StyleSheet.flatten([
         TYPOGRAPHY.small,
         {
-            color: COLORS.text.secondary,
+            color: COLORS.textMuted,
         },
     ]),
 })

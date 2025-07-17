@@ -9,16 +9,17 @@ export default function ImagesLayout() {
                 headerLargeTitle: true,
                 headerTransparent: Platform.OS === 'ios',
                 headerBlurEffect: 'regular',
-                headerLargeStyle: {
-                    backgroundColor: COLORS.background.list,
-                },
+                headerShadowVisible: true,
                 headerLargeTitleStyle: {
-                    color: COLORS.text.white,
+                    color: COLORS.text,
                 },
+                headerTintColor: COLORS.text,
                 headerStyle: {
-                    backgroundColor: COLORS.background.list,
+                    backgroundColor: COLORS.bgApp,
                 },
-                headerTintColor: COLORS.text.white,
+                contentStyle: {
+                    backgroundColor: COLORS.bgApp,
+                },
             }}
         >
             <Stack.Screen

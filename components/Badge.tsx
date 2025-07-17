@@ -1,3 +1,4 @@
+import { COLORS } from '@/theme'
 import { Text, View } from 'react-native'
 
 type BadgeProps = {
@@ -9,26 +10,26 @@ type BadgeProps = {
 
 export function Badge({
     label,
-    color = '#000',
-    backgroundColor = '#f3f4f6',
+    color = COLORS.textMuted,
+    backgroundColor = COLORS.bgSecondary,
     monospace = false,
 }: BadgeProps) {
     return (
         <View
             style={{
                 backgroundColor,
-                paddingHorizontal: 6,
-                paddingVertical: 2,
-                borderRadius: 6,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 7,
                 borderWidth: 0.5,
                 borderColor: `${color}25`,
             }}
         >
             <Text
                 style={{
-                    fontSize: 11,
+                    fontSize: 12,
                     color,
-                    fontWeight: '500',
+                    fontWeight: 500,
                     fontFamily: monospace ? 'monospace' : undefined,
                 }}
             >
@@ -36,4 +37,4 @@ export function Badge({
             </Text>
         </View>
     )
-} 
+}

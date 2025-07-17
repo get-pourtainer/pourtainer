@@ -3,7 +3,6 @@ import { usePersistedStore } from '@/stores/persisted'
 import { COLORS, SHADOWS } from '@/theme'
 import { useMutation } from '@tanstack/react-query'
 import { useFocusEffect, useLocalSearchParams } from 'expo-router'
-import { Stack } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import {
@@ -140,172 +139,153 @@ export default function ContainerTerminalScreen() {
         }
     }, [output])
 
-    return (
-        <>
-            <Stack.Screen
-                options={{
-                    headerTitle: 'Terminal',
-                    headerStyle: {
-                        backgroundColor: COLORS.background.list,
-                    },
-                    headerTintColor: COLORS.text.white,
-                    headerShadowVisible: false,
-                }}
-            />
-
-            {isConfigured ? (
-                <KeyboardAvoidingView
-                    style={{ flex: 1 }}
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
-                >
-                    <View style={{ flex: 1 }}>
-                        {/* Terminal Output Area */}
-                        <View style={{ flex: 1, backgroundColor: '#1a1a1a' }}>
-                            <ScrollView
-                                ref={scrollViewRef}
-                                style={{ padding: 12 }}
-                                contentContainerStyle={{ paddingBottom: 100 }}
-                            >
-                                {output.map((line, index) => (
-                                    <Text key={index} style={styles.outputText}>
-                                        {line}
-                                    </Text>
-                                ))}
-                            </ScrollView>
-                        </View>
-
-                        {/* Command Input Area - Update styles */}
-                        <View style={[styles.inputArea, { paddingBottom: 32 }]}>
-                            <Text style={styles.prompt}>$</Text>
-                            <TextInput
-                                style={styles.commandInput}
-                                value={command}
-                                onChangeText={setCommand}
-                                placeholder="Enter command..."
-                                placeholderTextColor="#666"
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                autoComplete="off"
-                                spellCheck={false}
-                                multiline={false}
-                                onSubmitEditing={sendCommand}
-                                blurOnSubmit={false}
-                                returnKeyType="send"
-                                returnKeyLabel="Send"
-                                enablesReturnKeyAutomatically={true}
-                            />
-                        </View>
+    if (isConfigured) {
+        return (
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+            >
+                <View style={{ flex: 1 }}>
+                    {/* Terminal Output Area */}
+                    <View style={{ flex: 1, backgroundColor: '#1a1a1a' }}>
+                        <ScrollView
+                            ref={scrollViewRef}
+                            style={{ padding: 12 }}
+                            contentContainerStyle={{ paddingBottom: 100 }}
+                        >
+                            {output.map((line, index) => (
+                                <Text key={index} style={styles.outputText}>
+                                    {line}
+                                </Text>
+                            ))}
+                        </ScrollView>
                     </View>
-                </KeyboardAvoidingView>
-            ) : (
-                <View style={[styles.setupContainer, { backgroundColor: COLORS.background.list }]}>
-                    <View style={[styles.setupCard]}>
-                        <Text style={[styles.setupTitle, { color: COLORS.text.primary }]}>
-                            Terminal Settings
-                        </Text>
 
-                        <View style={styles.section}>
-                            <Text style={[styles.label, { color: COLORS.text.secondary }]}>
-                                Command
-                            </Text>
-                            <View style={styles.commandButtons}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.commandButton,
-                                        {
-                                            borderColor: COLORS.form.input.border,
-                                            backgroundColor:
-                                                selectedShell === 'bash'
-                                                    ? COLORS.background.list
-                                                    : 'transparent',
-                                        },
-                                    ]}
-                                    onPress={() => setSelectedShell('bash')}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.commandButtonText,
-                                            {
-                                                color:
-                                                    selectedShell === 'bash'
-                                                        ? COLORS.text.white
-                                                        : COLORS.text.secondary,
-                                            },
-                                        ]}
-                                    >
-                                        /bin/bash
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.commandButton,
-                                        {
-                                            borderColor: COLORS.form.input.border,
-                                            backgroundColor:
-                                                selectedShell === 'sh'
-                                                    ? COLORS.background.list
-                                                    : 'transparent',
-                                        },
-                                    ]}
-                                    onPress={() => setSelectedShell('sh')}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.commandButtonText,
-                                            {
-                                                color:
-                                                    selectedShell === 'sh'
-                                                        ? COLORS.text.white
-                                                        : COLORS.text.secondary,
-                                            },
-                                        ]}
-                                    >
-                                        /bin/sh
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                    {/* Command Input Area - Update styles */}
+                    <View style={[styles.inputArea, { paddingBottom: 32 }]}>
+                        <Text style={styles.prompt}>$</Text>
+                        <TextInput
+                            style={styles.commandInput}
+                            value={command}
+                            onChangeText={setCommand}
+                            placeholder="Enter command..."
+                            placeholderTextColor="#666"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            autoComplete="off"
+                            spellCheck={false}
+                            multiline={false}
+                            onSubmitEditing={sendCommand}
+                            blurOnSubmit={false}
+                            returnKeyType="send"
+                            returnKeyLabel="Send"
+                            enablesReturnKeyAutomatically={true}
+                        />
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
+        )
+    }
 
-                        <View style={styles.section}>
-                            <Text style={[styles.label, { color: COLORS.text.secondary }]}>
-                                User
-                            </Text>
-                            <TextInput
+    return (
+        <View style={[styles.setupContainer, { backgroundColor: COLORS.bgApp }]}>
+            <View style={[styles.setupCard]}>
+                <Text style={[styles.setupTitle, { color: COLORS.primary }]}>
+                    Terminal Settings
+                </Text>
+
+                <View style={styles.section}>
+                    <Text style={[styles.label, { color: COLORS.textMuted }]}>Command</Text>
+                    <View style={styles.commandButtons}>
+                        <TouchableOpacity
+                            style={[
+                                styles.commandButton,
+                                {
+                                    borderColor:
+                                        selectedShell === 'bash' ? COLORS.primary : COLORS.hrMuted,
+                                    backgroundColor:
+                                        selectedShell === 'bash'
+                                            ? COLORS.primaryDark
+                                            : COLORS.bgApp,
+                                },
+                            ]}
+                            onPress={() => setSelectedShell('bash')}
+                        >
+                            <Text
                                 style={[
-                                    styles.userInput,
+                                    styles.commandButtonText,
                                     {
-                                        borderColor: COLORS.form.input.border,
-                                        backgroundColor: COLORS.form.input.background,
-                                        color: COLORS.form.input.text,
+                                        color:
+                                            selectedShell === 'bash'
+                                                ? COLORS.text
+                                                : COLORS.textMuted,
                                     },
                                 ]}
-                                value={user}
-                                onChangeText={setUser}
-                                placeholder="Enter username"
-                                placeholderTextColor={COLORS.form.input.placeholder}
-                            />
-                        </View>
-
+                            >
+                                /bin/bash
+                            </Text>
+                        </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.connectButton, { backgroundColor: COLORS.primary }]}
-                            onPress={() => startSessionMutation.mutate()}
-                            disabled={startSessionMutation.isPending}
+                            style={[
+                                styles.commandButton,
+                                {
+                                    borderColor:
+                                        selectedShell === 'sh' ? COLORS.primary : COLORS.hrMuted,
+                                    backgroundColor:
+                                        selectedShell === 'sh' ? COLORS.primaryDark : COLORS.bgApp,
+                                },
+                            ]}
+                            onPress={() => setSelectedShell('sh')}
                         >
-                            {startSessionMutation.isPending ? (
-                                <ActivityIndicator color={COLORS.text.white} />
-                            ) : (
-                                <Text
-                                    style={[styles.connectButtonText, { color: COLORS.text.white }]}
-                                >
-                                    Connect
-                                </Text>
-                            )}
+                            <Text
+                                style={[
+                                    styles.commandButtonText,
+                                    {
+                                        color:
+                                            selectedShell === 'sh' ? COLORS.text : COLORS.textMuted,
+                                    },
+                                ]}
+                            >
+                                /bin/sh
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 </View>
-            )}
-        </>
+
+                <View style={styles.section}>
+                    <Text style={[styles.label, { color: COLORS.textMuted }]}>User</Text>
+                    <TextInput
+                        style={[
+                            styles.userInput,
+                            {
+                                borderColor: COLORS.hrMuted,
+                                backgroundColor: COLORS.bgApp,
+                                color: COLORS.text,
+                            },
+                        ]}
+                        value={user}
+                        onChangeText={setUser}
+                        placeholder="Enter username"
+                        placeholderTextColor={COLORS.textMuted}
+                    />
+                </View>
+
+                <TouchableOpacity
+                    style={styles.connectButton}
+                    onPress={() => startSessionMutation.mutate()}
+                    disabled={startSessionMutation.isPending}
+                >
+                    {startSessionMutation.isPending ? (
+                        <ActivityIndicator color={COLORS.text} />
+                    ) : (
+                        <Text style={[styles.connectButtonText, { color: COLORS.text }]}>
+                            Connect
+                        </Text>
+                    )}
+                </TouchableOpacity>
+            </View>
+        </View>
     )
 }
 
@@ -317,7 +297,7 @@ const styles = StyleSheet.create({
     },
     setupCard: StyleSheet.flatten([
         {
-            backgroundColor: COLORS.background.card,
+            backgroundColor: COLORS.bgSecondary,
             borderRadius: 16,
             padding: 16,
         },
@@ -360,6 +340,7 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 8,
         alignItems: 'center',
+        backgroundColor: COLORS.primary,
     },
     connectButtonText: {
         fontSize: 16,

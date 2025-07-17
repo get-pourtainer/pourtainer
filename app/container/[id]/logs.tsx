@@ -1,4 +1,5 @@
 import { fetchLogs } from '@/api/queries'
+import { COLORS } from '@/theme'
 import { useQuery } from '@tanstack/react-query'
 import { useLocalSearchParams } from 'expo-router'
 import debounce from 'lodash/debounce'
@@ -178,7 +179,7 @@ export default function ContainerLogsScreen() {
             {/* Main container with relative positioning */}
             <View style={{ flex: 1 }}>
                 {/* Logs Area - Full height */}
-                <View style={{ flex: 1, backgroundColor: '#1a1a1a' }}>
+                <View style={{ flex: 1 }}>
                     {logsQuery.isLoading ? (
                         <View
                             style={{
@@ -187,7 +188,7 @@ export default function ContainerLogsScreen() {
                                 alignItems: 'center',
                             }}
                         >
-                            <ActivityIndicator size="large" color="#00ff00" />
+                            <ActivityIndicator size="large" color={COLORS.text} />
                         </View>
                     ) : logsQuery.error || !logsQuery.data ? (
                         <View
@@ -197,7 +198,7 @@ export default function ContainerLogsScreen() {
                                 alignItems: 'center',
                             }}
                         >
-                            <Text style={{ color: '#ff0000' }}>Error loading logs</Text>
+                            <Text style={{ color: COLORS.errorLight }}>Error loading logs</Text>
                         </View>
                     ) : (
                         <ScrollView
@@ -213,7 +214,7 @@ export default function ContainerLogsScreen() {
                                 <Text
                                     key={index}
                                     style={{
-                                        color: '#00ff00',
+                                        color: COLORS.terminalGreen,
                                         fontFamily: 'monospace',
                                         fontSize: 12,
                                         lineHeight: 20,
@@ -336,14 +337,14 @@ export default function ContainerLogsScreen() {
 const styles = StyleSheet.create({
     // Layout containers
     controls: {
-        backgroundColor: '#2a2a2a',
+        backgroundColor: COLORS.bgSecondary,
         padding: 12,
         borderTopWidth: 1,
-        borderTopColor: '#3a3a3a',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        borderTopColor: COLORS.hr,
+        // shadowColor: '#000',
+        // shadowOffset: { width: 0, height: -2 },
+        // shadowOpacity: 0.25,
+        // shadowRadius: 3.84,
         elevation: 5,
     },
     controlsRow: {
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
 
     // Base styles for interactive elements
     baseControl: {
-        backgroundColor: '#3a3a3a',
+        backgroundColor: COLORS.hrMuted,
         height: 36,
         borderRadius: 6,
         justifyContent: 'center',
@@ -367,7 +368,7 @@ const styles = StyleSheet.create({
 
     // Text styles
     baseText: {
-        color: '#00ff00',
+        color: COLORS.terminalGreen,
     },
     controlLabel: {
         fontSize: 12,
@@ -387,7 +388,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     modalContent: {
-        backgroundColor: '#2a2a2a',
+        backgroundColor: COLORS.bgSecondary,
         borderRadius: 8,
         padding: 8,
         width: '80%',

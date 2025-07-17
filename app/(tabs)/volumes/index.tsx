@@ -21,13 +21,9 @@ import {
 
 function VolumeRow({
     volume,
-    index,
-    total,
     isBrowsingSupported,
 }: {
     volume: Volume
-    index?: number
-    total?: number
     isBrowsingSupported: boolean
 }) {
     const router = useRouter()
@@ -78,33 +74,24 @@ function VolumeRow({
     }
 
     return (
-        <TouchableOpacity
-            onPress={handlePress}
-            style={[
-                styles.volumeRow,
-                index !== undefined &&
-                    total !== undefined &&
-                    index !== total - 1 &&
-                    styles.borderBottom,
-            ]}
-        >
+        <TouchableOpacity onPress={handlePress} style={styles.volumeRow}>
             <Text style={styles.volumeName}>{volume.Name}</Text>
 
             <View style={styles.badgeContainer}>
-                <Badge label={volume.Driver} color="#0369a1" backgroundColor="#bae6fd" />
+                <Badge
+                    label={volume.Driver}
+                    color={COLORS.primaryLight}
+                    backgroundColor={COLORS.primaryDark}
+                />
 
                 <Badge
                     label={new Date(volume.CreatedAt).toLocaleDateString()}
-                    color="#15803d"
-                    backgroundColor="#bbf7d0"
+                    color={COLORS.successLight}
+                    backgroundColor={COLORS.successDark}
                 />
 
                 {volume.Labels?.['com.docker.compose.project'] && (
-                    <Badge
-                        label={volume.Labels['com.docker.compose.project']}
-                        color="#475569"
-                        backgroundColor="#e2e8f0"
-                    />
+                    <Badge label={volume.Labels['com.docker.compose.project']} />
                 )}
             </View>
         </TouchableOpacity>
@@ -137,10 +124,15 @@ export default function VolumesScreen() {
             headerSearchBarOptions: {
                 placeholder: 'Search volumes...',
                 hideWhenScrolling: true,
-                barTintColor: COLORS.searchBar.background,
-                textColor: COLORS.searchBar.text,
-                placeholderTextColor: COLORS.searchBar.placeholder,
+                barTintColor: COLORS.bgApp,
+                textColor: COLORS.text,
+                tintColor: COLORS.primary,
                 onChangeText: (event: any) => setSearchQuery(event.nativeEvent.text),
+
+                //! do not seem to work
+                hintTextColor: 'red',
+                placeholderTextColor: 'red',
+                autoCapitalize: 'none',
             },
         })
     }, [navigation])
@@ -173,23 +165,16 @@ export default function VolumesScreen() {
     return (
         <FlatList
             data={filteredVolumes}
-            renderItem={({ item, index }) => (
-                <VolumeRow
-                    volume={item}
-                    index={index}
-                    total={filteredVolumes?.length}
-                    isBrowsingSupported={isBrowsingSupported}
-                />
+            renderItem={({ item: volume }) => (
+                <VolumeRow volume={volume} isBrowsingSupported={isBrowsingSupported} />
             )}
-            keyExtractor={(item) => item.Name}
+            keyExtractor={(volume) => volume.Name}
             ListEmptyComponent={
                 <View style={styles.noResultsContainer}>
                     <Text style={styles.noResultsText}>No volumes match your search</Text>
                 </View>
             }
             contentInsetAdjustmentBehavior="automatic"
-            contentContainerStyle={styles.listContainer}
-            style={styles.list}
             refreshControl={
                 <RefreshControl
                     refreshing={volumesQuery.isRefetching}
@@ -203,16 +188,14 @@ export default function VolumesScreen() {
 const styles = StyleSheet.create({
     volumeRow: {
         padding: SPACING.md,
-    },
-    borderBottom: {
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.primaryLight,
+        borderBottomColor: COLORS.hr,
     },
     volumeName: StyleSheet.flatten([
         TYPOGRAPHY.subtitle,
         SHADOWS.text,
         {
-            color: COLORS.text.white,
+            color: COLORS.text,
             marginBottom: SPACING.sm,
         },
     ]),
@@ -224,23 +207,13 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         width: '100%',
     },
-    listContainer: {
-        backgroundColor: COLORS.background.list,
-        position: 'relative',
-        borderTopWidth: 1,
-        borderTopColor: COLORS.primaryLight,
-    },
-    list: {
-        backgroundColor: COLORS.background.list,
-    },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: COLORS.background.list,
     },
     loadingIndicator: {
-        color: COLORS.text.white,
+        color: COLORS.text,
     },
     noResultsContainer: {
         alignItems: 'center',
@@ -248,6 +221,6 @@ const styles = StyleSheet.create({
     },
     noResultsText: {
         fontSize: TYPOGRAPHY.subtitle.fontSize,
-        color: COLORS.text.light,
+        color: COLORS.textMuted,
     },
 })

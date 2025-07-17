@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Tabs } from 'expo-router'
 import { useEffect } from 'react'
 import { useMemo } from 'react'
+import { Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function TabLayout() {
@@ -60,13 +61,15 @@ export default function TabLayout() {
             screenOptions={{
                 headerShown: false,
                 tabBarStyle: {
-                    backgroundColor: COLORS.background.list,
-                    borderTopColor: COLORS.primaryLight,
-                    borderTopWidth: 1,
-                    paddingBottom: bottomInset,
+                    backgroundColor: COLORS.bgApp,
+                    borderTopColor: COLORS.hr,
+                    borderTopWidth: Platform.OS === 'ios' ? 1 : 0.2,
+                    paddingTop: 8,
+                    paddingBottom: 24,
+                    height: 84,
                 },
-                tabBarActiveTintColor: COLORS.text.white,
-                tabBarInactiveTintColor: COLORS.tabInactive,
+                tabBarActiveTintColor: COLORS.primaryLight,
+                tabBarInactiveTintColor: COLORS.primaryDark,
             }}
         >
             <Tabs.Screen

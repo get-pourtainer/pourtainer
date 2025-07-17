@@ -19,6 +19,7 @@ import {
     Alert,
     FlatList,
     Pressable,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -231,7 +232,7 @@ export default function VolumeDetailScreen() {
         navigation.setOptions({
             headerLeft: () => (
                 <Pressable onPress={handleBack}>
-                    <Ionicons name="chevron-back" size={24} color={COLORS.text.white} />
+                    <Ionicons name="chevron-back" size={24} color={COLORS.text} />
                 </Pressable>
             ),
             headerRight: () => (
@@ -242,7 +243,7 @@ export default function VolumeDetailScreen() {
                         pressed && styles.headerButtonPressed,
                     ]}
                 >
-                    <Ionicons name="search" size={24} color={COLORS.text.white} />
+                    <Ionicons name="search" size={24} color={COLORS.text} />
                 </Pressable>
             ),
             headerBackVisible: false,
@@ -285,7 +286,14 @@ export default function VolumeDetailScreen() {
     )
 
     return (
-        <View style={styles.container}>
+        <ScrollView
+            contentInsetAdjustmentBehavior="automatic"
+            style={styles.container}
+            scrollEnabled={false}
+            contentContainerStyle={{
+                flex: 1,
+            }}
+        >
             {isSearchVisible && (
                 <View style={styles.searchContainer}>
                     <TextInput
@@ -343,37 +351,36 @@ export default function VolumeDetailScreen() {
                     <Ionicons name="cloud-upload" size={24} color="#FFFFFF" />
                 )}
             </Pressable>
-        </View>
+        </ScrollView>
     )
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background.app,
+        // position: 'relative',
     },
     contentLoadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: COLORS.background.app,
     },
     pathBar: {
         padding: 12,
-        backgroundColor: COLORS.volume.item.background,
+        backgroundColor: COLORS.primaryDark,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.primaryLight,
+        borderBottomColor: COLORS.hr,
     },
     pathText: {
         fontSize: 14,
-        color: COLORS.text.secondary,
+        color: COLORS.text,
     },
     item: {
         padding: 16,
-        backgroundColor: COLORS.volume.item.background,
+        backgroundColor: COLORS.bgSecondary,
     },
     itemPressed: {
-        backgroundColor: COLORS.volume.item.backgroundPressed,
+        backgroundColor: COLORS.hrMuted,
     },
     itemContent: {
         flexDirection: 'row',
@@ -391,24 +398,24 @@ const styles = StyleSheet.create({
     itemName: {
         marginLeft: 12,
         fontSize: 16,
-        color: COLORS.text.primary,
+        color: COLORS.primary,
     },
     itemDetails: {
         fontSize: 12,
-        color: COLORS.text.secondary,
+        color: COLORS.textMuted,
     },
     itemTime: {
         fontSize: 12,
-        color: COLORS.text.secondary,
+        color: COLORS.textMuted,
         marginTop: 4,
     },
     separator: {
         height: 1,
-        backgroundColor: COLORS.volume.item.separator,
+        backgroundColor: COLORS.hrPrimary,
     },
     fab: {
         position: 'absolute',
-        bottom: 24,
+        bottom: 150,
         right: 24,
         width: 56,
         height: 56,
@@ -444,25 +451,25 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 16,
-        color: COLORS.text.secondary,
+        color: COLORS.textMuted,
     },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 8,
-        backgroundColor: COLORS.volume.search.background,
+        backgroundColor: COLORS.bgApp,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.volume.item.separator,
+        borderBottomColor: COLORS.hr,
     },
     searchInput: {
         flex: 1,
         height: 36,
-        backgroundColor: COLORS.volume.search.input,
+        backgroundColor: COLORS.bgSecondary,
         borderRadius: 8,
         paddingHorizontal: 12,
         fontSize: 16,
         marginRight: 8,
-        color: COLORS.volume.search.text,
+        color: COLORS.text,
     },
     searchCancelButton: {
         padding: 8,

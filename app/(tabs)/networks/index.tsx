@@ -19,73 +19,68 @@ import { StyleSheet } from 'react-native'
 
 function NetworkRow({
     network,
-    index,
-    total,
     onPress,
 }: {
     network: Network
-    index?: number
-    total?: number
     onPress: () => void
 }) {
     return (
-        <TouchableOpacity
-            onPress={onPress}
-            style={[
-                styles.networkRow,
-                index !== undefined &&
-                    total !== undefined &&
-                    index !== total - 1 &&
-                    styles.rowBorder,
-            ]}
-        >
+        <TouchableOpacity onPress={onPress} style={styles.networkRow}>
             <Text style={styles.networkName}>{network.Name}</Text>
 
             <View style={styles.badgeContainer}>
                 {/* Network ID Badge */}
-                <Badge
-                    label={network.Id.substring(0, 12)}
-                    color="#475569"
-                    backgroundColor="#e2e8f0"
-                    monospace={true}
-                />
+                <Badge label={network.Id.substring(0, 12)} monospace={true} />
 
                 {/* Driver Badge */}
-                <Badge label={network.Driver} color="#0369a1" backgroundColor="#bae6fd" />
+                <Badge
+                    label={network.Driver}
+                    color={COLORS.primaryLight}
+                    backgroundColor={COLORS.primaryDark}
+                />
 
                 {/* Scope Badge */}
-                <Badge label={network.Scope} color="#15803d" backgroundColor="#bbf7d0" />
+                <Badge
+                    label={network.Scope}
+                    color={COLORS.successLight}
+                    backgroundColor={COLORS.successDark}
+                />
 
                 {/* IPv6 Badge */}
                 {network.EnableIPv6 && (
-                    <Badge label="IPv6" color="#6b21a8" backgroundColor="#ddd6fe" />
+                    <Badge
+                        label="IPv6"
+                        color={COLORS.primaryLight}
+                        backgroundColor={COLORS.primaryDark}
+                    />
                 )}
 
                 {/* Internal Badge */}
                 {network.Internal && (
-                    <Badge label="Internal" color="#b91c1c" backgroundColor="#fecaca" />
+                    <Badge
+                        label="Internal"
+                        color={COLORS.errorLight}
+                        backgroundColor={COLORS.errorDark}
+                    />
                 )}
 
                 {/* Attachable Badge */}
                 {network.Attachable && (
-                    <Badge label="Attachable" color="#c2410c" backgroundColor="#fed7aa" />
+                    <Badge
+                        label="Attachable"
+                        color={COLORS.warningLight}
+                        backgroundColor={COLORS.warningDark}
+                    />
                 )}
 
                 {/* IPAM Info */}
                 {network.IPAM.Config && network.IPAM.Config.length > 0 && (
                     <>
-                        <Badge
-                            label={network.IPAM.Config[0].Subnet}
-                            color="#475569"
-                            backgroundColor="#e2e8f0"
-                            monospace={true}
-                        />
+                        <Badge label={network.IPAM.Config[0].Subnet} monospace={true} />
 
                         {network.IPAM.Config[0].Gateway && (
                             <Badge
                                 label={`GW: ${network.IPAM.Config[0].Gateway}`}
-                                color="#475569"
-                                backgroundColor="#e2e8f0"
                                 monospace={true}
                             />
                         )}
@@ -110,10 +105,15 @@ export default function NetworksScreen() {
             headerSearchBarOptions: {
                 placeholder: 'Search networks...',
                 hideWhenScrolling: true,
-                barTintColor: COLORS.searchBar.background,
-                textColor: COLORS.searchBar.text,
-                placeholderTextColor: COLORS.searchBar.placeholder,
+                barTintColor: COLORS.bgSecondary,
+                textColor: COLORS.text,
+                tintColor: COLORS.primary,
                 onChangeText: (event: any) => setSearchQuery(event.nativeEvent.text),
+
+                //! do not seem to work
+                hintTextColor: 'red',
+                placeholderTextColor: 'red',
+                autoCapitalize: 'none',
             },
         })
     }, [navigation])
@@ -166,23 +166,16 @@ export default function NetworksScreen() {
     return (
         <FlatList
             data={filteredNetworks}
-            renderItem={({ item, index }) => (
-                <NetworkRow
-                    network={item}
-                    index={index}
-                    total={filteredNetworks?.length}
-                    onPress={() => handleNetworkPress(item)}
-                />
+            renderItem={({ item: network }) => (
+                <NetworkRow network={network} onPress={() => handleNetworkPress(network)} />
             )}
-            keyExtractor={(item) => item.Id}
+            keyExtractor={(network) => network.Id}
             ListEmptyComponent={
                 <View style={styles.noResultsContainer}>
                     <Text style={styles.noResultsText}>No networks match your search</Text>
                 </View>
             }
             contentInsetAdjustmentBehavior="automatic"
-            contentContainerStyle={styles.listContainer}
-            style={styles.list}
             refreshControl={
                 <RefreshControl
                     refreshing={networksQuery.isRefetching}
@@ -196,16 +189,14 @@ export default function NetworksScreen() {
 const styles = StyleSheet.create({
     networkRow: {
         padding: SPACING.md,
-    },
-    rowBorder: {
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.primaryLight,
+        borderBottomColor: COLORS.hr,
     },
     networkName: StyleSheet.flatten([
         TYPOGRAPHY.subtitle,
         SHADOWS.text,
         {
-            color: COLORS.text.white,
+            color: COLORS.text,
             marginBottom: SPACING.sm,
         },
     ]),
@@ -221,10 +212,9 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: COLORS.background.list,
     },
     loadingIndicator: {
-        color: COLORS.text.white,
+        color: COLORS.text,
     },
     noResultsContainer: {
         alignItems: 'center',
@@ -232,15 +222,6 @@ const styles = StyleSheet.create({
     },
     noResultsText: {
         fontSize: TYPOGRAPHY.subtitle.fontSize,
-        color: COLORS.text.light,
-    },
-    listContainer: {
-        backgroundColor: COLORS.background.list,
-        position: 'relative',
-        borderTopWidth: 1,
-        borderTopColor: COLORS.primaryLight,
-    },
-    list: {
-        backgroundColor: COLORS.background.list,
+        color: COLORS.textMuted,
     },
 })

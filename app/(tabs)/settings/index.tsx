@@ -59,7 +59,7 @@ export default function SettingsScreen() {
                 <View style={styles.card}>
                     {isLoading ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="small" color={COLORS.text.primary} />
+                            <ActivityIndicator size="small" color={COLORS.primary} />
                         </View>
                     ) : error ? (
                         <View style={styles.errorContainer}>
@@ -125,14 +125,10 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
-        backgroundColor: COLORS.background.list,
     },
     scrollViewContent: {
         padding: SPACING.md,
         gap: SPACING.lg,
-        position: 'relative',
-        borderTopWidth: 1,
-        borderTopColor: COLORS.primaryLight,
     },
     section: {
         gap: SPACING.md,
@@ -140,12 +136,12 @@ const styles = StyleSheet.create({
     sectionTitle: StyleSheet.flatten([
         TYPOGRAPHY.title,
         {
-            color: COLORS.text.white,
+            color: COLORS.text,
         },
     ]),
     card: StyleSheet.flatten([
         {
-            backgroundColor: COLORS.background.card,
+            backgroundColor: COLORS.bgSecondary,
             borderRadius: BORDER_RADIUS.lg,
             overflow: 'hidden',
         },
@@ -166,7 +162,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: SPACING.md,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.form.input.border,
+        borderBottomColor: COLORS.hrPrimary,
     },
     endpointContent: {
         flex: 1,
@@ -175,13 +171,13 @@ const styles = StyleSheet.create({
     endpointName: StyleSheet.flatten([
         TYPOGRAPHY.subtitle,
         {
-            color: COLORS.text.primary,
+            color: COLORS.primaryLight,
         },
     ]),
     endpointUrl: StyleSheet.flatten([
         TYPOGRAPHY.small,
         {
-            color: COLORS.text.secondary,
+            color: COLORS.textMuted,
         },
     ]),
     activeIndicator: {
@@ -193,31 +189,31 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     checkmark: {
-        color: COLORS.text.white,
+        color: COLORS.text,
         fontSize: 14,
         fontWeight: 'bold',
     },
     actionButton: {
         padding: SPACING.md,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.form.input.border,
+        borderBottomColor: COLORS.hrPrimary,
     },
     actionButtonText: StyleSheet.flatten([
         TYPOGRAPHY.subtitle,
         {
-            color: COLORS.text.primary,
+            color: COLORS.primaryLight,
         },
     ]),
     logoutButton: {
         borderBottomWidth: 0,
     },
     logoutText: {
-        color: COLORS.status.error,
+        color: COLORS.errorLight,
     },
     errorText: StyleSheet.flatten([
         TYPOGRAPHY.subtitle,
         {
-            color: COLORS.status.error,
+            color: COLORS.errorLight,
         },
     ]),
 })

@@ -8,6 +8,7 @@ import { isRunningInExpoGo } from 'expo'
 import { Stack, useNavigationContainerRef } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
+import { Platform } from 'react-native'
 import { SystemBars } from 'react-native-edge-to-edge'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
@@ -45,6 +46,25 @@ const mmkvPersister = createSyncStoragePersister({
     },
 })
 
+const commonHeaderStyle = {
+    headerTransparent: Platform.OS === 'ios',
+    headerStyle: {
+        backgroundColor: COLORS.bgApp,
+    },
+    headerTintColor: COLORS.text,
+    headerShadowVisible: true,
+    headerLargeTitleStyle: {
+        color: COLORS.text,
+    },
+    elevation: 0,
+}
+
+const commonContentStyle = {
+    contentStyle: {
+        backgroundColor: COLORS.bgApp,
+    },
+}
+
 function RootLayout() {
     // clearStorage()
     const ref = useNavigationContainerRef()
@@ -58,14 +78,6 @@ function RootLayout() {
     useEffect(() => {
         SplashScreen.hide()
     }, [])
-
-    const commonHeaderStyle = {
-        headerStyle: {
-            backgroundColor: COLORS.background.list,
-        },
-        headerTintColor: COLORS.text.white,
-        headerShadowVisible: false,
-    }
 
     return (
         <GestureHandlerRootView>
@@ -96,25 +108,34 @@ function RootLayout() {
                                 headerShown: false,
                             }}
                         />
-                        <Stack.Screen name="container/[id]/index" options={commonHeaderStyle} />
+                        <Stack.Screen
+                            name="container/[id]/index"
+                            options={{
+                                ...commonHeaderStyle,
+                                ...commonContentStyle,
+                            }}
+                        />
                         <Stack.Screen
                             name="container/[id]/logs"
                             options={{
-                                ...commonHeaderStyle,
                                 title: 'Logs',
+                                ...commonHeaderStyle,
+                                ...commonContentStyle,
                             }}
                         />
                         <Stack.Screen
                             name="container/[id]/terminal"
                             options={{
-                                ...commonHeaderStyle,
                                 title: 'Terminal',
+                                ...commonHeaderStyle,
+                                ...commonContentStyle,
                             }}
                         />
                         <Stack.Screen
                             name="volume/[id]"
                             options={{
                                 ...commonHeaderStyle,
+                                ...commonContentStyle,
                                 animation: 'none',
                             }}
                         />
