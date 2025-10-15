@@ -1,4 +1,5 @@
 import { startTerminalSession } from '@/api/mutations'
+import ActivityIndicator from '@/components/base/ActivityIndicator'
 import { usePersistedStore } from '@/stores/persisted'
 import { COLORS, SHADOWS } from '@/theme'
 import { useMutation } from '@tanstack/react-query'
@@ -6,7 +7,6 @@ import { useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import {
-    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -277,7 +277,7 @@ export default function ContainerTerminalScreen() {
                     disabled={startSessionMutation.isPending}
                 >
                     {startSessionMutation.isPending ? (
-                        <ActivityIndicator color={COLORS.text} />
+                        <ActivityIndicator size="small" />
                     ) : (
                         <Text style={[styles.connectButtonText, { color: COLORS.text }]}>
                             Connect

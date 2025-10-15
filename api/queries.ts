@@ -1,31 +1,32 @@
-import { apiClient } from '@/lib/api-client'
+import dockerClient from '@/lib/docker'
+import portainerClient from '@/lib/portainer'
 import { usePersistedStore } from '@/stores/persisted'
-import type { Container } from '@/types/container'
-import type { Endpoint } from '@/types/endpoint'
-import type { Image } from '@/types/image'
-import type { Network } from '@/types/network'
-import type { Status } from '@/types/status'
-import type { User } from '@/types/user'
-import type { Volume, VolumeEntity } from '@/types/volume'
-import WidgetKitModule from '@/widgetkit'
+import ReactNativeBlobUtil from 'react-native-blob-util'
 
-export async function fetchNetworks(): Promise<Network[]> {
+export async function fetchNetworks() {
     console.log('Fetching NETWORKS from API...')
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await apiClient(
-            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/networks`
-        )
+        const response = await dockerClient({
+            connectionId: currentConnection?.id,
+            endpointId: currentConnection?.currentEndpointId!,
+        }).GET('/networks')
 
-        if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
-            throw new Error(`Network response was not ok: ${response.respInfo.status}`)
+        if (response.error) {
+            throw new Error(response.error.message)
         }
 
-        const data = await response.json()
+        if (!response.data) {
+            throw new Error('No data returned from API')
+        }
+
+        const data = response.data
 
         // Sort networks by name
-        return (data as Network[]).sort((a, b) => a.Name.localeCompare(b.Name))
+        return data
+            .filter((network) => network.Name !== undefined)
+            .sort((a, b) => a.Name!.localeCompare(b.Name!))
     } catch (error) {
         console.error('Error fetching networks:', error)
         console.log(JSON.stringify(error, null, 2))
@@ -33,51 +34,53 @@ export async function fetchNetworks(): Promise<Network[]> {
     }
 }
 
-export async function fetchVolumes(): Promise<Volume[]> {
+export async function fetchVolumes() {
     console.log('Fetching VOLUMES from API...')
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        // Create URLSearchParams objects for each request
-        const danglingParams = new URLSearchParams()
-        danglingParams.append('filters', JSON.stringify({ dangling: ['true'] }))
+        const dangling = dockerClient({
+            connectionId: currentConnection?.id,
+            endpointId: currentConnection?.currentEndpointId!,
+        }).GET('/volumes', {
+            params: {
+                query: {
+                    filters: JSON.stringify({ dangling: ['true'] }),
+                },
+            },
+        })
 
-        const activeParams = new URLSearchParams()
-        activeParams.append('filters', JSON.stringify({ dangling: ['false'] }))
-
-        const dangling = apiClient(
-            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/volumes?${danglingParams.toString()}`
-        )
-
-        const active = apiClient(
-            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/volumes?${activeParams.toString()}`
-        )
+        const active = dockerClient({
+            connectionId: currentConnection?.id,
+            endpointId: currentConnection?.currentEndpointId!,
+        }).GET('/volumes', {
+            params: {
+                query: {
+                    filters: JSON.stringify({ dangling: ['false'] }),
+                },
+            },
+        })
 
         const [danglingRes, activeRes] = await Promise.all([dangling, active])
 
-        if (
-            danglingRes.respInfo.status < 200 ||
-            danglingRes.respInfo.status >= 300 ||
-            activeRes.respInfo.status < 200 ||
-            activeRes.respInfo.status >= 300
-        ) {
-            throw new Error(
-                `Network response was not ok: ${danglingRes.respInfo.status}, ${activeRes.respInfo.status}`
-            )
+        if (danglingRes.error) {
+            throw new Error(danglingRes.error.message)
         }
 
-        const danglingData = await danglingRes.json()
+        if (activeRes.error) {
+            throw new Error(activeRes.error.message)
+        }
+
+        const danglingData = danglingRes.data
+        const activeData = activeRes.data
 
         console.log('Dangling data:', danglingData)
-
-        const activeData = await activeRes.json()
-
         console.log('Active data:', activeData)
 
-        const all = [...(danglingData.Volumes || []), ...(activeData.Volumes || [])]
+        const all = [...(danglingData?.Volumes || []), ...(activeData?.Volumes || [])]
 
         // Sort volumes by name
-        return (all as Volume[]).sort((a, b) => a.Name.localeCompare(b.Name))
+        return all.sort((a, b) => a.Name.localeCompare(b.Name))
     } catch (error) {
         console.error('Error fetching volumes:', error)
         console.log(JSON.stringify(error, null, 2))
@@ -85,27 +88,28 @@ export async function fetchVolumes(): Promise<Volume[]> {
     }
 }
 
-export async function fetchVolumeContent(name: string, path: string): Promise<VolumeEntity[]> {
+export async function fetchVolumeContent(name: string, path: string) {
     console.log('Fetching VOLUME CONTENT from API...')
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const params = new URLSearchParams({
-            path: path,
-            volumeID: name,
+        const response = await portainerClient().GET('/endpoints/{id}/docker/v2/browse/ls', {
+            params: {
+                path: {
+                    id: Number(currentConnection?.currentEndpointId!),
+                },
+                query: {
+                    path: path,
+                    volumeID: name,
+                },
+            },
         })
 
-        const response = await apiClient(
-            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/v2/browse/ls?${params.toString()}`
-        )
-
-        if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
-            throw new Error(`Network response was not ok: ${response.respInfo.status}`)
+        if (!response.data) {
+            throw new Error('No data returned from API')
         }
 
-        const data = await response.json()
-
-        return data as VolumeEntity[]
+        return response.data
     } catch (error) {
         console.log('Error fetching volume content:', error)
         console.log(JSON.stringify(error, null, 2))
@@ -113,22 +117,29 @@ export async function fetchVolumeContent(name: string, path: string): Promise<Vo
     }
 }
 
-export async function fetchImages(): Promise<Image[]> {
+export async function fetchImages() {
     console.log('Fetching IMAGES from API...')
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await apiClient(
-            `/api/docker/${currentConnection?.currentEndpointId}/images?withUsage=true`
-        )
+        const response = await portainerClient({
+            connectionId: currentConnection?.id,
+        }).GET('/docker/{environmentId}/images', {
+            params: {
+                path: {
+                    environmentId: Number(currentConnection?.currentEndpointId!),
+                },
+                query: {
+                    withUsage: true,
+                },
+            },
+        })
 
-        if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
-            throw new Error(`Network response was not ok: ${response.respInfo.status}`)
+        if (!response.data) {
+            throw new Error('No data returned from API')
         }
 
-        const data = await response.json()
-
-        return data as Image[]
+        return response.data
     } catch (error) {
         console.error('Error fetching images:', error)
         console.log(JSON.stringify(error, null, 2))
@@ -136,45 +147,84 @@ export async function fetchImages(): Promise<Image[]> {
     }
 }
 
-export async function fetchContainers(): Promise<Container[]> {
+export async function fetchContainers() {
     console.log('Fetching CONTAINERS from API...')
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const params = new URLSearchParams({
-            all: 'true',
-        })
-
-        const response = await apiClient(
-            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/json?${params.toString()}`
-        )
-
-        if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
-            throw new Error(`Network response was not ok: ${response.respInfo.status}`)
-        }
-
         // todo remove me sometime in the future
         // register instance for users who were already signed in
-        if (WidgetKitModule.getConnections().length === 0) {
-            if (currentConnection) {
-                WidgetKitModule.registerConnection({
-                    id: currentConnection.id,
-                    url: currentConnection.baseUrl,
-                    accessToken: currentConnection.apiToken,
-                })
-            }
+        // if (WidgetKitModule.getConnections().length === 0) {
+        //     if (currentConnection) {
+        //         WidgetKitModule.registerConnection({
+        //             id: currentConnection.id,
+        //             url: currentConnection.baseUrl,
+        //             accessToken: currentConnection.apiToken,
+        //         })
+        //     }
+        // }
+
+        const response = await dockerClient({
+            connectionId: currentConnection?.id,
+            endpointId: currentConnection?.currentEndpointId!,
+        }).GET('/containers/json', {
+            params: {
+                query: {
+                    all: true,
+                },
+            },
+        })
+
+        if (response.error) {
+            throw new Error(response.error.message)
         }
 
-        const data = await response.json()
+        if (!response.data) {
+            throw new Error('No data returned from API')
+        }
+
+        const data = response.data
 
         // Sort containers by their first name (removing leading slash)
-        return (data as Container[])?.sort((a, b) => {
-            const nameA = a.Names[0].replace(/^\//, '')
-            const nameB = b.Names[0].replace(/^\//, '')
+        return data.sort((a, b) => {
+            const nameA = a.Names?.[0]?.replace(/^\//, '') || ''
+            const nameB = b.Names?.[0]?.replace(/^\//, '') || ''
             return nameA.localeCompare(nameB)
         })
     } catch (error) {
-        console.error('Error fetching applications:', error)
+        console.error('Error fetching containers:', error)
+        console.log(JSON.stringify(error, null, 2))
+        throw error
+    }
+}
+
+export async function fetchContainer(id: string) {
+    console.log('Fetching CONTAINER from API...')
+    const currentConnection = usePersistedStore.getState().currentConnection
+
+    try {
+        const response = await dockerClient({
+            connectionId: currentConnection?.id,
+            endpointId: currentConnection?.currentEndpointId!,
+        }).GET('/containers/{id}/json', {
+            params: {
+                path: {
+                    id: id,
+                },
+            },
+        })
+
+        if (response.error) {
+            throw new Error(response.error.message)
+        }
+
+        if (!response.data) {
+            throw new Error('No data returned from API')
+        }
+
+        return response.data
+    } catch (error) {
+        console.error('Error fetching container:', error)
         console.log(JSON.stringify(error, null, 2))
         throw error
     }
@@ -200,12 +250,14 @@ export async function fetchLogs(
             timestamps: options.timestamps ? '1' : '0',
         })
 
-        const response = await apiClient(
-            `/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/${id}/logs?${params.toString()}`,
+        const response = await ReactNativeBlobUtil.config({
+            trusty: true,
+        }).fetch(
+            'GET',
+            `${currentConnection?.baseUrl}/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/${id}/logs?${params.toString()}`,
             {
-                headers: {
-                    'Accept': 'application/json, text/plain, */*',
-                },
+                'x-api-key': currentConnection?.apiToken!,
+                'Accept': 'application/json, text/plain, */*',
             }
         )
 
@@ -246,8 +298,6 @@ export async function fetchLogs(
             position += length
         }
 
-        // console.log('result', result)
-
         return result
     } catch (error) {
         console.error('Error fetching logs:', error)
@@ -255,18 +305,17 @@ export async function fetchLogs(
     }
 }
 
-export async function fetchMe(): Promise<User> {
+export async function fetchMe() {
     console.log('Fetching current user from API...')
 
     try {
-        const response = await apiClient('/api/users/me')
+        const response = await portainerClient().GET('/users/me')
 
-        if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
-            throw new Error(`Network response was not ok: ${response.respInfo.status}`)
+        if (!response.data) {
+            throw new Error('No data returned from API')
         }
 
-        const data = await response.json()
-        return data as User
+        return response.data
     } catch (error) {
         console.error('Error fetching current user:', error)
         console.log(JSON.stringify(error, null, 2))
@@ -274,18 +323,17 @@ export async function fetchMe(): Promise<User> {
     }
 }
 
-export async function fetchStatus(): Promise<Status> {
+export async function fetchStatus() {
     console.log('Fetching system status from API...')
 
     try {
-        const response = await apiClient('/api/system/status')
+        const response = await portainerClient().GET('/system/status')
 
-        if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
-            throw new Error(`Network response was not ok: ${response.respInfo.status}`)
+        if (!response.data) {
+            throw new Error('No data returned from API')
         }
 
-        const data = await response.json()
-        return data as Status
+        return response.data
     } catch (error) {
         console.error('Error fetching system status:', error)
         console.log(JSON.stringify(error, null, 2))
@@ -293,22 +341,25 @@ export async function fetchStatus(): Promise<Status> {
     }
 }
 
-export async function fetchEndpoints(): Promise<Endpoint[]> {
+export async function fetchEndpoints({ connectionId }: { connectionId?: string } = {}) {
     console.log('Fetching endpoints from API...')
 
     try {
-        const params = new URLSearchParams({
-            excludeSnapshots: 'true',
+        const response = await portainerClient({
+            connectionId: connectionId,
+        }).GET('/endpoints', {
+            params: {
+                query: {
+                    excludeSnapshots: true,
+                },
+            },
         })
 
-        const response = await apiClient(`/api/endpoints?${params.toString()}`)
-
-        if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
-            throw new Error(`Network response was not ok: ${response.respInfo.status}`)
+        if (!response.data) {
+            throw new Error('No data returned from API')
         }
 
-        const data = await response.json()
-        return data as Endpoint[]
+        return response.data
     } catch (error) {
         console.error('Error fetching endpoints:', error)
         console.log(JSON.stringify(error, null, 2))

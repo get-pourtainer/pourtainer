@@ -1,7 +1,9 @@
 import { fetchContainers } from '@/api/queries'
+import buildPlaceholder from '@/components/base/Placeholder'
+import RefreshControl from '@/components/base/RefreshControl'
+import type { components } from '@/lib/docker/schema'
 import { usePersistedStore } from '@/stores/persisted'
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
-import type { Container } from '@/types/container'
 import { useQuery } from '@tanstack/react-query'
 import { router, useNavigation } from 'expo-router'
 import { SquircleButton } from 'expo-squircle-view'
@@ -9,19 +11,19 @@ import * as StoreReview from 'expo-store-review'
 import ms from 'ms'
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { StyleSheet } from 'react-native'
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native'
+import { ScrollView, Text, View } from 'react-native'
 
 type GroupedContainers = {
-    [key: string]: Container[]
+    [key: string]: components['schemas']['ContainerSummary'][]
 }
 
-function ContainerBox({ container }: { container: Container }) {
+function ContainerBox({ container }: { container: components['schemas']['ContainerSummary'] }) {
     const countToReviewPrompt = usePersistedStore((state) => state.countToReviewPrompt)
     const setCountToReviewPrompt = usePersistedStore((state) => state.setCountToReviewPrompt)
     const lastShownReviewPrompt = usePersistedStore((state) => state.lastShownReviewPrompt)
     const setLastShownReviewPrompt = usePersistedStore((state) => state.setLastShownReviewPrompt)
 
-    const status = container.State.toLowerCase()
+    const status = container.State?.toLowerCase() || 'unknown'
     const statusColor =
         status === 'running' ? COLORS.success : status === 'exited' ? COLORS.error : COLORS.warning
 
@@ -51,14 +53,15 @@ function ContainerBox({ container }: { container: Container }) {
             <View style={styles.containerBoxInner}>
                 <View>
                     <Text style={styles.containerName} numberOfLines={2}>
-                        {container.Names[0].replace(/^\//, '')}
+                        {container.Names?.[0]?.replace(/^\//, '') || 'Unnamed container'}
                     </Text>
                 </View>
 
                 <View style={styles.statusContainer}>
                     <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
                     <Text style={styles.statusText}>
-                        {container.State.charAt(0).toUpperCase() + container.State.slice(1)}
+                        {container.State?.charAt(0).toUpperCase() +
+                            (container.State?.slice(1) || '')}
                     </Text>
                 </View>
             </View>
@@ -75,32 +78,14 @@ export default function ContainersScreen() {
         queryFn: fetchContainers,
     })
 
-    useLayoutEffect(() => {
-        navigation.setOptions({
-            headerSearchBarOptions: {
-                placeholder: 'Search stacks or containers...',
-                hideWhenScrolling: true,
-                barTintColor: COLORS.bgSecondary,
-                textColor: COLORS.text,
-                tintColor: COLORS.primary,
-                onChangeText: (event: any) => setSearchQuery(event.nativeEvent.text),
-
-                //! do not seem to work
-                hintTextColor: 'red',
-                placeholderTextColor: 'red',
-                autoCapitalize: 'none',
-            },
-        })
-    }, [navigation])
-
     const filteredGroupedContainers = useMemo(() => {
-        if (!containersQuery.data) return {}
+        if (!containersQuery.data) return []
         const query = searchQuery.toLowerCase().trim()
 
         // If no search query, return all containers grouped
         const containers = query
             ? containersQuery.data.filter((container) => {
-                  const containerName = container.Names[0].toLowerCase()
+                  const containerName = container.Names?.[0]?.toLowerCase() ?? 'Unnamed container'
                   const stackName = (
                       container.Labels?.['com.docker.compose.project'] || 'Stackless'
                   ).toLowerCase()
@@ -120,26 +105,55 @@ export default function ContainersScreen() {
         const { Stackless, ...stackGroups } = groups
 
         // Return sorted groups with Stackless at the end if it exists
-        return {
+        const mapResult = {
             ...stackGroups,
             ...(Stackless ? { Stackless } : {}),
         }
+
+        return Object.entries(mapResult)
     }, [containersQuery.data, searchQuery])
 
-    if (containersQuery.isLoading) {
-        return (
-            <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color={styles.loadingIndicator.color} />
-            </View>
-        )
-    }
+    const Placeholder = useMemo(() => {
+        const isSearch = searchQuery.trim() !== ''
 
-    if (containersQuery.error) {
-        return (
-            <View style={styles.centerContainer}>
-                <Text style={styles.errorText}>Error loading data</Text>
-            </View>
-        )
+        const emptyContainers = buildPlaceholder({
+            isLoading: containersQuery.isLoading,
+            isError: containersQuery.isError,
+            hasData: filteredGroupedContainers.length > 0,
+            emptyLabel: isSearch
+                ? 'No containers or stacks match your search'
+                : 'No containers found',
+            errorLabel: 'Error loading containers',
+        })
+
+        return emptyContainers
+    }, [
+        containersQuery.isLoading,
+        containersQuery.isError,
+        filteredGroupedContainers.length,
+        searchQuery,
+    ])
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerSearchBarOptions: {
+                placeholder: 'Search stacks or containers...',
+                hideWhenScrolling: true,
+                barTintColor: COLORS.bgSecondary,
+                textColor: COLORS.text,
+                tintColor: COLORS.primary,
+                onChangeText: (event: any) => setSearchQuery(event.nativeEvent.text),
+
+                //! do not seem to work
+                hintTextColor: 'red',
+                placeholderTextColor: 'red',
+                autoCapitalize: 'none',
+            },
+        })
+    }, [navigation])
+
+    if (Placeholder) {
+        return Placeholder
     }
 
     return (
@@ -147,22 +161,9 @@ export default function ContainersScreen() {
             style={styles.scrollView}
             contentContainerStyle={styles.scrollViewContent}
             contentInsetAdjustmentBehavior="automatic"
-            refreshControl={
-                <RefreshControl
-                    refreshing={containersQuery.isRefetching}
-                    onRefresh={containersQuery.refetch}
-                />
-            }
+            refreshControl={<RefreshControl onRefresh={containersQuery.refetch} />}
         >
-            {Object.keys(filteredGroupedContainers).length === 0 && searchQuery.trim() !== '' && (
-                <View style={styles.noResultsContainer}>
-                    <Text style={styles.noResultsText}>
-                        No containers or stacks match your search
-                    </Text>
-                </View>
-            )}
-
-            {Object.entries(filteredGroupedContainers).map(([stackName, containers]) => (
+            {filteredGroupedContainers.map(([stackName, containers]) => (
                 <View key={stackName}>
                     <Text style={styles.stackName}>{stackName}</Text>
                     <View style={styles.containersGrid}>

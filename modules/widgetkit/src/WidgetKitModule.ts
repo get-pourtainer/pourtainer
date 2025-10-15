@@ -3,7 +3,9 @@ import type { Connection } from './WidgetKit.types'
 
 declare class WidgetKitModule extends NativeModule {
     getConnections(): Connection[]
-    registerConnection(connection: Connection): void
+    addConnection(connection: Connection): void
+    removeConnection(id: string): void
+    setIsSubscribed(isSubscribed: boolean): void
     clearAllConnections(): void
 }
 

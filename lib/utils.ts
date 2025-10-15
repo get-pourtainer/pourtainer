@@ -1,7 +1,8 @@
-import { apiClient } from '@/lib/api-client'
+import { usePersistedStore } from '@/stores/persisted'
 import * as FileSystem from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import { Platform } from 'react-native'
+import ReactNativeBlobUtil from 'react-native-blob-util'
 
 export function formatBytes(bytes: number, decimals = 2) {
     if (bytes === 0) return '0 Bytes'
@@ -31,12 +32,21 @@ export async function downloadFile({
         const tempDir = `${FileSystem.cacheDirectory}preview/`
         await FileSystem.makeDirectoryAsync(tempDir, { intermediates: true }).catch(() => {})
 
-        // Download the file using apiClient instead of FileSystem.downloadAsync
-        const response = await apiClient(
-            `/api/endpoints/${endpointId}/docker/v2/browse/get?volumeID=${encodeURIComponent(
-                volumeName
-            )}&path=${encodeURIComponent(filePath)}`
-        )
+        const currentConnection = usePersistedStore.getState().currentConnection
+
+        if (!currentConnection) {
+            throw new Error('No connection found')
+        }
+
+        const fullUrl = `${currentConnection.baseUrl}/api/endpoints/${endpointId}/docker/v2/browse/get?volumeID=${encodeURIComponent(
+            volumeName
+        )}&path=${encodeURIComponent(filePath)}`
+
+        const response = await ReactNativeBlobUtil.config({
+            trusty: true,
+        }).fetch('GET', fullUrl, {
+            'x-api-key': currentConnection.apiToken,
+        })
 
         // Generate temporary file path
         const localFilePath = `${tempDir}${fileName}`

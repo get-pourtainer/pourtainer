@@ -39,6 +39,13 @@ struct Provider: AppIntentTimelineProvider {
         try? Task.checkCancellation()
         
         var entries: [WidgetEntry] = []
+		var isSubscribed: Bool = false
+		
+		if let sharedDefaults = UserDefaults(suiteName: appGroupName) {
+			let isSubscribedValue = sharedDefaults.bool(forKey: isSubscribedKey)
+			
+			isSubscribed = isSubscribedValue
+		}
 
         let currentDate = Date()
         let connections = self.getConnections()
@@ -56,13 +63,16 @@ struct Provider: AppIntentTimelineProvider {
             for minuteOffset in stride(from: 0, to: 60 * 5, by: 15) {
                 let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate)!
 
-                let entry = WidgetEntry(
-                    date: entryDate, 
-                    hasConnections: !connections.isEmpty, 
-                    hasContainers: hasContainers, 
-                    selectedContainer: nil,
-                    logLines: []
-                )
+				let entry = WidgetEntry(
+					date: entryDate, 
+					hasConnections: !connections.isEmpty, 
+					hasContainers: hasContainers, 
+					selectedContainer: nil,
+					logLines: [],
+					isSubscribed: isSubscribed,
+					connectionId: nil,
+					endpointId: nil
+				)
 
                 entries.append(entry)
             }
@@ -172,7 +182,10 @@ struct Provider: AppIntentTimelineProvider {
             hasConnections: !connections.isEmpty, 
             hasContainers: hasContainers, 
             selectedContainer: container,
-            logLines: logLines
+            logLines: logLines,
+            isSubscribed: isSubscribed,
+            connectionId: connection.id,
+            endpointId: endpoint.Id
         )
         
         return Timeline(entries: [entry], policy: refreshPolicy)
@@ -233,9 +246,9 @@ struct ContainerWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { widget in
             // Switch on the widget state to display the appropriate view
-            switch (widget.hasConnections, widget.hasContainers, self.getWidgetState(), widget.selectedContainer) {
+            switch (widget.hasConnections, widget.hasContainers, self.getWidgetState(), widget.selectedContainer, widget.isSubscribed) {
             // Case: No connections - user needs to sign in
-            case (false, _, _, _):
+            case (false, _, _, _, _):
                 EntryView(
                     title: "Unauthorized", 
                     description: "Sign in with Pourtainer app"
@@ -243,7 +256,7 @@ struct ContainerWidget: Widget {
                 .containerBackground(Color("$background"), for: .widget)
                 
             // Case: No containers available
-            case (true, false, _, _), (true, true, .noContainers, nil):
+            case (true, false, _, _, _), (true, true, .noContainers, nil, _):
                 EntryView(
                     title: "No containers", 
                     description: "Add your first Container to show it here."
@@ -251,7 +264,7 @@ struct ContainerWidget: Widget {
                 .containerBackground(Color("$background"), for: .widget)
                 
             // Case: Containers available but not selected in widget config
-            case (true, true, .hasContainers, nil):
+            case (true, true, .hasContainers, nil, _):
                 EntryView(
                     title: "Container not found", 
                     description: "Please select another Container."
@@ -259,7 +272,7 @@ struct ContainerWidget: Widget {
                 .containerBackground(Color("$background"), for: .widget)
                 
             // Case: API error
-            case (true, true, .apiFailed, nil):
+            case (true, true, .apiFailed, nil, _):
                 EntryView(
                     title: "Api error", 
                     description: "We couldn't fetch data from the API."
@@ -267,18 +280,30 @@ struct ContainerWidget: Widget {
                 .containerBackground(Color("$background"), for: .widget)
                 
             // Case: Loading or unknown state
-            case (true, true, .loading, nil), (true, true, .none, nil):
+            case (true, true, .loading, nil, _), (true, true, .none, nil, _):
                 EntryView(
                     title: "Loading...", 
                     description: "We're getting your Container details."
                 )
                 .containerBackground(Color("$background"), for: .widget)
                 
+				
+			// Case: Not subscribed
+            case (true, true, _, _, false):
+                EntryView(
+                    title: "Subscription missing", 
+                    description: "Tap here to enable"
+                )
+                .containerBackground(Color("$background"), for: .widget)
+				.widgetURL(URL(string: "pourtainer://?showPaywall=1"))
+			
             // Case: Container successfully loaded - show container info
-            case (true, true, _, let container?):
+            case (true, true, _, let container?, _):
                 WidgetEntryView(
                     selectedContainer: container,
-                    logLines: widget.logLines
+                    logLines: widget.logLines,
+                    connectionId: widget.connectionId,
+                    endpointId: widget.endpointId
                 )
                 .containerBackground(Color("$background"), for: .widget)
             }
@@ -303,7 +328,10 @@ struct ContainerWidget: Widget {
         hasConnections: false, 
         hasContainers: false, 
         selectedContainer: nil,
-        logLines: []
+        logLines: [],
+		isSubscribed: true,
+        connectionId: nil,
+        endpointId: nil
     )
     // Signed in but no containers
     WidgetEntry(
@@ -311,7 +339,10 @@ struct ContainerWidget: Widget {
         hasConnections: true, 
         hasContainers: false, 
         selectedContainer: nil,
-        logLines: []
+        logLines: [],
+		isSubscribed: true,
+        connectionId: nil,
+        endpointId: nil
     )
     // Has containers but none selected
     WidgetEntry(
@@ -319,7 +350,10 @@ struct ContainerWidget: Widget {
         hasConnections: true, 
         hasContainers: true, 
         selectedContainer: nil,
-        logLines: []
+        logLines: [],
+		isSubscribed: true,
+        connectionId: nil,
+        endpointId: nil
     )
     // Container running state
     WidgetEntry(
@@ -337,7 +371,10 @@ struct ContainerWidget: Widget {
             LogLine(content: "Server listening on port 8080"),
             LogLine(content: "Received first request"),
             LogLine(content: "Processing data...")
-        ]
+        ],
+		isSubscribed: true,
+        connectionId: "preview-connection",
+        endpointId: 1
     )
     // Container exited state
     WidgetEntry(
@@ -349,7 +386,10 @@ struct ContainerWidget: Widget {
             Name: "Pourtainer", 
             State: ContainerState(StartedAt: "", Status: "exited")
         ),
-        logLines: [LogLine(content: "Process exited with code 0")]
+        logLines: [LogLine(content: "Process exited with code 0")],
+		isSubscribed: true,
+        connectionId: "preview-connection",
+        endpointId: 1
     )
     // Container unknown state
     WidgetEntry(
@@ -361,6 +401,9 @@ struct ContainerWidget: Widget {
             Name: "Pourtainer", 
             State: ContainerState(StartedAt: "", Status: "unknown")
         ),
-        logLines: [LogLine(content: "Status update pending...")]
+        logLines: [LogLine(content: "Status update pending...")],
+		isSubscribed: true,
+        connectionId: "preview-connection",
+        endpointId: 1
     )
 }

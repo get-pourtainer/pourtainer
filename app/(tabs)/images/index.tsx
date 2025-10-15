@@ -1,23 +1,22 @@
-import { deleteImage } from '@/api/mutations'
+import { deleteImage, pullImage } from '@/api/mutations'
 import { fetchImages } from '@/api/queries'
 import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
 import { Badge } from '@/components/Badge'
+import ActivityIndicator from '@/components/base/ActivityIndicator'
+import { HeaderTouchableOpacity } from '@/components/base/HeaderTouchableOpacity'
+import buildPlaceholder from '@/components/base/Placeholder'
+import RefreshControl from '@/components/base/RefreshControl'
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import type { Image } from '@/types/image'
+import { Ionicons } from '@expo/vector-icons'
 import Clipboard from '@react-native-clipboard/clipboard'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import * as Sentry from '@sentry/react-native'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import * as Haptics from 'expo-haptics'
 import { useNavigation } from 'expo-router'
-import { useLayoutEffect, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { StyleSheet } from 'react-native'
-import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    RefreshControl,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native'
+import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native'
 
 // Helper function to format bytes to human readable size
 function formatBytes(bytes: number): string {
@@ -83,8 +82,134 @@ export default function ImagesScreen() {
         queryFn: fetchImages,
     })
 
+    const pullImageMutation = useMutation({
+        mutationFn: async (imageName: string) => {
+            await pullImage(imageName)
+        },
+        onSuccess: () => {
+            imagesQuery.refetch()
+        },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error', error.message)
+        },
+    })
+
+    const filteredImages = useMemo(() => {
+        if (!imagesQuery.data) return []
+        return imagesQuery.data.filter((image) => {
+            const query = searchString.toLowerCase()
+            const imageName = (image.tags?.[0] || image.id).toLowerCase()
+            return imageName.includes(query)
+        })
+    }, [imagesQuery.data, searchString])
+
+    const handleImagePress = useCallback(
+        (image: Image) => {
+            const imageTitle = image.tags?.[0] || image.id.substring(7, 19)
+
+            const options: ActionSheetOption[] = [
+                {
+                    label: 'Copy ID',
+                    onPress: async () => {
+                        Clipboard.setString(image.id)
+                    },
+                },
+                {
+                    label: 'Delete',
+                    destructive: true,
+                    onPress: async () => {
+                        try {
+                            await deleteImage(image.id)
+                            queryClient.invalidateQueries({ queryKey: ['images'] })
+                        } catch (error) {
+                            Alert.alert(
+                                'Error',
+                                error instanceof Error ? error.message : 'Failed to delete image'
+                            )
+                        }
+                    },
+                },
+                {
+                    label: 'Force Delete',
+                    destructive: true,
+                    onPress: async () => {
+                        try {
+                            await deleteImage(image.id, { force: true })
+                            queryClient.invalidateQueries({ queryKey: ['images'] })
+                        } catch (error) {
+                            Alert.alert(
+                                'Error',
+                                error instanceof Error
+                                    ? error.message
+                                    : 'Failed to force delete image'
+                            )
+                        }
+                    },
+                },
+                {
+                    label: 'Cancel',
+                    cancel: true,
+                    destructive: false,
+                    onPress: () => {},
+                },
+            ]
+
+            showActionSheet(imageTitle, options)
+        },
+        [queryClient]
+    )
+
+    const Placeholder = useMemo(() => {
+        const isSearch = searchString.trim() !== ''
+
+        const emptyImages = buildPlaceholder({
+            isLoading: imagesQuery.isLoading,
+            isError: imagesQuery.isError,
+            hasData: filteredImages.length > 0,
+            emptyLabel: isSearch ? 'No images match your search' : 'No images found',
+            errorLabel: 'Error loading images',
+        })
+
+        return emptyImages
+    }, [imagesQuery.isLoading, imagesQuery.isError, filteredImages.length, searchString])
+
     useLayoutEffect(() => {
         navigation.setOptions({
+            headerRight: pullImageMutation.isPending
+                ? () => <ActivityIndicator size="small" />
+                : () => (
+                      <HeaderTouchableOpacity
+                          style={{
+                              height: 32,
+                              width: 32,
+                          }}
+                          onPress={() => {
+                              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+                              Alert.prompt(
+                                  'Pull Image',
+                                  'Enter the image name',
+                                  [
+                                      {
+                                          text: 'Cancel',
+                                          style: 'cancel',
+                                      },
+                                      {
+                                          text: 'Pull image',
+                                          onPress: (imageName) => {
+                                              if (!imageName) return
+                                              pullImageMutation.mutate(imageName)
+                                          },
+                                      },
+                                  ],
+                                  'plain-text',
+                                  'hello-world:latest'
+                              )
+                          }}
+                      >
+                          <Ionicons name="add-circle-sharp" size={32} color={COLORS.primaryLight} />
+                      </HeaderTouchableOpacity>
+                  ),
             headerSearchBarOptions: {
                 placeholder: 'Search images...',
                 hideWhenScrolling: true,
@@ -99,81 +224,10 @@ export default function ImagesScreen() {
                 autoCapitalize: 'none',
             },
         })
-    }, [navigation])
+    }, [navigation, pullImageMutation.isPending, pullImageMutation.mutate])
 
-    // Show loading state
-    if (imagesQuery.isLoading) {
-        return (
-            <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color={styles.loadingIndicator.color} />
-            </View>
-        )
-    }
-
-    // Show error if query has an error
-    if (imagesQuery.error) {
-        return (
-            <View style={styles.centerContainer}>
-                <Text>Error loading images</Text>
-            </View>
-        )
-    }
-
-    const filteredImages = imagesQuery.data?.filter((image) => {
-        const query = searchString.toLowerCase()
-        const imageName = (image.tags?.[0] || image.id).toLowerCase()
-        return imageName.includes(query)
-    })
-
-    const handleImagePress = (image: Image) => {
-        const imageTitle = image.tags?.[0] || image.id.substring(7, 19)
-
-        const options: ActionSheetOption[] = [
-            {
-                label: 'Copy ID',
-                onPress: async () => {
-                    Clipboard.setString(image.id)
-                },
-            },
-            {
-                label: 'Delete',
-                destructive: true,
-                onPress: async () => {
-                    try {
-                        await deleteImage(image.id)
-                        queryClient.invalidateQueries({ queryKey: ['images'] })
-                    } catch (error) {
-                        Alert.alert(
-                            'Error',
-                            error instanceof Error ? error.message : 'Failed to delete image'
-                        )
-                    }
-                },
-            },
-            {
-                label: 'Force Delete',
-                destructive: true,
-                onPress: async () => {
-                    try {
-                        await deleteImage(image.id, { force: true })
-                        queryClient.invalidateQueries({ queryKey: ['images'] })
-                    } catch (error) {
-                        Alert.alert(
-                            'Error',
-                            error instanceof Error ? error.message : 'Failed to force delete image'
-                        )
-                    }
-                },
-            },
-            {
-                label: 'Cancel',
-                cancel: true,
-                destructive: false,
-                onPress: () => {},
-            },
-        ]
-
-        showActionSheet(imageTitle, options)
+    if (Placeholder) {
+        return Placeholder
     }
 
     return (
@@ -183,18 +237,8 @@ export default function ImagesScreen() {
                 <ImageRow image={image} onPress={() => handleImagePress(image)} />
             )}
             keyExtractor={(image) => image.id}
-            ListEmptyComponent={
-                <View style={styles.noResultsContainer}>
-                    <Text style={styles.noResultsText}>No images match your search</Text>
-                </View>
-            }
             contentInsetAdjustmentBehavior="automatic"
-            refreshControl={
-                <RefreshControl
-                    refreshing={imagesQuery.isRefetching}
-                    onRefresh={imagesQuery.refetch}
-                />
-            }
+            refreshControl={<RefreshControl onRefresh={imagesQuery.refetch} />}
         />
     )
 }

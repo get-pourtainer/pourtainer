@@ -950,7 +950,7 @@ export interface paths {
          *
          *     Containers report these events: `attach`, `commit`, `copy`, `create`, `destroy`, `detach`, `die`, `exec_create`, `exec_detach`, `exec_start`, `exec_die`, `export`, `health_status`, `kill`, `oom`, `pause`, `rename`, `resize`, `restart`, `start`, `stop`, `top`, `unpause`, `update`, and `prune`
          *
-         *     Images report these events: `delete`, `import`, `load`, `pull`, `push`, `save`, `tag`, `untag`, and `prune`
+         *     Images report these events: `create`, `delete`, `import`, `load`, `pull`, `push`, `save`, `tag`, `untag`, and `prune`
          *
          *     Volumes report these events: `create`, `mount`, `unmount`, `destroy`, and `prune`
          *
@@ -1010,13 +1010,9 @@ export interface paths {
          *
          *     ### Image tarball format
          *
-         *     An image tarball contains one directory per image layer (named using its long ID), each containing these files:
+         *     An image tarball contains [Content as defined in the OCI Image Layout Specification](https://github.com/opencontainers/image-spec/blob/v1.1.1/image-layout.md#content).
          *
-         *     - `VERSION`: currently `1.0` - the file format version
-         *     - `json`: detailed layer information, similar to `docker inspect layer_id`
-         *     - `layer.tar`: A tarfile containing the filesystem changes in this layer
-         *
-         *     The `layer.tar` file contains `aufs` style `.wh..wh.aufs` files and directories for storing attribute changes and deletions.
+         *     Additionally, includes the manifest.json file associated with a backwards compatible docker save format.
          *
          *     If the tarball defines a repository, the tarball should also include a `repositories` file at the root that contains a list of repository and tag names mapped to layer IDs.
          *
@@ -2131,6 +2127,7 @@ export interface components {
              *
              *     - `bind` a mount of a file or directory from the host into the container.
              *     - `volume` a docker volume with the given `Name`.
+             *     - `image` a docker image
              *     - `tmpfs` a `tmpfs`.
              *     - `npipe` a named pipe from the host into the container.
              *     - `cluster` a Swarm cluster volume
@@ -2138,7 +2135,7 @@ export interface components {
              * @example volume
              * @enum {string}
              */
-            Type?: "bind" | "volume" | "tmpfs" | "npipe" | "cluster";
+            Type?: "bind" | "volume" | "image" | "tmpfs" | "npipe" | "cluster";
             /**
              * @description Name is the name reference to the underlying data defined by `Source`
              *     e.g., the volume name.
@@ -2257,13 +2254,14 @@ export interface components {
              *
              *     - `bind` Mounts a file or directory from the host into the container. Must exist prior to creating the container.
              *     - `volume` Creates a volume with the given name and options (or uses a pre-existing volume with the same name and options). These are **not** removed when the container is removed.
+             *     - `image` Mounts an image.
              *     - `tmpfs` Create a tmpfs with the given options. The mount source cannot be specified for tmpfs.
              *     - `npipe` Mounts a named pipe from the host into the container. Must exist prior to creating the container.
              *     - `cluster` a Swarm cluster volume
              *
              * @enum {string}
              */
-            Type?: "bind" | "volume" | "tmpfs" | "npipe" | "cluster";
+            Type?: "bind" | "volume" | "image" | "tmpfs" | "npipe" | "cluster";
             /** @description Whether the mount should be read-only. */
             ReadOnly?: boolean;
             /** @description The consistency requirement for the mount: `default`, `consistent`, `cached`, or `delegated`. */
@@ -2287,7 +2285,11 @@ export interface components {
                 CreateMountpoint: boolean;
                 /**
                  * @description Make the mount non-recursively read-only, but still leave the mount recursive
-                 *     (unless NonRecursive is set to true in conjunction).
+                 *     (unless NonRecursive is set to `true` in conjunction).
+                 *
+                 *     Added in v1.44, before that version all read-only mounts were
+                 *     non-recursive by default. To match the previous behaviour this
+                 *     will default to `true` for clients on versions prior to v1.44.
                  *
                  * @default false
                  */
@@ -2318,6 +2320,19 @@ export interface components {
                         [key: string]: string;
                     };
                 };
+                /**
+                 * @description Source path inside the volume. Must be relative without any back traversals.
+                 * @example dir-inside-volume/subdirectory
+                 */
+                Subpath?: string;
+            };
+            /** @description Optional configuration for the `image` type. */
+            ImageOptions?: {
+                /**
+                 * @description Source path inside the image. Must be relative without any back traversals.
+                 * @example dir-inside-image/subdirectory
+                 */
+                Subpath?: string;
             };
             /** @description Optional configuration for the `tmpfs` type. */
             TmpfsOptions?: {
@@ -2328,6 +2343,19 @@ export interface components {
                 SizeBytes?: number;
                 /** @description The permission mode for the tmpfs mount in an integer. */
                 Mode?: number;
+                /**
+                 * @description The options to be passed to the tmpfs mount. An array of arrays.
+                 *     Flag options should be provided as 1-length arrays. Other types
+                 *     should be provided as as 2-length arrays, where the first item is
+                 *     the key and the second the value.
+                 *
+                 * @example [
+                 *       [
+                 *         "noexec"
+                 *       ]
+                 *     ]
+                 */
+                Options?: string[][];
             };
         };
         /** @description The behavior to apply when the container exits. The default is not to
@@ -2763,12 +2791,26 @@ export interface components {
              *       `slave`.
              *      */
             Binds?: string[];
-            /** @description Path to a file where the container ID is written */
+            /**
+             * @description Path to a file where the container ID is written
+             * @example
+             */
             ContainerIDFile?: string;
             /** @description The logging configuration for this container */
             LogConfig?: {
-                /** @enum {string} */
-                Type?: "json-file" | "syslog" | "journald" | "gelf" | "fluentd" | "awslogs" | "splunk" | "etwlogs" | "none";
+                /**
+                 * @description Name of the logging driver used for the container or "none"
+                 *     if logging is disabled.
+                 * @enum {string}
+                 */
+                Type?: "local" | "json-file" | "syslog" | "journald" | "gelf" | "fluentd" | "awslogs" | "splunk" | "etwlogs" | "none";
+                /**
+                 * @description Driver-specific configuration options for the logging driver.
+                 * @example {
+                 *       "max-file": "5",
+                 *       "max-size": "10m"
+                 *     }
+                 */
                 Config?: {
                     [key: string]: string;
                 };
@@ -2794,8 +2836,14 @@ export interface components {
             /** @description Specification for mounts to be added to the container.
              *      */
             Mounts?: components["schemas"]["Mount"][];
-            /** @description Initial console size, as an `[height, width]` array.
-             *      */
+            /**
+             * @description Initial console size, as an `[height, width]` array.
+             *
+             * @example [
+             *       80,
+             *       64
+             *     ]
+             */
             ConsoleSize?: number[] | null;
             /** @description Arbitrary non-identifying metadata attached to container and
              *     provided to the runtime when the container is started.
@@ -2914,41 +2962,59 @@ export interface components {
              *
              */
             ShmSize?: number;
-            /** @description A list of kernel parameters (sysctls) to set in the container.
-             *     For example:
+            /**
+             * @description A list of kernel parameters (sysctls) to set in the container.
              *
-             *     ```
-             *     {"net.ipv4.ip_forward": "1"}
-             *     ```
-             *      */
+             *     This field is omitted if not set.
+             * @example {
+             *       "net.ipv4.ip_forward": "1"
+             *     }
+             */
             Sysctls?: {
                 [key: string]: string;
-            };
+            } | null;
             /** @description Runtime to use with this container. */
-            Runtime?: string;
+            Runtime?: string | null;
             /**
              * @description Isolation technology of the container. (Windows only)
              *
              * @enum {string}
              */
-            Isolation?: "default" | "process" | "hyperv";
-            /** @description The list of paths to be masked inside the container (this overrides
+            Isolation?: "default" | "process" | "hyperv" | "";
+            /**
+             * @description The list of paths to be masked inside the container (this overrides
              *     the default set of paths).
-             *      */
+             *
+             * @example [
+             *       "/proc/asound",
+             *       "/proc/acpi",
+             *       "/proc/kcore",
+             *       "/proc/keys",
+             *       "/proc/latency_stats",
+             *       "/proc/timer_list",
+             *       "/proc/timer_stats",
+             *       "/proc/sched_debug",
+             *       "/proc/scsi",
+             *       "/sys/firmware",
+             *       "/sys/devices/virtual/powercap"
+             *     ]
+             */
             MaskedPaths?: string[];
-            /** @description The list of paths to be set as read-only inside the container
+            /**
+             * @description The list of paths to be set as read-only inside the container
              *     (this overrides the default set of paths).
-             *      */
+             *
+             * @example [
+             *       "/proc/bus",
+             *       "/proc/fs",
+             *       "/proc/irq",
+             *       "/proc/sys",
+             *       "/proc/sysrq-trigger"
+             *     ]
+             */
             ReadonlyPaths?: string[];
         };
         /** @description Configuration for a container that is portable between hosts.
-         *
-         *     When used as `ContainerConfig` field in an image, `ContainerConfig` is an
-         *     optional field containing the configuration of the container that was last
-         *     committed when creating the image.
-         *
-         *     Previous versions of Docker builder used this field to store build cache,
-         *     and it is not in active use anymore.
          *      */
         ContainerConfig: {
             /**
@@ -2960,7 +3026,14 @@ export interface components {
             /** @description The domain name to use for the container.
              *      */
             Domainname?: string;
-            /** @description The user that commands are run as inside the container. */
+            /**
+             * @description Commands run as this user inside the container. If omitted, commands
+             *     run as the user specified in the image the container was started from.
+             *
+             *     Can be either user-name or UID, and optional group-name or GID,
+             *     separated by a colon (`<user-name|UID>[<:group-name|GID>]`).
+             * @example 123:456
+             */
             User?: string;
             /**
              * @description Whether to attach to `stdin`.
@@ -3105,19 +3178,11 @@ export interface components {
          *     when starting a container from the image.
          *
          * @example {
-         *       "Hostname": "",
-         *       "Domainname": "",
          *       "User": "web:web",
-         *       "AttachStdin": false,
-         *       "AttachStdout": false,
-         *       "AttachStderr": false,
          *       "ExposedPorts": {
          *         "80/tcp": {},
          *         "443/tcp": {}
          *       },
-         *       "Tty": false,
-         *       "OpenStdin": false,
-         *       "StdinOnce": false,
          *       "Env": [
          *         "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
          *       ],
@@ -3135,7 +3200,6 @@ export interface components {
          *         "StartInterval": 0
          *       },
          *       "ArgsEscaped": true,
-         *       "Image": "",
          *       "Volumes": {
          *         "/app/data": {},
          *         "/app/config": {}
@@ -3156,63 +3220,10 @@ export interface components {
          */
         ImageConfig: {
             /**
-             * @description The hostname to use for the container, as a valid RFC 1123 hostname.
-             *
-             *     <p><br /></p>
-             *
-             *     > **Note**: this field is always empty and must not be used.
-             *
-             * @example
-             */
-            Hostname?: string;
-            /**
-             * @description The domain name to use for the container.
-             *
-             *     <p><br /></p>
-             *
-             *     > **Note**: this field is always empty and must not be used.
-             *
-             * @example
-             */
-            Domainname?: string;
-            /**
              * @description The user that commands are run as inside the container.
              * @example web:web
              */
             User?: string;
-            /**
-             * @description Whether to attach to `stdin`.
-             *
-             *     <p><br /></p>
-             *
-             *     > **Note**: this field is always false and must not be used.
-             *
-             * @default false
-             * @example false
-             */
-            AttachStdin: boolean;
-            /**
-             * @description Whether to attach to `stdout`.
-             *
-             *     <p><br /></p>
-             *
-             *     > **Note**: this field is always false and must not be used.
-             *
-             * @default false
-             * @example false
-             */
-            AttachStdout: boolean;
-            /**
-             * @description Whether to attach to `stderr`.
-             *
-             *     <p><br /></p>
-             *
-             *     > **Note**: this field is always false and must not be used.
-             *
-             * @default false
-             * @example false
-             */
-            AttachStderr: boolean;
             /**
              * @description An object mapping ports to an empty object in the form:
              *
@@ -3226,39 +3237,6 @@ export interface components {
             ExposedPorts?: {
                 [key: string]: Record<string, never>;
             } | null;
-            /**
-             * @description Attach standard streams to a TTY, including `stdin` if it is not closed.
-             *
-             *     <p><br /></p>
-             *
-             *     > **Note**: this field is always false and must not be used.
-             *
-             * @default false
-             * @example false
-             */
-            Tty: boolean;
-            /**
-             * @description Open `stdin`
-             *
-             *     <p><br /></p>
-             *
-             *     > **Note**: this field is always false and must not be used.
-             *
-             * @default false
-             * @example false
-             */
-            OpenStdin: boolean;
-            /**
-             * @description Close `stdin` after one attached client disconnects.
-             *
-             *     <p><br /></p>
-             *
-             *     > **Note**: this field is always false and must not be used.
-             *
-             * @default false
-             * @example false
-             */
-            StdinOnce: boolean;
             /**
              * @description A list of environment variables to set inside the container in the
              *     form `["VAR=value", ...]`. A variable without `=` is removed from the
@@ -3284,18 +3262,6 @@ export interface components {
              * @example false
              */
             ArgsEscaped: boolean | null;
-            /**
-             * @description The name (or reference) of the image to use when creating the container,
-             *     or which was used when the container was created.
-             *
-             *     <p><br /></p>
-             *
-             *     > **Note**: this field is always empty and must not be used.
-             *
-             * @default
-             * @example
-             */
-            Image: string;
             /**
              * @description An object mapping mount point paths inside the container to empty
              *     objects.
@@ -3324,28 +3290,6 @@ export interface components {
              */
             Entrypoint?: string[];
             /**
-             * @description Disable networking for the container.
-             *
-             *     <p><br /></p>
-             *
-             *     > **Note**: this field is always omitted and must not be used.
-             *
-             * @default false
-             * @example false
-             */
-            NetworkDisabled: boolean | null;
-            /**
-             * @description MAC address of the container.
-             *
-             *     <p><br /></p>
-             *
-             *     > **Deprecated**: this field is deprecated in API v1.44 and up. It is always omitted.
-             *
-             * @default
-             * @example
-             */
-            MacAddress: string | null;
-            /**
              * @description `ONBUILD` metadata that were defined in the image's `Dockerfile`.
              *
              * @example []
@@ -3367,13 +3311,6 @@ export interface components {
              * @example SIGTERM
              */
             StopSignal?: string | null;
-            /** @description Timeout to stop a container in seconds.
-             *
-             *     <p><br /></p>
-             *
-             *     > **Note**: this field is always omitted and must not be used.
-             *      */
-            StopTimeout?: number | null;
             /**
              * @description Shell for when `RUN`, `CMD`, and `ENTRYPOINT` uses a shell.
              *
@@ -3653,7 +3590,7 @@ export interface components {
         /** @description Information about the storage driver used to store the container's and
          *     image's filesystem.
          *      */
-        GraphDriverData: {
+        DriverData: {
             /**
              * @description Name of the storage driver.
              * @example overlay2
@@ -3712,6 +3649,18 @@ export interface components {
              * @example sha256:ec3f0931a6e6b6855d76b2d7b0be30e81860baccd891b2e243280bf1cd8ad710
              */
             Id?: string;
+            Descriptor?: components["schemas"]["OCIDescriptor"];
+            /** @description Manifests is a list of image manifests available in this image. It
+             *     provides a more detailed view of the platform-specific image manifests or
+             *     other image-attached data like build attestations.
+             *
+             *     Only available if the daemon provides a multi-platform image store
+             *     and the `manifests` option is set in the inspect request.
+             *
+             *     WARNING: This is experimental and may change at any time without any backward
+             *     compatibility.
+             *      */
+            Manifests?: components["schemas"]["ImageManifestSummary"][] | null;
             /**
              * @description List of image names/tags in the local image cache that reference this
              *     image.
@@ -3771,23 +3720,11 @@ export interface components {
              */
             Created?: string | null;
             /**
-             * @description The ID of the container that was used to create the image.
-             *
-             *     Depending on how the image was created, this field may be empty.
-             *
-             *     **Deprecated**: this field is kept for backward compatibility, but
-             *     will be removed in API v1.45.
-             *
-             * @example 65974bc86f1770ae4bff79f651ebdbce166ae9aada632ee3fa9af3a264911735
-             */
-            Container?: string;
-            ContainerConfig?: components["schemas"]["ContainerConfig"];
-            /**
              * @description The version of Docker that was used to build the image.
              *
              *     Depending on how the image was created, this field may be empty.
              *
-             * @example 20.10.7
+             * @example 27.0.1
              */
             DockerVersion?: string;
             /**
@@ -3839,7 +3776,7 @@ export interface components {
              * @example 1239828
              */
             VirtualSize?: number;
-            GraphDriver?: components["schemas"]["GraphDriverData"];
+            GraphDriver?: components["schemas"]["DriverData"];
             /** @description Information about the image's RootFS, including the layer IDs.
              *      */
             RootFS?: {
@@ -3970,12 +3907,20 @@ export interface components {
              * @description Number of containers using this image. Includes both stopped and running
              *     containers.
              *
-             *     This size is not calculated by default, and depends on which API endpoint
-             *     is used. `-1` indicates that the value has not been set / calculated.
+             *     `-1` indicates that the value has not been set / calculated.
              *
              * @example 2
              */
             Containers: number;
+            /** @description Manifests is a list of manifests available in this image.
+             *     It provides a more detailed view of the platform-specific image manifests
+             *     or other image-attached data like build attestations.
+             *
+             *     WARNING: This is experimental and may change at any time without any backward
+             *     compatibility.
+             *      */
+            Manifests?: components["schemas"]["ImageManifestSummary"][];
+            Descriptor?: components["schemas"]["OCIDescriptor"];
         };
         /** @example {
          *       "username": "hannibal",
@@ -4156,7 +4101,7 @@ export interface components {
              *
              * @example 7d86d31b1478e7cca9ebed7e73aa0fdeec46c5ca29497431d3007d2d9e15ed99
              */
-            Id?: string;
+            Id: string;
             /**
              * Format: dateTime
              * @description Date and time at which the network was created in
@@ -4179,6 +4124,12 @@ export interface components {
              * @example overlay
              */
             Driver?: string;
+            /**
+             * @description Whether the network was created with IPv4 enabled.
+             *
+             * @example true
+             */
+            EnableIPv4?: boolean;
             /**
              * @description Whether the network was created with IPv6 enabled.
              *
@@ -4339,13 +4290,37 @@ export interface components {
              */
             IP?: string;
         };
+        /**
+         * NetworkCreateResponse
+         * @description OK response to NetworkCreate operation
+         */
+        NetworkCreateResponse: {
+            /**
+             * @description The ID of the created network.
+             * @example b5c4fc71e8022147cd25de22b22173de4e3b170134117172eb595cb91b4e7e5d
+             */
+            Id: string;
+            /**
+             * @description Warnings encountered when creating the container
+             * @example
+             */
+            Warning: string;
+        };
         BuildInfo: {
             id?: string;
             stream?: string;
-            error?: string;
+            /** @description errors encountered during the operation.
+             *
+             *
+             *     > **Deprecated**: This field is deprecated since API v1.4, and will be omitted in a future API version. Use the information in errorDetail instead. */
+            error?: string | null;
             errorDetail?: components["schemas"]["ErrorDetail"];
             status?: string;
-            progress?: string;
+            /** @description Progress is a pre-formatted presentation of progressDetail.
+             *
+             *
+             *     > **Deprecated**: This field is deprecated since API v1.8, and will be omitted in a future API version. Use the information in progressDetail instead. */
+            progress?: string | null;
             progressDetail?: components["schemas"]["ProgressDetail"];
             aux?: components["schemas"]["ImageID"];
         };
@@ -4435,17 +4410,51 @@ export interface components {
         };
         CreateImageInfo: {
             id?: string;
-            error?: string;
+            /** @description errors encountered during the operation.
+             *
+             *
+             *     > **Deprecated**: This field is deprecated since API v1.4, and will be omitted in a future API version. Use the information in errorDetail instead. */
+            error?: string | null;
             errorDetail?: components["schemas"]["ErrorDetail"];
             status?: string;
-            progress?: string;
+            /** @description Progress is a pre-formatted presentation of progressDetail.
+             *
+             *
+             *     > **Deprecated**: This field is deprecated since API v1.8, and will be omitted in a future API version. Use the information in progressDetail instead. */
+            progress?: string | null;
             progressDetail?: components["schemas"]["ProgressDetail"];
         };
         PushImageInfo: {
-            error?: string;
+            /** @description errors encountered during the operation.
+             *
+             *
+             *     > **Deprecated**: This field is deprecated since API v1.4, and will be omitted in a future API version. Use the information in errorDetail instead. */
+            error?: string | null;
+            errorDetail?: components["schemas"]["ErrorDetail"];
             status?: string;
-            progress?: string;
+            /** @description Progress is a pre-formatted presentation of progressDetail.
+             *
+             *
+             *     > **Deprecated**: This field is deprecated since API v1.8, and will be omitted in a future API version. Use the information in progressDetail instead. */
+            progress?: string | null;
             progressDetail?: components["schemas"]["ProgressDetail"];
+        };
+        /** @description DeviceInfo represents a device that can be used by a container.
+         *      */
+        DeviceInfo: {
+            /**
+             * @description The origin device driver.
+             *
+             * @example cdi
+             */
+            Source?: string;
+            /**
+             * @description The unique identifier for the device within its source driver.
+             *     For CDI devices, this would be an FQDN like "vendor.com/gpu=0".
+             *
+             * @example vendor.com/gpu=0
+             */
+            ID?: string;
         };
         ErrorDetail: {
             code?: number;
@@ -4466,7 +4475,7 @@ export interface components {
             message: string;
         };
         /** @description Response to an API call that returns just an Id */
-        IdResponse: {
+        IDResponse: {
             /** @description The id of the newly created object. */
             Id: string;
         };
@@ -4489,6 +4498,28 @@ export interface components {
              *       "server_y"
              *     ] */
             Aliases?: string[];
+            /**
+             * @description DriverOpts is a mapping of driver options and values. These options
+             *     are passed directly to the driver and are driver specific.
+             *
+             * @example {
+             *       "com.example.some-label": "some-value",
+             *       "com.example.some-other-label": "some-other-value"
+             *     }
+             */
+            DriverOpts?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Format: int64
+             * @description This property determines which endpoint will provide the default
+             *     gateway for a container. The endpoint with the highest priority will
+             *     be used. If multiple endpoints have the same priority, endpoints are
+             *     lexicographically sorted based on their network name, and the one
+             *     that sorts first is picked.
+             *
+             */
+            GwPriority?: number;
             /**
              * @description Unique ID of the network.
              *
@@ -4538,18 +4569,6 @@ export interface components {
              * @example 64
              */
             GlobalIPv6PrefixLen?: number;
-            /**
-             * @description DriverOpts is a mapping of driver options and values. These options
-             *     are passed directly to the driver and are driver specific.
-             *
-             * @example {
-             *       "com.example.some-label": "some-value",
-             *       "com.example.some-other-label": "some-other-value"
-             *     }
-             */
-            DriverOpts?: {
-                [key: string]: string;
-            } | null;
             /**
              * @description List of all DNS names an endpoint has on a specific network. This
              *     list is based on the container name, network aliases, container short
@@ -5454,6 +5473,14 @@ export interface components {
                      *      */
                     SecretName?: string;
                 }[];
+                /**
+                 * Format: int64
+                 * @description An integer value containing the score given to the container in
+                 *     order to tune OOM killer preferences.
+                 *
+                 * @example 0
+                 */
+                OomScoreAdj?: number;
                 /** @description Configs contains references to zero or more configs that will be
                  *     exposed to the service.
                  *      */
@@ -5503,7 +5530,7 @@ export interface components {
                  *
                  * @enum {string}
                  */
-                Isolation?: "default" | "process" | "hyperv";
+                Isolation?: "default" | "process" | "hyperv" | "";
                 /** @description Run an init inside the container that forwards signals and reaps
                  *     processes. This field is omitted if empty, and the default (as
                  *     configured on the daemon) is used.
@@ -5620,7 +5647,7 @@ export interface components {
                  *     `node.platform.os`   | Node operating system          | `node.platform.os==windows`
                  *     `node.platform.arch` | Node architecture              | `node.platform.arch==x86_64`
                  *     `node.labels`        | User-defined node labels       | `node.labels.security==high`
-                 *     `engine.labels`      | Docker Engine's labels         | `engine.labels.operatingsystem==ubuntu-14.04`
+                 *     `engine.labels`      | Docker Engine's labels         | `engine.labels.operatingsystem==ubuntu-24.04`
                  *
                  *     `engine.labels` apply to Docker Engine labels like operating system,
                  *     drivers, etc. Swarm administrators add `node.labels` for operational
@@ -6209,51 +6236,282 @@ export interface components {
             /** @description Optional warning messages */
             Warnings?: string[];
         };
-        ContainerSummary: {
-            /** @description The ID of this container */
-            Id?: string;
-            /** @description The names that this container has been given */
-            Names?: string[];
-            /** @description The name of the image used when creating this container */
+        /** ContainerInspectResponse */
+        ContainerInspectResponse: {
+            /**
+             * @description The ID of this container as a 128-bit (64-character) hexadecimal string (32 bytes).
+             * @example aa86eacfb3b3ed4cd362c1e88fc89a53908ad05fb3a4103bca3f9b28292d14bf
+             */
+            Id: string;
+            /**
+             * Format: dateTime
+             * @description Date and time at which the container was created, formatted in
+             *     [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.
+             * @example 2025-02-17T17:43:39.64001363Z
+             */
+            Created?: string | null;
+            /**
+             * @description The path to the command being run
+             * @example /bin/sh
+             */
+            Path?: string;
+            /**
+             * @description The arguments to the command being run
+             * @example [
+             *       "-c",
+             *       "exit 9"
+             *     ]
+             */
+            Args?: string[];
+            State?: components["schemas"]["ContainerState"];
+            /**
+             * @description The ID (digest) of the image that this container was created from.
+             * @example sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782
+             */
             Image?: string;
-            /** @description The ID of the image that this container was created from */
+            /**
+             * @description Location of the `/etc/resolv.conf` generated for the container on the
+             *     host.
+             *
+             *     This file is managed through the docker daemon, and should not be
+             *     accessed or modified by other tools.
+             * @example /var/lib/docker/containers/aa86eacfb3b3ed4cd362c1e88fc89a53908ad05fb3a4103bca3f9b28292d14bf/resolv.conf
+             */
+            ResolvConfPath?: string;
+            /**
+             * @description Location of the `/etc/hostname` generated for the container on the
+             *     host.
+             *
+             *     This file is managed through the docker daemon, and should not be
+             *     accessed or modified by other tools.
+             * @example /var/lib/docker/containers/aa86eacfb3b3ed4cd362c1e88fc89a53908ad05fb3a4103bca3f9b28292d14bf/hostname
+             */
+            HostnamePath?: string;
+            /**
+             * @description Location of the `/etc/hosts` generated for the container on the
+             *     host.
+             *
+             *     This file is managed through the docker daemon, and should not be
+             *     accessed or modified by other tools.
+             * @example /var/lib/docker/containers/aa86eacfb3b3ed4cd362c1e88fc89a53908ad05fb3a4103bca3f9b28292d14bf/hosts
+             */
+            HostsPath?: string;
+            /**
+             * @description Location of the file used to buffer the container's logs. Depending on
+             *     the logging-driver used for the container, this field may be omitted.
+             *
+             *     This file is managed through the docker daemon, and should not be
+             *     accessed or modified by other tools.
+             * @example /var/lib/docker/containers/5b7c7e2b992aa426584ce6c47452756066be0e503a08b4516a433a54d2f69e59/5b7c7e2b992aa426584ce6c47452756066be0e503a08b4516a433a54d2f69e59-json.log
+             */
+            LogPath?: string | null;
+            /**
+             * @description The name associated with this container.
+             *
+             *     For historic reasons, the name may be prefixed with a forward-slash (`/`).
+             * @example /funny_chatelet
+             */
+            Name?: string;
+            /**
+             * @description Number of times the container was restarted since it was created,
+             *     or since daemon was started.
+             * @example 0
+             */
+            RestartCount?: number;
+            /**
+             * @description The storage-driver used for the container's filesystem (graph-driver
+             *     or snapshotter).
+             * @example overlayfs
+             */
+            Driver?: string;
+            /**
+             * @description The platform (operating system) for which the container was created.
+             *
+             *     This field was introduced for the experimental "LCOW" (Linux Containers
+             *     On Windows) features, which has been removed. In most cases, this field
+             *     is equal to the host's operating system (`linux` or `windows`).
+             * @example linux
+             */
+            Platform?: string;
+            ImageManifestDescriptor?: components["schemas"]["OCIDescriptor"];
+            /**
+             * @description SELinux mount label set for the container.
+             * @example
+             */
+            MountLabel?: string;
+            /**
+             * @description SELinux process label set for the container.
+             * @example
+             */
+            ProcessLabel?: string;
+            /**
+             * @description The AppArmor profile set for the container.
+             * @example
+             */
+            AppArmorProfile?: string;
+            /**
+             * @description IDs of exec instances that are running in the container.
+             * @example [
+             *       "b35395de42bc8abd327f9dd65d913b9ba28c74d2f0734eeeae84fa1c616a0fca",
+             *       "3fc1232e5cd20c8de182ed81178503dc6437f4e7ef12b52cc5e8de020652f1c4"
+             *     ]
+             */
+            ExecIDs?: string[] | null;
+            HostConfig?: components["schemas"]["HostConfig"];
+            GraphDriver?: components["schemas"]["DriverData"];
+            /**
+             * Format: int64
+             * @description The size of files that have been created or changed by this container.
+             *
+             *     This field is omitted by default, and only set when size is requested
+             *     in the API request.
+             * @example 122880
+             */
+            SizeRw?: number | null;
+            /**
+             * Format: int64
+             * @description The total size of all files in the read-only layers from the image
+             *     that the container uses. These layers can be shared between containers.
+             *
+             *     This field is omitted by default, and only set when size is requested
+             *     in the API request.
+             * @example 1653948416
+             */
+            SizeRootFs?: number | null;
+            /** @description List of mounts used by the container. */
+            Mounts?: components["schemas"]["MountPoint"][];
+            Config?: components["schemas"]["ContainerConfig"];
+            NetworkSettings?: components["schemas"]["NetworkSettings"];
+        };
+        ContainerSummary: {
+            /**
+             * @description The ID of this container as a 128-bit (64-character) hexadecimal string (32 bytes).
+             * @example aa86eacfb3b3ed4cd362c1e88fc89a53908ad05fb3a4103bca3f9b28292d14bf
+             */
+            Id: string;
+            /**
+             * @description The names associated with this container. Most containers have a single
+             *     name, but when using legacy "links", the container can have multiple
+             *     names.
+             *
+             *     For historic reasons, names are prefixed with a forward-slash (`/`).
+             * @example [
+             *       "/funny_chatelet"
+             *     ]
+             */
+            Names?: string[];
+            /**
+             * @description The name or ID of the image used to create the container.
+             *
+             *     This field shows the image reference as was specified when creating the container,
+             *     which can be in its canonical form (e.g., `docker.io/library/ubuntu:latest`
+             *     or `docker.io/library/ubuntu@sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782`),
+             *     short form (e.g., `ubuntu:latest`)), or the ID(-prefix) of the image (e.g., `72297848456d`).
+             *
+             *     The content of this field can be updated at runtime if the image used to
+             *     create the container is untagged, in which case the field is updated to
+             *     contain the the image ID (digest) it was resolved to in its canonical,
+             *     non-truncated form (e.g., `sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782`).
+             * @example docker.io/library/ubuntu:latest
+             */
+            Image?: string;
+            /**
+             * @description The ID (digest) of the image that this container was created from.
+             * @example sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782
+             */
             ImageID?: string;
-            /** @description Command to run when starting the container */
+            ImageManifestDescriptor?: components["schemas"]["OCIDescriptor"];
+            /**
+             * @description Command to run when starting the container
+             * @example /bin/bash
+             */
             Command?: string;
             /**
              * Format: int64
-             * @description When the container was created
+             * @description Date and time at which the container was created as a Unix timestamp
+             *     (number of seconds since EPOCH).
+             * @example 1739811096
              */
             Created?: number;
-            /** @description The ports exposed by this container */
+            /** @description Port-mappings for the container. */
             Ports?: components["schemas"]["Port"][];
             /**
              * Format: int64
-             * @description The size of files that have been created or changed by this container
+             * @description The size of files that have been created or changed by this container.
+             *
+             *     This field is omitted by default, and only set when size is requested
+             *     in the API request.
+             * @example 122880
              */
-            SizeRw?: number;
+            SizeRw?: number | null;
             /**
              * Format: int64
-             * @description The total size of all the files in this container
+             * @description The total size of all files in the read-only layers from the image
+             *     that the container uses. These layers can be shared between containers.
+             *
+             *     This field is omitted by default, and only set when size is requested
+             *     in the API request.
+             * @example 1653948416
              */
-            SizeRootFs?: number;
-            /** @description User-defined key/value metadata. */
+            SizeRootFs?: number | null;
+            /**
+             * @description User-defined key/value metadata.
+             * @example {
+             *       "com.example.vendor": "Acme",
+             *       "com.example.license": "GPL",
+             *       "com.example.version": "1.0"
+             *     }
+             */
             Labels?: {
                 [key: string]: string;
             };
-            /** @description The state of this container (e.g. `Exited`) */
-            State?: string;
-            /** @description Additional human-readable status of this container (e.g. `Exit 0`) */
+            /**
+             * @description The state of this container.
+             *
+             * @example running
+             * @enum {string}
+             */
+            State?: "created" | "running" | "paused" | "restarting" | "exited" | "removing" | "dead";
+            /**
+             * @description Additional human-readable status of this container (e.g. `Exit 0`)
+             * @example Up 4 days
+             */
             Status?: string;
+            /** @description Summary of host-specific runtime information of the container. This
+             *     is a reduced set of information in the container's "HostConfig" as
+             *     available in the container "inspect" response. */
             HostConfig?: {
+                /**
+                 * @description Networking mode (`host`, `none`, `container:<id>`) or name of the
+                 *     primary network the container is using.
+                 *
+                 *     This field is primarily for backward compatibility. The container
+                 *     can be connected to multiple networks for which information can be
+                 *     found in the `NetworkSettings.Networks` field, which enumerates
+                 *     settings per network.
+                 * @example mynetwork
+                 */
                 NetworkMode?: string;
+                /**
+                 * @description Arbitrary key-value metadata attached to the container.
+                 * @example {
+                 *       "io.kubernetes.docker.type": "container",
+                 *       "io.kubernetes.sandbox.id": "3befe639bed0fd6afdd65fd1fa84506756f59360ec4adc270b0fdac9be22b4d3"
+                 *     }
+                 */
+                Annotations?: {
+                    [key: string]: string;
+                } | null;
             };
-            /** @description A summary of the container's network settings */
+            /** @description Summary of the container's network settings */
             NetworkSettings?: {
+                /** @description Summary of network-settings for each network the container is
+                 *     attached to. */
                 Networks?: {
                     [key: string]: components["schemas"]["EndpointSettings"];
                 };
             };
+            /** @description List of mounts used by the container. */
             Mounts?: components["schemas"]["MountPoint"][];
         };
         /** @description Driver represents a driver (network, logging, secrets). */
@@ -6288,8 +6546,11 @@ export interface components {
                 [key: string]: string;
             };
             /**
-             * @description Base64-url-safe-encoded ([RFC 4648](https://tools.ietf.org/html/rfc4648#section-5))
-             *     data to store as secret.
+             * @description Data is the data to store as a secret, formatted as a Base64-url-safe-encoded
+             *     ([RFC 4648](https://tools.ietf.org/html/rfc4648#section-5)) string.
+             *     It must be empty if the Driver field is set, in which case the data is
+             *     loaded from an external secret store. The maximum allowed size is 500KB,
+             *     as defined in [MaxSecretSize](https://pkg.go.dev/github.com/moby/swarmkit/v2@v2.0.0-20250103191802-8c1959736554/api/validation#MaxSecretSize).
              *
              *     This field is only used to _create_ a secret, and is not returned by
              *     other endpoints.
@@ -6323,8 +6584,9 @@ export interface components {
             Labels?: {
                 [key: string]: string;
             };
-            /** @description Base64-url-safe-encoded ([RFC 4648](https://tools.ietf.org/html/rfc4648#section-5))
-             *     config data.
+            /** @description Data is the data to store as a config, formatted as a Base64-url-safe-encoded
+             *     ([RFC 4648](https://tools.ietf.org/html/rfc4648#section-5)) string.
+             *     The maximum allowed size is 1000KB, as defined in [MaxConfigSize](https://pkg.go.dev/github.com/moby/swarmkit/v2@v2.0.0-20250103191802-8c1959736554/manager/controlapi#MaxConfigSize).
              *      */
             Data?: string;
             Templating?: components["schemas"]["Driver"];
@@ -6424,6 +6686,532 @@ export interface components {
             Warnings: string[];
         };
         /**
+         * ContainerUpdateResponse
+         * @description Response for a successful container-update.
+         */
+        ContainerUpdateResponse: {
+            /**
+             * @description Warnings encountered when updating the container.
+             * @example [
+             *       "Published ports are discarded when using host network mode"
+             *     ]
+             */
+            Warnings?: string[];
+        };
+        /**
+         * ContainerStatsResponse
+         * @description Statistics sample for a container.
+         *
+         */
+        ContainerStatsResponse: {
+            /**
+             * @description Name of the container
+             * @example boring_wozniak
+             */
+            name?: string | null;
+            /**
+             * @description ID of the container
+             * @example ede54ee1afda366ab42f824e8a5ffd195155d853ceaec74a927f249ea270c743
+             */
+            id?: string | null;
+            /**
+             * Format: date-time
+             * @description Date and time at which this sample was collected.
+             *     The value is formatted as [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt)
+             *     with nano-seconds.
+             *
+             * @example 2025-01-16T13:55:22.165243637Z
+             */
+            read?: string;
+            /**
+             * Format: date-time
+             * @description Date and time at which this first sample was collected. This field
+             *     is not propagated if the "one-shot" option is set. If the "one-shot"
+             *     option is set, this field may be omitted, empty, or set to a default
+             *     date (`0001-01-01T00:00:00Z`).
+             *
+             *     The value is formatted as [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt)
+             *     with nano-seconds.
+             *
+             * @example 2025-01-16T13:55:21.160452595Z
+             */
+            preread?: string;
+            pids_stats?: components["schemas"]["ContainerPidsStats"];
+            blkio_stats?: components["schemas"]["ContainerBlkioStats"];
+            /**
+             * Format: uint32
+             * @description The number of processors on the system.
+             *
+             *     This field is Windows-specific and always zero for Linux containers.
+             *
+             * @example 16
+             */
+            num_procs?: number;
+            storage_stats?: components["schemas"]["ContainerStorageStats"];
+            cpu_stats?: components["schemas"]["ContainerCPUStats"];
+            precpu_stats?: components["schemas"]["ContainerCPUStats"];
+            memory_stats?: components["schemas"]["ContainerMemoryStats"];
+            /**
+             * @description Network statistics for the container per interface.
+             *
+             *     This field is omitted if the container has no networking enabled.
+             *
+             * @example
+             */
+            networks?: Record<string, never> | null;
+        };
+        /**
+         * @description BlkioStats stores all IO service stats for data read and write.
+         *
+         *     This type is Linux-specific and holds many fields that are specific to cgroups v1.
+         *     On a cgroup v2 host, all fields other than `io_service_bytes_recursive`
+         *     are omitted or `null`.
+         *
+         *     This type is only populated on Linux and omitted for Windows containers.
+         *
+         * @example {
+         *       "io_service_bytes_recursive": [
+         *         {
+         *           "major": 254,
+         *           "minor": 0,
+         *           "op": "read",
+         *           "value": 7593984
+         *         },
+         *         {
+         *           "major": 254,
+         *           "minor": 0,
+         *           "op": "write",
+         *           "value": 100
+         *         }
+         *       ]
+         *     }
+         */
+        ContainerBlkioStats: {
+            io_service_bytes_recursive?: components["schemas"]["ContainerBlkioStatEntry"][];
+            /** @description This field is only available when using Linux containers with
+             *     cgroups v1. It is omitted or `null` when using cgroups v2.
+             *      */
+            io_serviced_recursive?: components["schemas"]["ContainerBlkioStatEntry"][] | null;
+            /** @description This field is only available when using Linux containers with
+             *     cgroups v1. It is omitted or `null` when using cgroups v2.
+             *      */
+            io_queue_recursive?: components["schemas"]["ContainerBlkioStatEntry"][] | null;
+            /** @description This field is only available when using Linux containers with
+             *     cgroups v1. It is omitted or `null` when using cgroups v2.
+             *      */
+            io_service_time_recursive?: components["schemas"]["ContainerBlkioStatEntry"][] | null;
+            /** @description This field is only available when using Linux containers with
+             *     cgroups v1. It is omitted or `null` when using cgroups v2.
+             *      */
+            io_wait_time_recursive?: components["schemas"]["ContainerBlkioStatEntry"][] | null;
+            /** @description This field is only available when using Linux containers with
+             *     cgroups v1. It is omitted or `null` when using cgroups v2.
+             *      */
+            io_merged_recursive?: components["schemas"]["ContainerBlkioStatEntry"][] | null;
+            /** @description This field is only available when using Linux containers with
+             *     cgroups v1. It is omitted or `null` when using cgroups v2.
+             *      */
+            io_time_recursive?: components["schemas"]["ContainerBlkioStatEntry"][] | null;
+            /** @description This field is only available when using Linux containers with
+             *     cgroups v1. It is omitted or `null` when using cgroups v2.
+             *      */
+            sectors_recursive?: components["schemas"]["ContainerBlkioStatEntry"][] | null;
+        } | null;
+        /** @description Blkio stats entry.
+         *
+         *     This type is Linux-specific and omitted for Windows containers.
+         *      */
+        ContainerBlkioStatEntry: {
+            /**
+             * Format: uint64
+             * @example 254
+             */
+            major?: number;
+            /**
+             * Format: uint64
+             * @example 0
+             */
+            minor?: number;
+            /** @example read */
+            op?: string;
+            /**
+             * Format: uint64
+             * @example 7593984
+             */
+            value?: number;
+        } | null;
+        /** @description CPU related info of the container
+         *      */
+        ContainerCPUStats: {
+            cpu_usage?: components["schemas"]["ContainerCPUUsage"];
+            /**
+             * Format: uint64
+             * @description System Usage.
+             *
+             *     This field is Linux-specific and omitted for Windows containers.
+             *
+             * @example 5
+             */
+            system_cpu_usage?: number | null;
+            /**
+             * Format: uint32
+             * @description Number of online CPUs.
+             *
+             *     This field is Linux-specific and omitted for Windows containers.
+             *
+             * @example 5
+             */
+            online_cpus?: number | null;
+            throttling_data?: components["schemas"]["ContainerThrottlingData"];
+        } | null;
+        /** @description All CPU stats aggregated since container inception.
+         *      */
+        ContainerCPUUsage: {
+            /**
+             * Format: uint64
+             * @description Total CPU time consumed in nanoseconds (Linux) or 100's of nanoseconds (Windows).
+             *
+             * @example 29912000
+             */
+            total_usage?: number;
+            /** @description Total CPU time (in nanoseconds) consumed per core (Linux).
+             *
+             *     This field is Linux-specific when using cgroups v1. It is omitted
+             *     when using cgroups v2 and Windows containers.
+             *      */
+            percpu_usage?: number[] | null;
+            /**
+             * Format: uint64
+             * @description Time (in nanoseconds) spent by tasks of the cgroup in kernel mode (Linux),
+             *     or time spent (in 100's of nanoseconds) by all container processes in
+             *     kernel mode (Windows).
+             *
+             *     Not populated for Windows containers using Hyper-V isolation.
+             *
+             * @example 21994000
+             */
+            usage_in_kernelmode?: number;
+            /**
+             * Format: uint64
+             * @description Time (in nanoseconds) spent by tasks of the cgroup in user mode (Linux),
+             *     or time spent (in 100's of nanoseconds) by all container processes in
+             *     kernel mode (Windows).
+             *
+             *     Not populated for Windows containers using Hyper-V isolation.
+             *
+             * @example 7918000
+             */
+            usage_in_usermode?: number;
+        } | null;
+        /** @description PidsStats contains Linux-specific stats of a container's process-IDs (PIDs).
+         *
+         *     This type is Linux-specific and omitted for Windows containers.
+         *      */
+        ContainerPidsStats: {
+            /**
+             * Format: uint64
+             * @description Current is the number of PIDs in the cgroup.
+             *
+             * @example 5
+             */
+            current?: number | null;
+            /**
+             * Format: uint64
+             * @description Limit is the hard limit on the number of pids in the cgroup.
+             *     A "Limit" of 0 means that there is no limit.
+             *
+             */
+            limit?: number | null;
+        } | null;
+        /** @description CPU throttling stats of the container.
+         *
+         *     This type is Linux-specific and omitted for Windows containers.
+         *      */
+        ContainerThrottlingData: {
+            /**
+             * Format: uint64
+             * @description Number of periods with throttling active.
+             *
+             * @example 0
+             */
+            periods?: number;
+            /**
+             * Format: uint64
+             * @description Number of periods when the container hit its throttling limit.
+             *
+             * @example 0
+             */
+            throttled_periods?: number;
+            /**
+             * Format: uint64
+             * @description Aggregated time (in nanoseconds) the container was throttled for.
+             *
+             * @example 0
+             */
+            throttled_time?: number;
+        } | null;
+        /** @description Aggregates all memory stats since container inception on Linux.
+         *     Windows returns stats for commit and private working set only.
+         *      */
+        ContainerMemoryStats: {
+            /**
+             * Format: uint64
+             * @description Current `res_counter` usage for memory.
+             *
+             *     This field is Linux-specific and omitted for Windows containers.
+             *
+             * @example 0
+             */
+            usage?: number | null;
+            /**
+             * Format: uint64
+             * @description Maximum usage ever recorded.
+             *
+             *     This field is Linux-specific and only supported on cgroups v1.
+             *     It is omitted when using cgroups v2 and for Windows containers.
+             *
+             * @example 0
+             */
+            max_usage?: number | null;
+            /**
+             * @description All the stats exported via memory.stat. when using cgroups v2.
+             *
+             *     This field is Linux-specific and omitted for Windows containers.
+             *
+             * @example {
+             *       "active_anon": 1572864,
+             *       "active_file": 5115904,
+             *       "anon": 1572864,
+             *       "anon_thp": 0,
+             *       "file": 7626752,
+             *       "file_dirty": 0,
+             *       "file_mapped": 2723840,
+             *       "file_writeback": 0,
+             *       "inactive_anon": 0,
+             *       "inactive_file": 2510848,
+             *       "kernel_stack": 16384,
+             *       "pgactivate": 0,
+             *       "pgdeactivate": 0,
+             *       "pgfault": 2042,
+             *       "pglazyfree": 0,
+             *       "pglazyfreed": 0,
+             *       "pgmajfault": 45,
+             *       "pgrefill": 0,
+             *       "pgscan": 0,
+             *       "pgsteal": 0,
+             *       "shmem": 0,
+             *       "slab": 1180928,
+             *       "slab_reclaimable": 725576,
+             *       "slab_unreclaimable": 455352,
+             *       "sock": 0,
+             *       "thp_collapse_alloc": 0,
+             *       "thp_fault_alloc": 1,
+             *       "unevictable": 0,
+             *       "workingset_activate": 0,
+             *       "workingset_nodereclaim": 0,
+             *       "workingset_refault": 0
+             *     }
+             */
+            stats?: {
+                [key: string]: number | null;
+            };
+            /**
+             * Format: uint64
+             * @description Number of times memory usage hits limits.
+             *
+             *     This field is Linux-specific and only supported on cgroups v1.
+             *     It is omitted when using cgroups v2 and for Windows containers.
+             *
+             * @example 0
+             */
+            failcnt?: number | null;
+            /**
+             * Format: uint64
+             * @description This field is Linux-specific and omitted for Windows containers.
+             *
+             * @example 8217579520
+             */
+            limit?: number | null;
+            /**
+             * Format: uint64
+             * @description Committed bytes.
+             *
+             *     This field is Windows-specific and omitted for Linux containers.
+             *
+             * @example 0
+             */
+            commitbytes?: number | null;
+            /**
+             * Format: uint64
+             * @description Peak committed bytes.
+             *
+             *     This field is Windows-specific and omitted for Linux containers.
+             *
+             * @example 0
+             */
+            commitpeakbytes?: number | null;
+            /**
+             * Format: uint64
+             * @description Private working set.
+             *
+             *     This field is Windows-specific and omitted for Linux containers.
+             *
+             * @example 0
+             */
+            privateworkingset?: number | null;
+        };
+        /** @description Aggregates the network stats of one container
+         *      */
+        ContainerNetworkStats: {
+            /**
+             * Format: uint64
+             * @description Bytes received. Windows and Linux.
+             *
+             * @example 5338
+             */
+            rx_bytes?: number;
+            /**
+             * Format: uint64
+             * @description Packets received. Windows and Linux.
+             *
+             * @example 36
+             */
+            rx_packets?: number;
+            /**
+             * Format: uint64
+             * @description Received errors. Not used on Windows.
+             *
+             *     This field is Linux-specific and always zero for Windows containers.
+             *
+             * @example 0
+             */
+            rx_errors?: number;
+            /**
+             * Format: uint64
+             * @description Incoming packets dropped. Windows and Linux.
+             *
+             * @example 0
+             */
+            rx_dropped?: number;
+            /**
+             * Format: uint64
+             * @description Bytes sent. Windows and Linux.
+             *
+             * @example 1200
+             */
+            tx_bytes?: number;
+            /**
+             * Format: uint64
+             * @description Packets sent. Windows and Linux.
+             *
+             * @example 12
+             */
+            tx_packets?: number;
+            /**
+             * Format: uint64
+             * @description Sent errors. Not used on Windows.
+             *
+             *     This field is Linux-specific and always zero for Windows containers.
+             *
+             * @example 0
+             */
+            tx_errors?: number;
+            /**
+             * Format: uint64
+             * @description Outgoing packets dropped. Windows and Linux.
+             *
+             * @example 0
+             */
+            tx_dropped?: number;
+            /** @description Endpoint ID. Not used on Linux.
+             *
+             *     This field is Windows-specific and omitted for Linux containers.
+             *      */
+            endpoint_id?: string | null;
+            /** @description Instance ID. Not used on Linux.
+             *
+             *     This field is Windows-specific and omitted for Linux containers.
+             *      */
+            instance_id?: string | null;
+        } | null;
+        /** @description StorageStats is the disk I/O stats for read/write on Windows.
+         *
+         *     This type is Windows-specific and omitted for Linux containers.
+         *      */
+        ContainerStorageStats: {
+            /**
+             * Format: uint64
+             * @example 7593984
+             */
+            read_count_normalized?: number | null;
+            /**
+             * Format: uint64
+             * @example 7593984
+             */
+            read_size_bytes?: number | null;
+            /**
+             * Format: uint64
+             * @example 7593984
+             */
+            write_count_normalized?: number | null;
+            /**
+             * Format: uint64
+             * @example 7593984
+             */
+            write_size_bytes?: number | null;
+        } | null;
+        /**
+         * ContainerTopResponse
+         * @description Container "top" response.
+         */
+        ContainerTopResponse: {
+            /**
+             * @description The ps column titles
+             * @example {
+             *       "Titles": [
+             *         "UID",
+             *         "PID",
+             *         "PPID",
+             *         "C",
+             *         "STIME",
+             *         "TTY",
+             *         "TIME",
+             *         "CMD"
+             *       ]
+             *     }
+             */
+            Titles?: string[];
+            /**
+             * @description Each process running in the container, where each process
+             *     is an array of values corresponding to the titles.
+             * @example {
+             *       "Processes": [
+             *         [
+             *           "root",
+             *           "13642",
+             *           "882",
+             *           "0",
+             *           "17:03",
+             *           "pts/0",
+             *           "00:00:00",
+             *           "/bin/bash"
+             *         ],
+             *         [
+             *           "root",
+             *           "13735",
+             *           "13642",
+             *           "0",
+             *           "17:06",
+             *           "pts/0",
+             *           "00:00:00",
+             *           "sleep 10"
+             *         ]
+             *       ]
+             *     }
+             */
+            Processes?: string[][];
+        };
+        /**
          * ContainerWaitResponse
          * @description OK response to ContainerWait operation
          */
@@ -6458,7 +7246,7 @@ export interface components {
                 /**
                  * @description Version of the component
                  *
-                 * @example 19.03.12
+                 * @example 27.0.1
                  */
                 Version: string;
                 /** @description Key/value pairs of strings with additional information about the
@@ -6468,23 +7256,23 @@ export interface components {
                  *
                  *     These messages can be printed by the client as information to the user.
                  *      */
-                Details?: Record<string, never>;
+                Details?: Record<string, never> | null;
             }[];
             /**
              * @description The version of the daemon
-             * @example 19.03.12
+             * @example 27.0.1
              */
             Version?: string;
             /**
              * @description The default (and highest) API version that is supported by the daemon
              *
-             * @example 1.40
+             * @example 1.47
              */
             ApiVersion?: string;
             /**
              * @description The minimum API version that is supported by the daemon
              *
-             * @example 1.12
+             * @example 1.24
              */
             MinAPIVersion?: string;
             /**
@@ -6497,7 +7285,7 @@ export interface components {
              * @description The version Go used to compile the daemon, and the version of the Go
              *     runtime in use.
              *
-             * @example go1.13.14
+             * @example go1.22.7
              */
             GoVersion?: string;
             /**
@@ -6517,7 +7305,7 @@ export interface components {
              *
              *     This field is omitted when empty.
              *
-             * @example 4.19.76-linuxkit
+             * @example 6.8.0-31-generic
              */
             KernelVersion?: string;
             /**
@@ -6684,13 +7472,28 @@ export interface components {
              */
             IPv4Forwarding?: boolean;
             /**
-             * @description Indicates if `bridge-nf-call-iptables` is available on the host.
-             * @example true
+             * @description Indicates if `bridge-nf-call-iptables` is available on the host when
+             *     the daemon was started.
+             *
+             *     <p><br /></p>
+             *
+             *     > **Deprecated**: netfilter module is now loaded on-demand and no longer
+             *     > during daemon startup, making this field obsolete. This field is always
+             *     > `false` and will be removed in a API v1.49.
+             *
+             * @example false
              */
             BridgeNfIptables?: boolean;
             /**
              * @description Indicates if `bridge-nf-call-ip6tables` is available on the host.
-             * @example true
+             *
+             *     <p><br /></p>
+             *
+             *     > **Deprecated**: netfilter module is now loaded on-demand, and no longer
+             *     > during daemon startup, making this field obsolete. This field is always
+             *     > `false` and will be removed in a API v1.49.
+             *
+             * @example false
              */
             BridgeNfIp6tables?: boolean;
             /**
@@ -6754,14 +7557,14 @@ export interface components {
              *     information is queried from the <kbd>HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\</kbd>
              *     registry value, for example _"10.0 14393 (14393.1198.amd64fre.rs1_release_sec.170427-1353)"_.
              *
-             * @example 4.9.38-moby
+             * @example 6.8.0-31-generic
              */
             KernelVersion?: string;
             /**
-             * @description Name of the host's operating system, for example: "Ubuntu 16.04.2 LTS"
+             * @description Name of the host's operating system, for example: "Ubuntu 24.04 LTS"
              *     or "Windows Server 2016 Datacenter"
              *
-             * @example Alpine Linux v3.5
+             * @example Ubuntu 24.04 LTS
              */
             OperatingSystem?: string;
             /**
@@ -6773,7 +7576,7 @@ export interface components {
              *     > very existence, and the formatting of values, should not be considered
              *     > stable, and may change without notice.
              *
-             * @example 16.04
+             * @example 24.04
              */
             OSVersion?: string;
             /**
@@ -6885,7 +7688,7 @@ export interface components {
             /**
              * @description Version string of the daemon.
              *
-             * @example 24.0.2
+             * @example 27.0.1
              */
             ServerVersion?: string;
             /**
@@ -6951,7 +7754,7 @@ export interface components {
              * @default default
              * @enum {string}
              */
-            Isolation: "default" | "hyperv" | "process";
+            Isolation: "default" | "hyperv" | "process" | "";
             /**
              * @description Name and, optional, path of the `docker-init` binary.
              *
@@ -7009,6 +7812,13 @@ export interface components {
                  */
                 Size?: number;
             }[];
+            FirewallBackend?: components["schemas"]["FirewallInfo"];
+            /** @description List of devices discovered by device drivers.
+             *
+             *     Each device includes information about its source driver, kind, name,
+             *     and additional driver-specific attributes.
+             *      */
+            DiscoveredDevices?: components["schemas"]["DeviceInfo"][];
             /**
              * @description List of warnings / informational messages about missing features, or
              *     issues related to the daemon configuration.
@@ -7016,9 +7826,7 @@ export interface components {
              *     These messages can be printed by the client as information to the user.
              *
              * @example [
-             *       "WARNING: No memory limit support",
-             *       "WARNING: bridge-nf-call-iptables is disabled",
-             *       "WARNING: bridge-nf-call-ip6tables is disabled"
+             *       "WARNING: No memory limit support"
              *     ]
              */
             Warnings?: string[];
@@ -7041,7 +7849,87 @@ export interface components {
              *     ]
              */
             CDISpecDirs?: string[];
+            Containerd?: components["schemas"]["ContainerdInfo"];
         };
+        /** @description Information for connecting to the containerd instance that is used by the daemon.
+         *     This is included for debugging purposes only.
+         *      */
+        ContainerdInfo: {
+            /**
+             * @description The address of the containerd socket.
+             * @example /run/containerd/containerd.sock
+             */
+            Address?: string;
+            /** @description The namespaces that the daemon uses for running containers and
+             *     plugins in containerd. These namespaces can be configured in the
+             *     daemon configuration, and are considered to be used exclusively
+             *     by the daemon, Tampering with the containerd instance may cause
+             *     unexpected behavior.
+             *
+             *     As these namespaces are considered to be exclusively accessed
+             *     by the daemon, it is not recommended to change these values,
+             *     or to change them to a value that is used by other systems,
+             *     such as cri-containerd.
+             *      */
+            Namespaces?: {
+                /**
+                 * @description The default containerd namespace used for containers managed
+                 *     by the daemon.
+                 *
+                 *     The default namespace for containers is "moby", but will be
+                 *     suffixed with the `<uid>.<gid>` of the remapped `root` if
+                 *     user-namespaces are enabled and the containerd image-store
+                 *     is used.
+                 *
+                 * @default moby
+                 * @example moby
+                 */
+                Containers: string;
+                /**
+                 * @description The default containerd namespace used for plugins managed by
+                 *     the daemon.
+                 *
+                 *     The default namespace for plugins is "plugins.moby", but will be
+                 *     suffixed with the `<uid>.<gid>` of the remapped `root` if
+                 *     user-namespaces are enabled and the containerd image-store
+                 *     is used.
+                 *
+                 * @default plugins.moby
+                 * @example plugins.moby
+                 */
+                Plugins: string;
+            };
+        } | null;
+        /** @description Information about the daemon's firewalling configuration.
+         *
+         *     This field is currently only used on Linux, and omitted on other platforms.
+         *      */
+        FirewallInfo: {
+            /**
+             * @description The name of the firewall backend driver.
+             *
+             * @example nftables
+             */
+            Driver?: string;
+            /**
+             * @description Information about the firewall backend, provided as
+             *     "label" / "value" pairs.
+             *
+             *     <p><br /></p>
+             *
+             *     > **Note**: The information returned in this field, including the
+             *     > formatting of values and labels, should not be considered stable,
+             *     > and may change without notice.
+             *
+             * @example [
+             *       [
+             *         "ReloadedAt",
+             *         "2025-01-01T00:00:00Z"
+             *       ]
+             *     ]
+             */
+            Info?: string[][];
+        } | null;
         /** @description Available plugins per type.
          *
          *     <p><br /></p>
@@ -7097,69 +7985,12 @@ export interface components {
          *      */
         RegistryServiceConfig: {
             /**
-             * @description List of IP ranges to which nondistributable artifacts can be pushed,
-             *     using the CIDR syntax [RFC 4632](https://tools.ietf.org/html/4632).
-             *
-             *     Some images (for example, Windows base images) contain artifacts
-             *     whose distribution is restricted by license. When these images are
-             *     pushed to a registry, restricted artifacts are not included.
-             *
-             *     This configuration override this behavior, and enables the daemon to
-             *     push nondistributable artifacts to all registries whose resolved IP
-             *     address is within the subnet described by the CIDR syntax.
-             *
-             *     This option is useful when pushing images containing
-             *     nondistributable artifacts to a registry on an air-gapped network so
-             *     hosts on that network can pull the images without connecting to
-             *     another server.
-             *
-             *     > **Warning**: Nondistributable artifacts typically have restrictions
-             *     > on how and where they can be distributed and shared. Only use this
-             *     > feature to push artifacts to private registries and ensure that you
-             *     > are in compliance with any terms that cover redistributing
-             *     > nondistributable artifacts.
-             *
-             * @example [
-             *       "::1/128",
-             *       "127.0.0.0/8"
-             *     ]
-             */
-            AllowNondistributableArtifactsCIDRs?: string[];
-            /**
-             * @description List of registry hostnames to which nondistributable artifacts can be
-             *     pushed, using the format `<hostname>[:<port>]` or `<IP address>[:<port>]`.
-             *
-             *     Some images (for example, Windows base images) contain artifacts
-             *     whose distribution is restricted by license. When these images are
-             *     pushed to a registry, restricted artifacts are not included.
-             *
-             *     This configuration override this behavior for the specified
-             *     registries.
-             *
-             *     This option is useful when pushing images containing
-             *     nondistributable artifacts to a registry on an air-gapped network so
-             *     hosts on that network can pull the images without connecting to
-             *     another server.
-             *
-             *     > **Warning**: Nondistributable artifacts typically have restrictions
-             *     > on how and where they can be distributed and shared. Only use this
-             *     > feature to push artifacts to private registries and ensure that you
-             *     > are in compliance with any terms that cover redistributing
-             *     > nondistributable artifacts.
-             *
-             * @example [
-             *       "registry.internal.corp.example.com:3000",
-             *       "[2001:db8:a0b:12f0::1]:443"
-             *     ]
-             */
-            AllowNondistributableArtifactsHostnames?: string[];
-            /**
              * @description List of IP ranges of insecure registries, using the CIDR syntax
              *     ([RFC 4632](https://tools.ietf.org/html/4632)). Insecure registries
              *     accept un-encrypted (HTTP) and/or untrusted (HTTPS with certificates
              *     from unknown CAs) communication.
              *
-             *     By default, local registries (`127.0.0.0/8`) are configured as
+             *     By default, local registries (`::1/128` and `127.0.0.0/8`) are configured as
              *     insecure. All other registries are secure. Communicating with an
              *     insecure registry is not possible if the daemon assumes that registry
              *     is secure.
@@ -7328,12 +8159,6 @@ export interface components {
              * @example cfb82a876ecc11b5ca0977d1733adbe58599088a
              */
             ID?: string;
-            /**
-             * @description Commit ID of external tool expected by dockerd as set at build time.
-             *
-             * @example 2d41c047c83e09a6d61d464906feb2a2f3c52aa4
-             */
-            Expected?: string;
         };
         /** @description Represents generic information about swarm.
          *      */
@@ -7488,7 +8313,7 @@ export interface components {
             /**
              * @description The media type of the object this schema refers to.
              *
-             * @example application/vnd.docker.distribution.manifest.v2+json
+             * @example application/vnd.oci.image.manifest.v1+json
              */
             mediaType?: string;
             /**
@@ -7501,9 +8326,40 @@ export interface components {
              * Format: int64
              * @description The size in bytes of the blob.
              *
-             * @example 3987495
+             * @example 424
              */
             size?: number;
+            /** @description List of URLs from which this object MAY be downloaded. */
+            urls?: string[] | null;
+            /**
+             * @description Arbitrary metadata relating to the targeted content.
+             * @example {
+             *       "com.docker.official-images.bashbrew.arch": "amd64",
+             *       "org.opencontainers.image.base.digest": "sha256:0d0ef5c914d3ea700147da1bd050c59edb8bb12ca312f3800b29d7c8087eabd8",
+             *       "org.opencontainers.image.base.name": "scratch",
+             *       "org.opencontainers.image.created": "2025-01-27T00:00:00Z",
+             *       "org.opencontainers.image.revision": "9fabb4bad5138435b01857e2fe9363e2dc5f6a79",
+             *       "org.opencontainers.image.source": "https://git.launchpad.net/cloud-images/+oci/ubuntu-base",
+             *       "org.opencontainers.image.url": "https://hub.docker.com/_/ubuntu",
+             *       "org.opencontainers.image.version": "24.04"
+             *     }
+             */
+            annotations?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * @description Data is an embedding of the targeted content. This is encoded as a base64
+             *     string when marshalled to JSON (automatically, by encoding/json). If
+             *     present, Data can be used directly to avoid fetching the targeted content.
+             * @example null
+             */
+            data?: string | null;
+            platform?: components["schemas"]["OCIPlatform"];
+            /**
+             * @description ArtifactType is the IANA media type of this artifact.
+             * @example null
+             */
+            artifactType?: string | null;
         };
         /** @description Describes the platform which the image in the manifest runs on, as defined
          *     in the [OCI Image Index Specification](https://github.com/opencontainers/image-spec/blob/v1.0.1/image-index.md).
@@ -7544,7 +8400,7 @@ export interface components {
              * @example v7
              */
             variant?: string;
-        };
+        } | null;
         /**
          * DistributionInspectResponse
          * @description Describes the result obtained from contacting the registry to retrieve
@@ -7749,6 +8605,102 @@ export interface components {
         Topology: {
             [key: string]: string;
         };
+        /** @description ImageManifestSummary represents a summary of an image manifest.
+         *      */
+        ImageManifestSummary: {
+            /**
+             * @description ID is the content-addressable ID of an image and is the same as the
+             *     digest of the image manifest.
+             *
+             * @example sha256:95869fbcf224d947ace8d61d0e931d49e31bb7fc67fffbbe9c3198c33aa8e93f
+             */
+            ID: string;
+            Descriptor: components["schemas"]["OCIDescriptor"];
+            /**
+             * @description Indicates whether all the child content (image config, layers) is fully available locally.
+             * @example true
+             */
+            Available: boolean;
+            Size: {
+                /**
+                 * Format: int64
+                 * @description Total is the total size (in bytes) of all the locally present
+                 *     data (both distributable and non-distributable) that's related to
+                 *     this manifest and its children.
+                 *     This equal to the sum of [Content] size AND all the sizes in the
+                 *     [Size] struct present in the Kind-specific data struct.
+                 *     For example, for an image kind (Kind == "image")
+                 *     this would include the size of the image content and unpacked
+                 *     image snapshots ([Size.Content] + [ImageData.Size.Unpacked]).
+                 *
+                 * @example 8213251
+                 */
+                Total: number;
+                /**
+                 * Format: int64
+                 * @description Content is the size (in bytes) of all the locally present
+                 *     content in the content store (e.g. image config, layers)
+                 *     referenced by this manifest and its children.
+                 *     This only includes blobs in the content store.
+                 *
+                 * @example 3987495
+                 */
+                Content: number;
+            };
+            /**
+             * @description The kind of the manifest.
+             *
+             *     kind         | description
+             *     -------------|-----------------------------------------------------------
+             *     image        | Image manifest that can be used to start a container.
+             *     attestation  | Attestation manifest produced by the Buildkit builder for a specific image manifest.
+             *
+             * @example image
+             * @enum {string}
+             */
+            Kind: "image" | "attestation" | "unknown";
+            /** @description The image data for the image manifest.
+             *     This field is only populated when Kind is "image".
+             *      */
+            ImageData?: {
+                Platform: components["schemas"]["OCIPlatform"];
+                /**
+                 * @description The IDs of the containers that are using this image.
+                 *
+                 * @example [
+                 *       "ede54ee1fda366ab42f824e8a5ffd195155d853ceaec74a927f249ea270c7430",
+                 *       "abadbce344c096744d8d6071a90d474d28af8f1034b5ea9fb03c3f4bfc6d005e"
+                 *     ]
+                 */
+                Containers: string[];
+                Size: {
+                    /**
+                     * Format: int64
+                     * @description Unpacked is the size (in bytes) of the locally unpacked
+                     *     (uncompressed) image content that's directly usable by the containers
+                     *     running this image.
+                     *     It's independent of the distributable content - e.g.
+                     *     the image might still have an unpacked data that's still used by
+                     *     some container even when the distributable/compressed content is
+                     *     already gone.
+                     *
+                     * @example 3987495
+                     */
+                    Unpacked: number;
+                };
+            } | null;
+            /** @description The image data for the attestation manifest.
+             *     This field is only populated when Kind is "attestation".
+             *      */
+            AttestationData?: {
+                /**
+                 * @description The digest of the image manifest that this attestation is for.
+                 *
+                 * @example sha256:95869fbcf224d947ace8d61d0e931d49e31bb7fc67fffbbe9c3198c33aa8e93f
+                 */
+                For: string;
+            } | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -7898,6 +8850,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such image: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -7942,49 +8897,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** @description The ID of the container */
-                        Id?: string;
-                        /** @description The time the container was created */
-                        Created?: string;
-                        /** @description The path to the command being run */
-                        Path?: string;
-                        /** @description The arguments to the command being run */
-                        Args?: string[];
-                        State?: components["schemas"]["ContainerState"];
-                        /** @description The container's image ID */
-                        Image?: string;
-                        ResolvConfPath?: string;
-                        HostnamePath?: string;
-                        HostsPath?: string;
-                        LogPath?: string;
-                        Name?: string;
-                        RestartCount?: number;
-                        Driver?: string;
-                        Platform?: string;
-                        MountLabel?: string;
-                        ProcessLabel?: string;
-                        AppArmorProfile?: string;
-                        /** @description IDs of exec instances that are running in the container. */
-                        ExecIDs?: string[] | null;
-                        HostConfig?: components["schemas"]["HostConfig"];
-                        GraphDriver?: components["schemas"]["GraphDriverData"];
-                        /**
-                         * Format: int64
-                         * @description The size of files that have been created or changed by this
-                         *     container.
-                         *
-                         */
-                        SizeRw?: number;
-                        /**
-                         * Format: int64
-                         * @description The total size of all the files in this container.
-                         */
-                        SizeRootFs?: number;
-                        Mounts?: components["schemas"]["MountPoint"][];
-                        Config?: components["schemas"]["ContainerConfig"];
-                        NetworkSettings?: components["schemas"]["NetworkSettings"];
-                    };
+                    "application/json": components["schemas"]["ContainerInspectResponse"];
                 };
             };
             /** @description no such container */
@@ -7993,6 +8906,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -8028,22 +8944,8 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** @description The ps column titles */
-                        Titles?: string[];
-                        /** @description Each process running in the container, where each is process
-                         *     is an array of values corresponding to the titles.
-                         *      */
-                        Processes?: string[][];
-                    };
-                    "text/plain": {
-                        /** @description The ps column titles */
-                        Titles?: string[];
-                        /** @description Each process running in the container, where each is process
-                         *     is an array of values corresponding to the titles.
-                         *      */
-                        Processes?: string[][];
-                    };
+                    "application/json": components["schemas"]["ContainerTopResponse"];
+                    "text/plain": components["schemas"]["ContainerTopResponse"];
                 };
             };
             /** @description no such container */
@@ -8052,6 +8954,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -8119,6 +9024,9 @@ export interface operations {
                 content: {
                     "application/vnd.docker.raw-stream": components["schemas"]["ErrorResponse"];
                     "application/vnd.docker.multiplexed-stream": components["schemas"]["ErrorResponse"];
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": unknown;
                 };
             };
@@ -8152,6 +9060,20 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example [
+                     *       {
+                     *         "Path": "/dev",
+                     *         "Kind": 0
+                     *       },
+                     *       {
+                     *         "Path": "/dev/kmsg",
+                     *         "Kind": 1
+                     *       },
+                     *       {
+                     *         "Path": "/test",
+                     *         "Kind": 1
+                     *       }
+                     *     ] */
                     "application/json": components["schemas"]["FilesystemChange"][];
                 };
             };
@@ -8161,6 +9083,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -8201,6 +9126,9 @@ export interface operations {
                 };
                 content: {
                     "application/octet-stream": components["schemas"]["ErrorResponse"];
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": unknown;
                 };
             };
@@ -8242,7 +9170,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["ContainerStatsResponse"];
                 };
             };
             /** @description no such container */
@@ -8251,6 +9179,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -8296,6 +9227,9 @@ export interface operations {
                 };
                 content: {
                     "text/plain": components["schemas"]["ErrorResponse"];
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": unknown;
                 };
             };
@@ -8348,6 +9282,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -8402,6 +9339,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -8449,6 +9389,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -8494,6 +9437,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -8504,6 +9450,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "Container d37cde0fe4ad63c3a7252023b2f9800282894247d145cb5933ddf6e52cc03a28 is not running"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -8544,9 +9493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        Warnings?: string[];
-                    };
+                    "application/json": components["schemas"]["ContainerUpdateResponse"];
                 };
             };
             /** @description no such container */
@@ -8555,6 +9502,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -8597,6 +9547,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -8648,6 +9601,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -8689,6 +9645,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -8774,6 +9733,9 @@ export interface operations {
                 content: {
                     "application/vnd.docker.raw-stream": components["schemas"]["ErrorResponse"];
                     "application/vnd.docker.multiplexed-stream": components["schemas"]["ErrorResponse"];
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": unknown;
                 };
             };
@@ -8847,6 +9809,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -8905,6 +9870,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -8961,6 +9929,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -8971,6 +9942,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "You cannot remove a running container: c2ada9df5af8. Stop the\ncontainer before attempting removal or force remove\n"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -9025,6 +9999,9 @@ export interface operations {
                 };
                 content: {
                     "application/x-tar": components["schemas"]["ErrorResponse"];
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": unknown;
                 };
             };
@@ -9085,6 +10062,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "not a directory"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -9105,6 +10085,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -9163,6 +10146,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                     "text/plain": components["schemas"]["ErrorResponse"];
                 };
@@ -9246,6 +10232,8 @@ export interface operations {
                 "shared-size"?: boolean;
                 /** @description Show digest information as a `RepoDigests` field on each image. */
                 digests?: boolean;
+                /** @description Include `Manifests` in the image summary. */
+                manifests?: boolean;
             };
             header?: never;
             path?: never;
@@ -9403,8 +10391,18 @@ export interface operations {
     BuildPrune: {
         parameters: {
             query?: {
-                /** @description Amount of disk space in bytes to keep for cache */
+                /** @description Amount of disk space in bytes to keep for cache
+                 *
+                 *     > **Deprecated**: This parameter is deprecated and has been renamed to "reserved-space".
+                 *     > It is kept for backward compatibility and will be removed in API v1.49.
+                 *      */
                 "keep-storage"?: number;
+                /** @description Amount of disk space in bytes to keep for cache */
+                "reserved-space"?: number;
+                /** @description Maximum amount of disk space allowed to keep for cache */
+                "max-used-space"?: number;
+                /** @description Target amount of free disk space after pruning */
+                "min-free-space"?: number;
                 /** @description Remove all types of build cache */
                 all?: boolean;
                 /** @description A JSON encoded value of the filters (a `map[string][]string`) to
@@ -9459,7 +10457,13 @@ export interface operations {
     ImageCreate: {
         parameters: {
             query?: {
-                /** @description Name of the image to pull. The name may include a tag or digest. This parameter may only be used when pulling an image. The pull is cancelled if the HTTP connection is closed. */
+                /** @description Name of the image to pull. If the name includes a tag or digest, specific behavior applies:
+                 *
+                 *     - If only `fromImage` includes a tag, that tag is used.
+                 *     - If both `fromImage` and `tag` are provided, `tag` takes precedence.
+                 *     - If `fromImage` includes a digest, the image is pulled by digest, and `tag` is ignored.
+                 *     - If neither a tag nor digest is specified, all tags are pulled.
+                 *      */
                 fromImage?: string;
                 /** @description Source to import. The value may be a URL from which the image can be retrieved or `-` to read the image from the request body. This parameter may only be used when importing an image. */
                 fromSrc?: string;
@@ -9543,7 +10547,10 @@ export interface operations {
     };
     ImageInspect: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Include Manifests in the image summary. */
+                manifests?: boolean;
+            };
             header?: never;
             path: {
                 /** @description Image name or id */
@@ -9568,6 +10575,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such image: someimage (tag: latest)"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -9584,7 +10594,20 @@ export interface operations {
     };
     ImageHistory: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description JSON-encoded OCI platform to select the platform-variant.
+                 *     If omitted, it defaults to any locally available platform,
+                 *     prioritizing the daemon's host platform.
+                 *
+                 *     If the daemon provides a multi-platform image store, this selects
+                 *     the platform-variant to show the history for. If the image is
+                 *     a single-platform image, or if the multi-platform image does not
+                 *     provide a variant matching the given platform, an error is returned.
+                 *
+                 *     Example: `{"os": "linux", "architecture": "arm", "variant": "v5"}`
+                 *      */
+                platform?: string;
+            };
             header?: never;
             path: {
                 /** @description Image name or ID */
@@ -9600,6 +10623,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example [
+                     *       {
+                     *         "Id": "3db9c44f45209632d6050b35958829c3a2aa256d81b9a7be45b362ff85c54710",
+                     *         "Created": 1398108230,
+                     *         "CreatedBy": "/bin/sh -c #(nop) ADD file:eb15dbd63394e063b805a3c32ca7bf0266ef64676d5a6fab4801f2e81e2a5148 in /",
+                     *         "Tags": [
+                     *           "ubuntu:lucid",
+                     *           "ubuntu:10.04"
+                     *         ],
+                     *         "Size": 182964289,
+                     *         "Comment": ""
+                     *       },
+                     *       {
+                     *         "Id": "6cfa4d1f33fb861d4d114f43b25abd0ac737509268065cdfd69d544a59c85ab8",
+                     *         "Created": 1398108222,
+                     *         "CreatedBy": "/bin/sh -c #(nop) MAINTAINER Tianon Gravi <admwiggin@gmail.com> - mkimage-debootstrap.sh -i iproute,iputils-ping,ubuntu-minimal -t lucid.tar.xz lucid http://archive.ubuntu.com/ubuntu/",
+                     *         "Tags": [],
+                     *         "Size": 0,
+                     *         "Comment": ""
+                     *       },
+                     *       {
+                     *         "Id": "511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158",
+                     *         "Created": 1371157430,
+                     *         "CreatedBy": "",
+                     *         "Tags": [
+                     *           "scratch12:latest",
+                     *           "scratch:latest"
+                     *         ],
+                     *         "Size": 0,
+                     *         "Comment": "Imported from -"
+                     *       }
+                     *     ] */
                     "application/json": {
                         Id: string;
                         /** Format: int64 */
@@ -9640,6 +10695,17 @@ export interface operations {
                  *     are pushed.
                  *      */
                 tag?: string;
+                /** @description JSON-encoded OCI platform to select the platform-variant to push.
+                 *     If not provided, all available variants will attempt to be pushed.
+                 *
+                 *     If the daemon provides a multi-platform image store, this selects
+                 *     the platform-variant to push to the registry. If the image is
+                 *     a single-platform image, or if the multi-platform image does not
+                 *     provide a variant matching the given platform, an error is returned.
+                 *
+                 *     Example: `{"os": "linux", "architecture": "arm", "variant": "v5"}`
+                 *      */
+                platform?: string;
             };
             header: {
                 /** @description A base64url-encoded auth configuration.
@@ -9767,6 +10833,11 @@ export interface operations {
                 force?: boolean;
                 /** @description Do not delete untagged parent images */
                 noprune?: boolean;
+                /** @description Select platform-specific content to delete.
+                 *     Multiple values are accepted.
+                 *     Each platform is a OCI platform encoded as a JSON string.
+                 *      */
+                platforms?: string[];
             };
             header?: never;
             path: {
@@ -9783,6 +10854,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example [
+                     *       {
+                     *         "Untagged": "3e2f21a89f"
+                     *       },
+                     *       {
+                     *         "Deleted": "3e2f21a89f"
+                     *       },
+                     *       {
+                     *         "Deleted": "53b4f83ac9"
+                     *       }
+                     *     ] */
                     "application/json": components["schemas"]["ImageDeleteResponseItem"][];
                 };
             };
@@ -9824,13 +10906,8 @@ export interface operations {
                 limit?: number;
                 /** @description A JSON encoded value of the filters (a `map[string][]string`) to process on the images list. Available filters:
                  *
-                 *     - `is-automated=(true|false)` (deprecated, see below)
                  *     - `is-official=(true|false)`
                  *     - `stars=<number>` Matches images that has at least 'number' stars.
-                 *
-                 *     The `is-automated` filter is deprecated. The `is_automated` field has
-                 *     been deprecated by Docker Hub's search API. Consequently, searching
-                 *     for `is-automated=true` will yield no results.
                  *      */
                 filters?: string;
             };
@@ -9846,6 +10923,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example [
+                     *       {
+                     *         "description": "A minimal Docker image based on Alpine Linux with a complete package index and only 5 MB in size!",
+                     *         "is_official": true,
+                     *         "is_automated": false,
+                     *         "name": "alpine",
+                     *         "star_count": 10093
+                     *       },
+                     *       {
+                     *         "description": "Busybox base image.",
+                     *         "is_official": true,
+                     *         "is_automated": false,
+                     *         "name": "Busybox base image.",
+                     *         "star_count": 3037
+                     *       },
+                     *       {
+                     *         "description": "The PostgreSQL object-relational database system provides reliability and data integrity.",
+                     *         "is_official": true,
+                     *         "is_automated": false,
+                     *         "name": "postgres",
+                     *         "star_count": 12408
+                     *       }
+                     *     ] */
                     "application/json": {
                         description?: string;
                         is_official?: boolean;
@@ -9854,8 +10954,7 @@ export interface operations {
                          *
                          *     <p><br /></p>
                          *
-                         *     > **Deprecated**: This field is deprecated and will always
-                         *     > be "false" in future.
+                         *     > **Deprecated**: This field is deprecated and will always be "false".
                          *
                          * @example false
                          */
@@ -9943,6 +11042,10 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "Status": "Login Succeeded",
+                     *       "IdentityToken": "9cbaf023786cd7..."
+                     *     } */
                     "application/json": {
                         /** @description The status of the authentication */
                         Status: string;
@@ -10052,12 +11155,12 @@ export interface operations {
                      *     and if the daemon is acting as a manager or worker node.
                      *      */
                     Swarm?: "inactive" | "pending" | "error" | "locked" | "active/worker" | "active/manager";
+                    /** @description Max API Version the server supports */
+                    "Api-Version"?: string;
                     /** @description If the server is running with experimental mode enabled */
                     "Docker-Experimental"?: boolean;
                     "Cache-Control"?: string;
                     Pragma?: string;
-                    /** @description Max API Version the server supports */
-                    "API-Version"?: string;
                     /** @description Default version of docker image builder
                      *
                      *     The default on Linux is version "2" (BuildKit), but the daemon
@@ -10104,12 +11207,12 @@ export interface operations {
                      *     and if the daemon is acting as a manager or worker node.
                      *      */
                     Swarm?: "inactive" | "pending" | "error" | "locked" | "active/worker" | "active/manager";
+                    /** @description Max API Version the server supports */
+                    "Api-Version"?: string;
                     /** @description If the server is running with experimental mode enabled */
                     "Docker-Experimental"?: boolean;
                     "Cache-Control"?: string;
                     Pragma?: string;
-                    /** @description Max API Version the server supports */
-                    "API-Version"?: string;
                     /** @description Default version of docker image builder */
                     "Builder-Version"?: string;
                     [name: string]: unknown;
@@ -10164,7 +11267,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IdResponse"];
+                    "application/json": components["schemas"]["IDResponse"];
                 };
             };
             /** @description no such container */
@@ -10173,6 +11276,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -10299,7 +11405,16 @@ export interface operations {
     };
     ImageGet: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description JSON encoded OCI platform describing a platform which will be used
+                 *     to select a platform-specific image to be saved if the image is
+                 *     multi-platform.
+                 *     If not provided, the full multi-platform image will be saved.
+                 *
+                 *     Example: `{"os": "linux", "architecture": "arm", "variant": "v5"}`
+                 *      */
+                platform?: string;
+            };
             header?: never;
             path: {
                 /** @description Image name or ID */
@@ -10334,6 +11449,14 @@ export interface operations {
             query?: {
                 /** @description Image names to filter by */
                 names?: string[];
+                /** @description JSON encoded OCI platform describing a platform which will be used
+                 *     to select a platform-specific image to be saved if the image is
+                 *     multi-platform.
+                 *     If not provided, the full multi-platform image will be saved.
+                 *
+                 *     Example: `{"os": "linux", "architecture": "arm", "variant": "v5"}`
+                 *      */
+                platform?: string;
             };
             header?: never;
             path?: never;
@@ -10366,6 +11489,14 @@ export interface operations {
             query?: {
                 /** @description Suppress progress details during load. */
                 quiet?: boolean;
+                /** @description JSON encoded OCI platform describing a platform which will be used
+                 *     to select a platform-specific image to be load if the image is
+                 *     multi-platform.
+                 *     If not provided, the full multi-platform image will be loaded.
+                 *
+                 *     Example: `{"os": "linux", "architecture": "arm", "variant": "v5"}`
+                 *      */
+                platform?: string;
             };
             header?: never;
             path?: never;
@@ -10416,7 +11547,13 @@ export interface operations {
                     AttachStdout?: boolean;
                     /** @description Attach to `stderr` of the exec command. */
                     AttachStderr?: boolean;
-                    /** @description Initial console size, as an `[height, width]` array. */
+                    /**
+                     * @description Initial console size, as an `[height, width]` array.
+                     * @example [
+                     *       80,
+                     *       64
+                     *     ]
+                     */
                     ConsoleSize?: number[] | null;
                     /** @description Override the key sequence for detaching a container. Format is
                      *     a single character `[a-Z]` or `ctrl-<value>` where `<value>`
@@ -10453,7 +11590,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IdResponse"];
+                    "application/json": components["schemas"]["IDResponse"];
                 };
             };
             /** @description no such container */
@@ -10462,6 +11599,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such container: c2ada9df5af8"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -10498,11 +11638,23 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Detach from the command. */
+                    /**
+                     * @description Detach from the command.
+                     * @example false
+                     */
                     Detach?: boolean;
-                    /** @description Allocate a pseudo-TTY. */
+                    /**
+                     * @description Allocate a pseudo-TTY.
+                     * @example true
+                     */
                     Tty?: boolean;
-                    /** @description Initial console size, as an `[height, width]` array. */
+                    /**
+                     * @description Initial console size, as an `[height, width]` array.
+                     * @example [
+                     *       80,
+                     *       64
+                     *     ]
+                     */
                     ConsoleSize?: number[] | null;
                 };
             };
@@ -10611,6 +11763,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "CanRemove": false,
+                     *       "ContainerID": "b53ee82b53a40c7dca428523e34f741f3abc51d9f297a14ff874bf761b995126",
+                     *       "DetachKeys": "",
+                     *       "ExitCode": 2,
+                     *       "ID": "f33bbfb39f5b142420f4759b2348913bd4a8d1a6d7fd56499cb41a1bb91d7b3b",
+                     *       "OpenStderr": true,
+                     *       "OpenStdin": true,
+                     *       "OpenStdout": true,
+                     *       "ProcessConfig": {
+                     *         "arguments": [
+                     *           "-c",
+                     *           "exit 2"
+                     *         ],
+                     *         "entrypoint": "sh",
+                     *         "privileged": false,
+                     *         "tty": true,
+                     *         "user": "1000"
+                     *       },
+                     *       "Running": false,
+                     *       "Pid": 42000
+                     *     } */
                     "application/json": {
                         CanRemove?: boolean;
                         DetachKeys?: string;
@@ -10969,6 +12143,72 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example [
+                     *       {
+                     *         "Name": "bridge",
+                     *         "Id": "f2de39df4171b0dc801e8002d1d999b77256983dfc63041c0f34030aa3977566",
+                     *         "Created": "2016-10-19T06:21:00.416543526Z",
+                     *         "Scope": "local",
+                     *         "Driver": "bridge",
+                     *         "EnableIPv4": true,
+                     *         "EnableIPv6": false,
+                     *         "Internal": false,
+                     *         "Attachable": false,
+                     *         "Ingress": false,
+                     *         "IPAM": {
+                     *           "Driver": "default",
+                     *           "Config": [
+                     *             {
+                     *               "Subnet": "172.17.0.0/16"
+                     *             }
+                     *           ]
+                     *         },
+                     *         "Options": {
+                     *           "com.docker.network.bridge.default_bridge": "true",
+                     *           "com.docker.network.bridge.enable_icc": "true",
+                     *           "com.docker.network.bridge.enable_ip_masquerade": "true",
+                     *           "com.docker.network.bridge.host_binding_ipv4": "0.0.0.0",
+                     *           "com.docker.network.bridge.name": "docker0",
+                     *           "com.docker.network.driver.mtu": "1500"
+                     *         }
+                     *       },
+                     *       {
+                     *         "Name": "none",
+                     *         "Id": "e086a3893b05ab69242d3c44e49483a3bbbd3a26b46baa8f61ab797c1088d794",
+                     *         "Created": "0001-01-01T00:00:00Z",
+                     *         "Scope": "local",
+                     *         "Driver": "null",
+                     *         "EnableIPv4": false,
+                     *         "EnableIPv6": false,
+                     *         "Internal": false,
+                     *         "Attachable": false,
+                     *         "Ingress": false,
+                     *         "IPAM": {
+                     *           "Driver": "default",
+                     *           "Config": []
+                     *         },
+                     *         "Containers": {},
+                     *         "Options": {}
+                     *       },
+                     *       {
+                     *         "Name": "host",
+                     *         "Id": "13e871235c677f196c4e1ecebb9dc733b9b2d2ab589e30c539efeda84a24215e",
+                     *         "Created": "0001-01-01T00:00:00Z",
+                     *         "Scope": "local",
+                     *         "Driver": "host",
+                     *         "EnableIPv4": false,
+                     *         "EnableIPv6": false,
+                     *         "Internal": false,
+                     *         "Attachable": false,
+                     *         "Ingress": false,
+                     *         "IPAM": {
+                     *           "Driver": "default",
+                     *           "Config": []
+                     *         },
+                     *         "Containers": {},
+                     *         "Options": {}
+                     *       }
+                     *     ] */
                     "application/json": components["schemas"]["Network"][];
                 };
             };
@@ -11097,12 +12337,6 @@ export interface operations {
                      */
                     Name: string;
                     /**
-                     * @description Deprecated: CheckDuplicate is now always enabled.
-                     *
-                     * @example true
-                     */
-                    CheckDuplicate?: boolean;
-                    /**
                      * @description Name of the network driver plugin to use.
                      * @default bridge
                      * @example bridge
@@ -11141,6 +12375,11 @@ export interface operations {
                     ConfigFrom?: components["schemas"]["ConfigReference"];
                     IPAM?: components["schemas"]["IPAM"];
                     /**
+                     * @description Enable IPv4 on the network.
+                     * @example true
+                     */
+                    EnableIPv4?: boolean;
+                    /**
                      * @description Enable IPv6 on the network.
                      * @example true
                      */
@@ -11173,17 +12412,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description No error */
+            /** @description Network created successfully */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** @description The ID of the created network. */
-                        Id?: string;
-                        Warning?: string;
-                    };
+                    "application/json": components["schemas"]["NetworkCreateResponse"];
                 };
             };
             /** @description bad parameter */
@@ -13032,6 +14267,9 @@ export interface operations {
                 content: {
                     "application/vnd.docker.raw-stream": components["schemas"]["ErrorResponse"];
                     "application/vnd.docker.multiplexed-stream": components["schemas"]["ErrorResponse"];
+                    /** @example {
+                     *       "message": "No such service: c2ada9df5af8"
+                     *     } */
                     "application/json": unknown;
                 };
             };
@@ -13206,6 +14444,9 @@ export interface operations {
                 content: {
                     "application/vnd.docker.raw-stream": components["schemas"]["ErrorResponse"];
                     "application/vnd.docker.multiplexed-stream": components["schemas"]["ErrorResponse"];
+                    /** @example {
+                     *       "message": "No such task: c2ada9df5af8"
+                     *     } */
                     "application/json": unknown;
                 };
             };
@@ -13300,7 +14541,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IdResponse"];
+                    "application/json": components["schemas"]["IDResponse"];
                 };
             };
             /** @description name conflicts with an existing object */
@@ -13350,6 +14591,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "ID": "ktnbjxoalbkvbvedmg1urrz8h",
+                     *       "Version": {
+                     *         "Index": 11
+                     *       },
+                     *       "CreatedAt": "2016-11-05T01:20:17.327670065Z",
+                     *       "UpdatedAt": "2016-11-05T01:20:17.327670065Z",
+                     *       "Spec": {
+                     *         "Name": "app-dev.crt",
+                     *         "Labels": {
+                     *           "foo": "bar"
+                     *         },
+                     *         "Driver": {
+                     *           "Name": "secret-bucket",
+                     *           "Options": {
+                     *             "OptionA": "value for driver option A",
+                     *             "OptionB": "value for driver option B"
+                     *           }
+                     *         }
+                     *       }
+                     *     } */
                     "application/json": components["schemas"]["Secret"];
                 };
             };
@@ -13574,7 +14836,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IdResponse"];
+                    "application/json": components["schemas"]["IDResponse"];
                 };
             };
             /** @description name conflicts with an existing object */
@@ -13624,6 +14886,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "ID": "ktnbjxoalbkvbvedmg1urrz8h",
+                     *       "Version": {
+                     *         "Index": 11
+                     *       },
+                     *       "CreatedAt": "2016-11-05T01:20:17.327670065Z",
+                     *       "UpdatedAt": "2016-11-05T01:20:17.327670065Z",
+                     *       "Spec": {
+                     *         "Name": "app-dev.crt"
+                     *       }
+                     *     } */
                     "application/json": components["schemas"]["Config"];
                 };
             };
@@ -13806,6 +15079,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /** @example {
+                     *       "message": "No such image: someimage (tag: latest)"
+                     *     } */
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };

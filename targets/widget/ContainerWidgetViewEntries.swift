@@ -76,6 +76,8 @@ struct ContainerStatusView: View {
 struct WidgetEntryView: View {
     var selectedContainer: Container
     var logLines: [LogLine]
+    var connectionId: String?
+    var endpointId: Int?
     
     // Access the widget family from the environment
     @Environment(\.widgetFamily) var family
@@ -97,31 +99,31 @@ struct WidgetEntryView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            // Container status indicator (running, exited, etc.)
-            ContainerStatusView(status: selectedContainer.State.Status)
-            
-            // Container name with truncation for long names
-            Text(selectedContainer.Name)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(Color("$text"))
-                .lineLimit(2)
-                .truncationMode(.tail)
-            
-            // Display log lines if available
-            if !visibleLogLines.isEmpty {
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(visibleLogLines) { logLine in
-                        Text(logLine.content)
-                            .font(.system(size: 12))
-                            .foregroundColor(Color("$text").opacity(0.7))
-                            .lineLimit(family == .systemLarge ? 2 : 1)
-                            .truncationMode(.tail)
-                    }
-                }
-                .padding(.top, 2)
-            }
-        }
+		VStack(alignment: .leading, spacing: 4) {
+			// Container status indicator (running, exited, etc.)
+			ContainerStatusView(status: selectedContainer.State.Status)
+			
+			// Container name with truncation for long names
+			Text(selectedContainer.Name)
+				.font(.system(size: 16, weight: .bold))
+				.foregroundColor(Color("$text"))
+				.lineLimit(2)
+				.truncationMode(.tail)
+			
+			// Display log lines if available
+			if !visibleLogLines.isEmpty {
+				VStack(alignment: .leading, spacing: 2) {
+					ForEach(visibleLogLines) { logLine in
+						Text(logLine.content)
+							.font(.system(size: 12))
+							.foregroundColor(Color("$text").opacity(0.7))
+							.lineLimit(family == .systemLarge ? 2 : 1)
+							.truncationMode(.tail)
+					}
+				}
+				.padding(.top, 2)
+			}
+		}
         .frame(
             maxWidth: .infinity, 
             maxHeight: .infinity, 
@@ -129,6 +131,6 @@ struct WidgetEntryView: View {
         )
         .background(Color("$background"))
         // Deep link to open the container details in the Pourtainer app
-        .widgetURL(URL(string: "pourtainer://container//\(selectedContainer.Id)"))
+        .widgetURL(URL(string: "pourtainer://container//\(selectedContainer.Id)?connectionId=\(connectionId ?? "")&endpointId=\(endpointId ?? 0)"))
     }
 }

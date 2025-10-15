@@ -26,6 +26,7 @@ import kotlinx.coroutines.runBlocking
 import savedConnectionsKey
 import savedWidgetStateKey
 import java.util.concurrent.TimeUnit
+import isSubscribedKey
 
 class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = ContainerWidget()
@@ -37,6 +38,7 @@ class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
         val containerMetadataKey = stringPreferencesKey("containerMetadata")
         val connectionsKey = stringPreferencesKey("connections")
         val containerLogsKey = stringPreferencesKey("containerLogs")
+		  val isSubscribedValueKey = booleanPreferencesKey("isSubscribed")
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -61,6 +63,7 @@ class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
                         prefs.toMutablePreferences().apply {
                             this[connectionsKey] = sharedPrefs.getString(savedConnectionsKey, "null").toString()
                             this[widgetStateKey] = sharedPrefs.getInt(savedWidgetStateKey, WidgetIntentState.LOADING.value).toString()
+                            this[isSubscribedKey] = sharedPrefs.getBoolean(isSubscribedKey, false)
                         }
                     }
 
@@ -82,7 +85,7 @@ class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
         }
     }
 
-    fun onContainerSelected(context: Context, glanceId: GlanceId, container: Container?) {
+    fun onContainerSelected(context: Context, glanceId: GlanceId, container: Container?, isSubscribed: Boolean) {
         if (container == null) {
             return
         }
@@ -99,6 +102,7 @@ class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
                     ) { prefs ->
                         prefs.toMutablePreferences().apply {
                             this[selectedContainerKey] = Gson().toJson(container)
+							this[isSubscribedValueKey] = isSubscribed
                         }
                     }
 

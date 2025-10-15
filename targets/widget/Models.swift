@@ -3,9 +3,11 @@ import WidgetKit
 
 // App group ID for sharing data between the app and the widget
 let appGroupName: String = "group.com.pourtainer.mobile"
+
 // UserDefaults keys for sharing data across app/widget
 let connectionsKey: String = "pourtainer::connections"
 let widgetStateKey: String = "pourtainer::widgetState"
+let isSubscribedKey: String = "pourtainer::subscribed"
 
 // Represents a Pourtainer server connection with authentication credentials
 struct Connection: Decodable {
@@ -84,6 +86,9 @@ struct WidgetEntry: TimelineEntry {
     let hasContainers: Bool         
     let selectedContainer: Container?
     let logLines: [LogLine]          // Array of log lines for the selected container
+	let isSubscribed: Bool
+    let connectionId: String?        // Connection ID for deep linking
+    let endpointId: Int?             // Endpoint ID for deep linking
 }
 
 // Default placeholder widget for previews and initial loading states
@@ -97,7 +102,10 @@ let placeholderWidget: WidgetEntry = WidgetEntry(
         LogLine(content: "Connected to database"),
         LogLine(content: "Server listening on port 8080"),
         LogLine(content: "Received first request")
-    ]
+    ],
+    isSubscribed: true,
+    connectionId: "default-connection",
+    endpointId: 1
 )
 
 /**
@@ -135,6 +143,7 @@ struct StackWidgetEntry: TimelineEntry {
     let hasContainers: Bool
     let selectedStack: String?
     let containers: [ContainerWithLogs]
+	let isSubscribed: Bool
 }
 
 // Default placeholder for the stack widget
@@ -162,5 +171,6 @@ let placeholderStackWidget: StackWidgetEntry = StackWidgetEntry(
             status: "running",
             lastLogLine: LogLine(content: "Ready to accept connections")
         )
-    ]
+    ],
+    isSubscribed: true
 )

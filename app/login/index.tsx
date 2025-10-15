@@ -1,19 +1,21 @@
-import { guestClient } from '@/lib/guest-client'
+import guestClient from '@/lib/guest'
 import { usePersistedStore } from '@/stores/persisted'
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import type { Endpoint } from '@/types/endpoint'
-import WidgetKitModule from '@/widgetkit'
-import { router } from 'expo-router'
-import { useCallback, useRef, useState } from 'react'
+import { Ionicons } from '@expo/vector-icons'
+import { router, useNavigation } from 'expo-router'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
     Alert,
     Button,
     Image,
     Linking,
+    Platform,
     Pressable,
     StyleSheet,
     Text,
     TextInput,
+    TouchableOpacity,
     View,
 } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
@@ -24,23 +26,34 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
+// remove trailing slashes from url
 const sanitizeUrl = (url: string) => {
     return url.replace(/\/+$/, '')
 }
 
 export default function LoginScreen() {
+    const navigation = useNavigation()
+
     const addConnection = usePersistedStore((state) => state.addConnection)
     const switchConnection = usePersistedStore((state) => state.switchConnection)
+    const connections = usePersistedStore((state) => state.connections)
 
     const { bottom: bottomInset, top: topInset } = useSafeAreaInsets()
 
+    const [isModal, setIsModal] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+
     const baseUrlRef = useRef<string>('')
     const apiTokenRef = useRef<string>('')
     const keyboard = useAnimatedKeyboard({
         isStatusBarTranslucentAndroid: true,
         isNavigationBarTranslucentAndroid: true,
     })
+
+    const showCloseButton = useMemo(() => {
+        return Platform.OS === 'android' && isModal
+    }, [isModal])
 
     const helpBoxAnimatedStyles = useAnimatedStyle(() => {
         const isKeyboardVisible = interpolate(keyboard.height.value, [0, 1], [0, 1], 'clamp')
@@ -89,55 +102,68 @@ export default function LoginScreen() {
             return
         }
 
-        setIsLoading(true)
-
         const sanitizedUrl = sanitizeUrl(baseUrl)
         const instanceId = await validateConnection(sanitizedUrl, apiToken)
 
-        if (instanceId) {
-            const endpointsResponse = await guestClient(
-                sanitizedUrl,
-                '/api/endpoints?excludeSnapshots=true',
-                apiToken
-            )
-
-            if (endpointsResponse.respInfo.status >= 300) {
-                Alert.alert('Error', 'Could not fetch endpoints. Please check your server.')
-                return
-            }
-
-            const endpoints = endpointsResponse.json() as Endpoint[]
-            console.log(endpoints)
-
-            const firstId = endpoints.at(0)?.Id
-            if (!firstId) {
-                Alert.alert('Error', 'Your server does not have any endpoints.')
-                return
-            }
-
-            addConnection({
-                id: instanceId,
-                apiToken,
-                baseUrl: sanitizedUrl,
-                currentEndpointId: firstId.toString(),
-            })
-            switchConnection(instanceId)
-
-            WidgetKitModule.registerConnection({
-                id: instanceId,
-                url: sanitizedUrl,
-                accessToken: apiToken,
-            })
-
-            router.replace('/')
+        if (!instanceId) {
+            Alert.alert('Error', 'Invalid token')
+            return
         }
 
+        if (connections.find((c) => c.id === instanceId)) {
+            Alert.alert('Error', 'You are already connected to this instance')
+            return
+        }
+
+        setIsLoading(true)
+
+        const endpointsResponse = await guestClient(
+            sanitizedUrl,
+            '/api/endpoints?excludeSnapshots=true',
+            apiToken
+        )
+
+        if (endpointsResponse.respInfo.status >= 300) {
+            Alert.alert('Error', 'Could not fetch endpoints. Please check your server.')
+            return
+        }
+
+        const endpoints = endpointsResponse.json() as Endpoint[]
+        console.log(endpoints)
+
+        const firstId = endpoints.at(0)?.Id
+        if (!firstId) {
+            Alert.alert('Error', 'Your server does not have any endpoints.')
+            return
+        }
+
+        addConnection({
+            id: instanceId,
+            apiToken,
+            baseUrl: sanitizedUrl,
+            currentEndpointId: null,
+        })
+        switchConnection({ connectionId: instanceId, endpointId: firstId.toString() })
+
+        router.replace('/')
+
         setIsLoading(false)
-    }, [addConnection, switchConnection, validateConnection])
+    }, [addConnection, switchConnection, validateConnection, connections])
 
     const openApiDocs = () => {
         Linking.openURL('https://docs.portainer.io/api/access')
     }
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+    useEffect(() => {
+        setIsModal(connections.length > 0)
+    }, [])
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            gestureEnabled: isModal,
+        })
+    }, [navigation, isModal])
 
     return (
         <>
@@ -150,6 +176,24 @@ export default function LoginScreen() {
                     paddingTop: topInset,
                 }}
             >
+                {showCloseButton && (
+                    <TouchableOpacity
+                        style={{
+                            position: 'absolute',
+                            top: -42,
+                            right: 30,
+                            backgroundColor: '#ffffff28',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            borderRadius: 16,
+                            height: 32,
+                            width: 32,
+                        }}
+                        onPress={() => router.back()}
+                    >
+                        <Ionicons name="close" size={20} color={COLORS.text} />
+                    </TouchableOpacity>
+                )}
                 <View style={styles.content}>
                     <Image
                         source={require('../../assets/whale.png')}

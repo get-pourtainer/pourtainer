@@ -4,6 +4,7 @@ import WidgetKit
 public class WidgetKitModule: Module {
     let _groupName: String = "group.com.pourtainer.mobile"
     let _connectionsKey: String = "pourtainer::connections"
+	let _isSubscribedKey: String = "pourtainer::subscribed"
 
     private func getConnections() -> [Connection] {
         guard let sharedDefaults = UserDefaults(suiteName: _groupName),
@@ -13,15 +14,31 @@ public class WidgetKitModule: Module {
 
         return (try? JSONDecoder().decode([Connection].self, from: rawExistingConnections)) ?? []
     }
+	
+	private func reloadWidgets() {
+        if #available(iOS 16.0, *) {
+            WidgetCenter.shared.invalidateConfigurationRecommendations()
+        }
+        
+        WidgetCenter.shared.reloadAllTimelines()
+    }
 
     public func definition() -> ModuleDefinition {
         Name("PourtainerWidgetKit")
+		
+		Function("setIsSubscribed") { (isSubscribed: Bool) -> Void in
+            guard let sharedDefaults = UserDefaults(suiteName: _groupName) else { return }
+            
+            sharedDefaults.set(isSubscribed, forKey: _isSubscribedKey)
+            
+            self.reloadWidgets()
+        }
 
         Function("getConnections") {
             return self.getConnections()
         }
 
-        Function("registerConnection") { (connection: Connection) in
+        Function("addConnection") { (connection: Connection) in
             guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {
                 return
             }
@@ -41,13 +58,22 @@ public class WidgetKitModule: Module {
                 sharedDefaults.set(encodedConnections, forKey: _connectionsKey)
                 sharedDefaults.synchronize()
 
-                if #available(iOS 16.0, *) {
-                    WidgetCenter.shared.invalidateConfigurationRecommendations()
-                }
-                
-                WidgetCenter.shared.reloadAllTimelines()
+                 self.reloadWidgets()
             } catch {
                 // for now do nothing
+            }
+        }
+		
+		Function("removeConnection") { (id: String) in
+            guard let sharedDefaults = UserDefaults(suiteName: _groupName) else { return }
+            
+            do {
+                let connections = self.getConnections().filter { $0.id != id }
+                let encodedConnections = try JSONEncoder().encode(connections)
+                
+                sharedDefaults.set(encodedConnections, forKey: _connectionsKey)
+                
+                self.reloadWidgets()
             }
         }
 
@@ -59,11 +85,7 @@ public class WidgetKitModule: Module {
             sharedDefaults.removePersistentDomain(forName: _groupName)
             sharedDefaults.synchronize()
 
-            if #available(iOS 16.0, *) {
-                WidgetCenter.shared.invalidateConfigurationRecommendations()
-            }
-            
-            WidgetCenter.shared.reloadAllTimelines()
+            self.reloadWidgets()
         }
     }
 }

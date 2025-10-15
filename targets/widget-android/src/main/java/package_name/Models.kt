@@ -5,6 +5,7 @@ val packageName: String = "com.pourtainer.mobile"
 val appGroupName: String = "group.com.pourtainer.mobile"
 val savedConnectionsKey: String = "pourtainer::connections"
 val savedWidgetStateKey: String = "pourtainer::widgetState"
+val isSubscribedKey: String = "pourtainer::subscribed"
 
 data class RawContainerResponse(
     val Id: String,

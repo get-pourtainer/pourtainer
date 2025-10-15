@@ -37,6 +37,14 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
     func timeline(for configuration: StackConfigurationIntent, in context: Context) async -> Timeline<StackWidgetEntry> {
         // Check for task cancellation at entry point
         try? Task.checkCancellation()
+		
+		var isSubscribed: Bool = false
+		
+		if let sharedDefaults = UserDefaults(suiteName: appGroupName) {
+			let isSubscribedValue = sharedDefaults.bool(forKey: isSubscribedKey)
+			
+			isSubscribed = isSubscribedValue
+		}
         
         let currentDate = Date()
         
@@ -52,7 +60,8 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
                     hasConnections: false,
                     hasContainers: false,
                     selectedStack: nil,
-                    containers: []
+                    containers: [],
+                    isSubscribed: isSubscribed
                 )],
                 policy: .after(currentDate.addingTimeInterval(15 * 60))
             )
@@ -68,7 +77,8 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
                     hasConnections: true,
                     hasContainers: false,
                     selectedStack: nil,
-                    containers: []
+                    containers: [],
+                    isSubscribed: isSubscribed
                 )],
                 policy: .after(currentDate.addingTimeInterval(15 * 60))
             )
@@ -96,7 +106,8 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
                         hasConnections: true,
                         hasContainers: false,
                         selectedStack: stackEntity.name,
-                        containers: []
+                        containers: [],
+                        isSubscribed: isSubscribed
                     )],
                     policy: .after(currentDate.addingTimeInterval(15 * 60))
                 )
@@ -180,7 +191,8 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
                     hasConnections: true,
                     hasContainers: false,
                     selectedStack: stackEntity.name,
-                    containers: []
+                    containers: [],
+                    isSubscribed: isSubscribed
                 )],
                 policy: .after(currentDate.addingTimeInterval(15 * 60))
             )
@@ -203,7 +215,8 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
             hasConnections: true,
             hasContainers: true,
             selectedStack: stackEntity.name,
-            containers: containers
+            containers: containers,
+            isSubscribed: isSubscribed
         )
         
         return Timeline(
@@ -240,6 +253,13 @@ struct StackWidgetEntryView: View {
                 description: "Stack '\(entry.selectedStack ?? "")' has no containers."
             )
             .containerBackground(Color("$background"), for: .widget)
+        } else if !entry.isSubscribed {
+            placeholderView(
+                title: "Subscription missing",
+                description: "Tap here to enable"
+            )
+            .containerBackground(Color("$background"), for: .widget)
+			.widgetURL(URL(string: "pourtainer://?showPaywall=1"))
         } else {
             mainContent
                 .containerBackground(Color("$background"), for: .widget)

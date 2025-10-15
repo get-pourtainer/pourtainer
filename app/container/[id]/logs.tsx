@@ -1,4 +1,5 @@
 import { fetchLogs } from '@/api/queries'
+import buildPlaceholder from '@/components/base/Placeholder'
 import { COLORS } from '@/theme'
 import { useQuery } from '@tanstack/react-query'
 import { useLocalSearchParams } from 'expo-router'
@@ -6,7 +7,6 @@ import debounce from 'lodash/debounce'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import {
-    ActivityIndicator,
     Animated,
     KeyboardAvoidingView,
     type LayoutChangeEvent,
@@ -64,8 +64,8 @@ export default function ContainerLogsScreen() {
 
     const logsQuery = useQuery({
         queryKey: ['container-logs', id, options],
-        queryFn: () =>
-            fetchLogs(id, {
+        queryFn: async () =>
+            await fetchLogs(id, {
                 timestamps: options.timestamps,
                 tail: options.tail,
                 since: sinceSeconds,
@@ -170,6 +170,18 @@ export default function ContainerLogsScreen() {
         }))
     }, [])
 
+    const Placeholder = useMemo(() => {
+        return buildPlaceholder({
+            isLoading: logsQuery.isLoading,
+            isError: logsQuery.isError,
+            hasData: !!logsQuery.data,
+            emptyLabel:
+                'An error has occurred, this container does not support reading logs using the API.',
+            errorLabel:
+                'An error has occurred, this container does not support reading logs using the API.',
+        })
+    }, [logsQuery.isLoading, logsQuery.isError, logsQuery.data])
+
     return (
         <KeyboardAvoidingView
             style={{ flex: 1 }}
@@ -180,26 +192,9 @@ export default function ContainerLogsScreen() {
             <View style={{ flex: 1 }}>
                 {/* Logs Area - Full height */}
                 <View style={{ flex: 1 }}>
-                    {logsQuery.isLoading ? (
-                        <View
-                            style={{
-                                flex: 1,
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                            }}
-                        >
-                            <ActivityIndicator size="large" color={COLORS.text} />
-                        </View>
-                    ) : logsQuery.error || !logsQuery.data ? (
-                        <View
-                            style={{
-                                flex: 1,
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                            }}
-                        >
-                            <Text style={{ color: COLORS.errorLight }}>Error loading logs</Text>
-                        </View>
+                    {/* Pleasing the compiler */}
+                    {Placeholder || !logsQuery.data ? (
+                        Placeholder
                     ) : (
                         <ScrollView
                             ref={scrollViewRef}

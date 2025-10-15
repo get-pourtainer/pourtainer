@@ -22,6 +22,7 @@ import expo.modules.widgetkit.Connection
 import androidx.core.content.edit
 import savedConnectionsKey
 import savedWidgetStateKey
+import isSubscribedKey
 
 class PourtainerAppWidgetConfigurationActivity: AppCompatActivity() {
     override fun onCreate(savedConnectionState: Bundle?) {
@@ -121,8 +122,11 @@ class PourtainerAppWidgetConfigurationActivity: AppCompatActivity() {
                 containers,
                 onContainerSelected,
                 onDone = {
+					val prefs = getSharedPreferences(appGroupName, Context.MODE_PRIVATE)
+                    val isSubscribed = prefs.getBoolean(isSubscribedKey, false)
+					
                     val glanceId = GlanceAppWidgetManager(applicationContext).getGlanceIdBy(appWidgetId)
-                    ContainerWidgetReceiver().onContainerSelected(applicationContext, glanceId, selectedContainer)
+                    ContainerWidgetReceiver().onContainerSelected(applicationContext, glanceId, selectedContainer, isSubscribed)
 
                     val resultValue = Intent().apply {
                         putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)

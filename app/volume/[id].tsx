@@ -1,12 +1,15 @@
 import { deleteFile, renameFile, uploadFile } from '@/api/mutations'
 import { fetchVolumeContent } from '@/api/queries'
 import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
+import ActivityIndicator from '@/components/base/ActivityIndicator'
+import type { paths } from '@/lib/portainer/schema'
 import { formatBytes } from '@/lib/utils'
 import { downloadFile } from '@/lib/utils'
 import { usePersistedStore } from '@/stores/persisted'
 import { COLORS } from '@/theme'
 import type { VolumeEntity } from '@/types/volume'
 import { Ionicons } from '@expo/vector-icons'
+import * as Sentry from '@sentry/react-native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMutation } from '@tanstack/react-query'
 import { formatDistance } from 'date-fns'
@@ -15,7 +18,6 @@ import type { DocumentPickerAsset } from 'expo-document-picker'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import {
-    ActivityIndicator,
     Alert,
     FlatList,
     Pressable,
@@ -38,7 +40,7 @@ export default function VolumeDetailScreen() {
 
     const { data: entities, isLoading } = useQuery({
         queryKey: ['volume-content', id, path],
-        queryFn: () => fetchVolumeContent(id, path),
+        queryFn: async () => await fetchVolumeContent(id, path),
         staleTime: 10 * 1000, // 10 seconds
         gcTime: 15 * 1000, // 15 seconds garbage collection time
     })
@@ -59,6 +61,10 @@ export default function VolumeDetailScreen() {
             // Invalidate and refetch the volume content
             queryClient.invalidateQueries({ queryKey: ['volume-content', id, path] })
         },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error', 'Failed to upload file')
+        },
     })
 
     const deleteMutation = useMutation({
@@ -67,6 +73,10 @@ export default function VolumeDetailScreen() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['volume-content', id, path] })
+        },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error', 'Failed to delete item')
         },
     })
 
@@ -77,8 +87,21 @@ export default function VolumeDetailScreen() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['volume-content', id, path] })
         },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error', 'Failed to rename item')
+        },
     })
 
+    const downloadFileMutation = useMutation({
+        mutationFn: async (props: Parameters<typeof downloadFile>[0]) => {
+            await downloadFile(props)
+        },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error', 'Failed to download file')
+        },
+    })
     const navigateToPath = useCallback(
         (newPath: string) => {
             router.push({
@@ -124,22 +147,14 @@ export default function VolumeDetailScreen() {
             if (!item.Dir) {
                 actions.push({
                     label: 'Download',
-                    onPress: async () => {
-                        try {
-                            console.log(
-                                'Downloading file:',
-                                `${path}/${item.Name}`.replace('//', '/')
-                            )
-                            await downloadFile({
-                                volumeName: id,
-                                filePath: `${path}/${item.Name}`.replace('//', '/'),
-                                fileName: item.Name,
-                                endpointId: currentConnection?.currentEndpointId!,
-                            })
-                        } catch (error) {
-                            console.error('Error opening file:', error)
-                            Alert.alert('Error', 'Failed to download file')
-                        }
+                    onPress: () => {
+                        console.log('Downloading file:', `${path}/${item.Name}`.replace('//', '/'))
+                        downloadFileMutation.mutate({
+                            volumeName: id,
+                            filePath: `${path}/${item.Name}`.replace('//', '/'),
+                            fileName: item.Name,
+                            endpointId: currentConnection?.currentEndpointId!,
+                        })
                     },
                 })
             }
@@ -203,7 +218,14 @@ export default function VolumeDetailScreen() {
 
             showActionSheet(item.Name, actions)
         },
-        [path, deleteMutation, renameMutation, currentConnection?.currentEndpointId, id]
+        [
+            path,
+            deleteMutation,
+            renameMutation,
+            currentConnection?.currentEndpointId,
+            id,
+            downloadFileMutation.mutate,
+        ]
     )
 
     const handlePress = useCallback(
@@ -225,6 +247,12 @@ export default function VolumeDetailScreen() {
         return entities.filter((item) => item.Name.toLowerCase().includes(query))
     }, [entities, searchQuery])
 
+    const isHeaderRightLoading = useMemo(() => {
+        return (
+            deleteMutation.isPending || renameMutation.isPending || downloadFileMutation.isPending
+        )
+    }, [downloadFileMutation.isPending, deleteMutation.isPending, renameMutation.isPending])
+
     useLayoutEffect(() => {
         const currentFolderName =
             path === '/' ? 'Browse' : path.split('/').filter(Boolean).pop() || 'Volume Details'
@@ -235,24 +263,30 @@ export default function VolumeDetailScreen() {
                     <Ionicons name="chevron-back" size={24} color={COLORS.text} />
                 </Pressable>
             ),
-            headerRight: () => (
-                <Pressable
-                    onPress={() => setIsSearchVisible((v) => !v)}
-                    style={({ pressed }) => [
-                        styles.headerButton,
-                        pressed && styles.headerButtonPressed,
-                    ]}
-                >
-                    <Ionicons name="search" size={24} color={COLORS.text} />
-                </Pressable>
-            ),
+            headerRight: isHeaderRightLoading
+                ? () => <ActivityIndicator size="small" />
+                : () => (
+                      <Pressable
+                          onPress={() => setIsSearchVisible((v) => !v)}
+                          style={({ pressed }) => [
+                              styles.headerButton,
+                              pressed && styles.headerButtonPressed,
+                          ]}
+                      >
+                          <Ionicons name="search" size={24} color={COLORS.text} />
+                      </Pressable>
+                  ),
             headerBackVisible: false,
             title: currentFolderName,
         })
-    }, [navigation, handleBack, path])
+    }, [navigation, handleBack, path, isHeaderRightLoading])
 
     const renderItem = useCallback(
-        ({ item }: { item: VolumeEntity }) => {
+        ({
+            item,
+        }: {
+            item: paths['/endpoints/{id}/docker/v2/browse/ls']['get']['responses']['200']['content']['application/json'][number]
+        }) => {
             const isDirectory = item.Dir
             const timestamp = new Date(item.ModTime * 1000)
             const timeAgo = formatDistance(timestamp, new Date(), { addSuffix: true })
@@ -322,7 +356,7 @@ export default function VolumeDetailScreen() {
             </View>
             {isLoading ? (
                 <View style={styles.contentLoadingContainer}>
-                    <ActivityIndicator size="large" />
+                    <ActivityIndicator />
                 </View>
             ) : (
                 <FlatList
@@ -344,8 +378,9 @@ export default function VolumeDetailScreen() {
             <Pressable
                 onPress={handleUpload}
                 style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+                disabled={isHeaderRightLoading || uploadMutation.isPending}
             >
-                {uploadMutation.isPending || deleteMutation.isPending ? (
+                {uploadMutation.isPending ? (
                     <ActivityIndicator size="small" />
                 ) : (
                     <Ionicons name="cloud-upload" size={24} color="#FFFFFF" />

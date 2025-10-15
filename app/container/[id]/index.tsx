@@ -7,6 +7,9 @@ import {
     unpauseContainer,
 } from '@/api/mutations'
 import { fetchContainers } from '@/api/queries'
+import ContainerWidgetMessage from '@/components/WidgetMessage'
+import buildPlaceholder from '@/components/base/Placeholder'
+import RefreshControl from '@/components/base/RefreshControl'
 import { usePersistedStore } from '@/stores/persisted'
 import { COLORS } from '@/theme'
 import type { Container } from '@/types/container'
@@ -15,9 +18,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocalSearchParams } from 'expo-router'
 import { useRouter } from 'expo-router'
 import { Stack } from 'expo-router'
-import { useEffect } from 'react'
-import { StyleSheet } from 'react-native'
-import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { useEffect, useMemo } from 'react'
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function ContainerDetailScreen() {
@@ -28,7 +30,8 @@ export default function ContainerDetailScreen() {
     }>()
     const currentConnection = usePersistedStore((state) => state.currentConnection)
     const switchConnection = usePersistedStore((state) => state.switchConnection)
-    const switchEndpoint = usePersistedStore((state) => state.switchEndpoint)
+
+    console.log('id', id)
 
     const { bottom: bottomInset } = useSafeAreaInsets()
 
@@ -37,18 +40,24 @@ export default function ContainerDetailScreen() {
 
     useEffect(() => {
         // when navigating from widget and the container is on a different connection/endpoint
-        if (connectionId && connectionId !== currentConnection?.id) {
-            switchConnection(connectionId)
+        if (!connectionId || !endpointId) return
+        if (endpointId !== currentConnection?.currentEndpointId) {
+            switchConnection({ connectionId, endpointId })
         }
-        if (endpointId && endpointId !== currentConnection?.currentEndpointId) {
-            switchEndpoint(endpointId)
-        }
-    }, [connectionId, endpointId, currentConnection, switchConnection, switchEndpoint])
+    }, [connectionId, endpointId, currentConnection, switchConnection])
 
-    const containersQuery = useQuery<Container[]>({
+    const containersQuery = useQuery({
         queryKey: ['containers'],
-        queryFn: fetchContainers,
+        queryFn: async () => fetchContainers(),
+        enabled: endpointId ? endpointId === currentConnection?.currentEndpointId : true,
     })
+
+    const container = useMemo(() => {
+        if (!containersQuery.data) return null
+        const foundContainer = containersQuery.data.find((container) => container.Id === id)
+        if (!foundContainer) return null // just for type to be the same (not undefined OR null)
+        return foundContainer
+    }, [containersQuery.data, id])
 
     const restartMutation = useMutation({
         mutationFn: restartContainer,
@@ -110,393 +119,408 @@ export default function ContainerDetailScreen() {
         },
     })
 
-    if (
-        containersQuery.isLoading ||
-        (connectionId && connectionId !== currentConnection?.id) ||
-        (endpointId && endpointId !== currentConnection?.currentEndpointId)
-    ) {
-        return (
-            <View
-                style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#f5f5f5',
-                }}
-            >
-                <ActivityIndicator size="large" color="#007AFF" />
-            </View>
-        )
-    }
-
-    if (containersQuery.error || !containersQuery.data) {
-        return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text>Error loading container details</Text>
-            </View>
-        )
-    }
-
-    const container = containersQuery.data.find((container) => container.Id === id)
-
-    if (!container) {
-        return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text>Container not found</Text>
-            </View>
-        )
-    }
+    const Placeholder = useMemo(() => {
+        const emptyContainer = buildPlaceholder({
+            isLoading: containersQuery.isLoading || containersQuery.isPending,
+            isError: containersQuery.isError,
+            hasData: !!container,
+            emptyLabel: 'Container not found',
+            errorLabel: 'Error loading container',
+        })
+        return emptyContainer
+    }, [containersQuery.isLoading, containersQuery.isError, containersQuery.isPending, container])
 
     return (
         <>
             <Stack.Screen
                 options={{
-                    headerTitle: container.Names[0].replace(/^\//, ''),
-                    headerLargeTitle: true,
-                    headerStyle: {
-                        backgroundColor: COLORS.bgApp,
-                    },
-                    headerTintColor: COLORS.text,
-                    headerLargeTitleStyle: {
-                        color: COLORS.text,
-                    },
-                    headerShadowVisible: false,
+                    title: container?.Names?.[0]?.replace(/^\//, '') || '',
                     headerBackTitle: 'Back',
                 }}
             />
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={{
-                    paddingBottom: bottomInset,
-                }}
-                contentInsetAdjustmentBehavior="automatic"
-            >
-                <View style={{ padding: 16, gap: 12 }}>
-                    {/* Terminal & Logs Actions */}
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                        <TouchableOpacity
-                            style={{
-                                backgroundColor: COLORS.primaryDark,
-                                padding: 12,
-                                borderRadius: 12,
-                                flex: 1,
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 8,
-                            }}
-                            onPress={() => router.push(`/container/${id}/logs`)}
-                        >
-                            <Ionicons
-                                name="document-text-outline"
-                                size={20}
-                                color={COLORS.primaryLight}
-                            />
-                            <Text style={{ color: COLORS.primaryLight, fontSize: 17 }}>Logs</Text>
-                        </TouchableOpacity>
+            {/* Pleasing the compiler */}
+            {Placeholder || !container ? (
+                Placeholder
+            ) : (
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={{
+                        paddingBottom: bottomInset,
+                    }}
+                    contentInsetAdjustmentBehavior="automatic"
+                    refreshControl={<RefreshControl onRefresh={containersQuery.refetch} />}
+                >
+                    <View style={{ padding: 16, gap: 12 }}>
+                        <ContainerWidgetMessage />
 
-                        <TouchableOpacity
-                            style={{
-                                backgroundColor: COLORS.purpleDark,
-                                padding: 12,
-                                borderRadius: 12,
-                                flex: 1,
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 8,
-                            }}
-                            onPress={() => router.push(`/container/${id}/terminal`)}
-                        >
-                            <Ionicons
-                                name="terminal-outline"
-                                size={20}
-                                color={COLORS.purpleLight}
-                            />
-                            <Text style={{ color: COLORS.purpleLight, fontSize: 17 }}>
-                                Terminal
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+                        {/* Terminal & Logs Actions */}
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: COLORS.primaryDark,
+                                    padding: 12,
+                                    borderRadius: 12,
+                                    flex: 1,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 8,
+                                }}
+                                onPress={() => router.push(`/container/${id}/logs`)}
+                            >
+                                <Ionicons
+                                    name="document-text-outline"
+                                    size={20}
+                                    color={COLORS.primaryLight}
+                                />
+                                <Text style={{ color: COLORS.primaryLight, fontSize: 17 }}>
+                                    Logs
+                                </Text>
+                            </TouchableOpacity>
 
-                    {/* Status Card */}
-                    <View style={styles.card}>
-                        <View
-                            style={{
-                                flexDirection: 'row',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                            }}
-                        >
-                            <View>
-                                <Text style={styles.cardLabel}>Status</Text>
-                                <View
-                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
-                                >
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: COLORS.purpleDark,
+                                    padding: 12,
+                                    borderRadius: 12,
+                                    flex: 1,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 8,
+                                }}
+                                onPress={() => router.push(`/container/${id}/terminal`)}
+                            >
+                                <Ionicons
+                                    name="terminal-outline"
+                                    size={20}
+                                    color={COLORS.purpleLight}
+                                />
+                                <Text style={{ color: COLORS.purpleLight, fontSize: 17 }}>
+                                    Terminal
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: COLORS.warningDark,
+                                    padding: 12,
+                                    borderRadius: 12,
+                                    flex: 1,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 8,
+                                }}
+                                onPress={() => router.push(`/container/${id}/edit`)}
+                            >
+                                <Ionicons
+                                    name="pencil-outline"
+                                    size={20}
+                                    color={COLORS.warningLight}
+                                />
+                                <Text style={{ color: COLORS.warningLight, fontSize: 17 }}>
+                                    Edit
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Status Card */}
+                        <View style={styles.card}>
+                            <View
+                                style={{
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <View>
+                                    <Text style={styles.cardLabel}>Status</Text>
                                     <View
                                         style={{
-                                            width: 8,
-                                            height: 8,
-                                            borderRadius: 4,
-                                            backgroundColor:
-                                                container.State === 'running'
-                                                    ? COLORS.success
-                                                    : container.State === 'paused'
-                                                      ? COLORS.warning
-                                                      : COLORS.error,
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: 8,
                                         }}
-                                    />
-                                    <Text style={styles.statusText}>{container.State}</Text>
+                                    >
+                                        <View
+                                            style={{
+                                                width: 8,
+                                                height: 8,
+                                                borderRadius: 4,
+                                                backgroundColor:
+                                                    container.State === 'running'
+                                                        ? COLORS.success
+                                                        : container.State === 'paused'
+                                                          ? COLORS.warning
+                                                          : COLORS.error,
+                                            }}
+                                        />
+                                        <Text style={styles.statusText}>{container.State}</Text>
+                                    </View>
                                 </View>
-                            </View>
 
-                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                {container.State === 'running' ? (
-                                    <>
+                                <View style={{ flexDirection: 'row', gap: 8 }}>
+                                    {container.State === 'running' ? (
+                                        <>
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    Alert.alert(
+                                                        'Stop Container',
+                                                        'Are you sure you want to stop this container?',
+                                                        [
+                                                            { text: 'Cancel', style: 'cancel' },
+                                                            {
+                                                                text: 'Stop',
+                                                                style: 'destructive',
+                                                                onPress: () =>
+                                                                    stopMutation.mutate(id),
+                                                            },
+                                                        ]
+                                                    )
+                                                }}
+                                                disabled={stopMutation.isPending}
+                                                style={{ padding: 4 }}
+                                            >
+                                                <Ionicons
+                                                    name="stop-circle-outline"
+                                                    size={28}
+                                                    color={
+                                                        stopMutation.isPending
+                                                            ? COLORS.textMuted
+                                                            : COLORS.errorLight
+                                                    }
+                                                />
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    Alert.alert(
+                                                        'Kill Container',
+                                                        'Are you sure you want to force kill this container? This may cause data loss.',
+                                                        [
+                                                            { text: 'Cancel', style: 'cancel' },
+                                                            {
+                                                                text: 'Kill',
+                                                                style: 'destructive',
+                                                                onPress: () =>
+                                                                    killMutation.mutate(id),
+                                                            },
+                                                        ]
+                                                    )
+                                                }}
+                                                disabled={killMutation.isPending}
+                                                style={{ padding: 4 }}
+                                            >
+                                                <Ionicons
+                                                    name="close-circle-outline"
+                                                    size={28}
+                                                    color={
+                                                        killMutation.isPending
+                                                            ? COLORS.textMuted
+                                                            : COLORS.errorLight
+                                                    }
+                                                />
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    Alert.alert(
+                                                        'Pause Container',
+                                                        'Are you sure you want to pause this container?',
+                                                        [
+                                                            { text: 'Cancel', style: 'cancel' },
+                                                            {
+                                                                text: 'Pause',
+                                                                onPress: () =>
+                                                                    pauseMutation.mutate(id),
+                                                            },
+                                                        ]
+                                                    )
+                                                }}
+                                                disabled={pauseMutation.isPending}
+                                                style={{ padding: 4 }}
+                                            >
+                                                <Ionicons
+                                                    name="pause-circle-outline"
+                                                    size={28}
+                                                    color={
+                                                        pauseMutation.isPending
+                                                            ? COLORS.textMuted
+                                                            : COLORS.warningLight
+                                                    }
+                                                />
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    Alert.alert(
+                                                        'Restart Container',
+                                                        'Are you sure you want to restart this container?',
+                                                        [
+                                                            { text: 'Cancel', style: 'cancel' },
+                                                            {
+                                                                text: 'Restart',
+                                                                onPress: () =>
+                                                                    restartMutation.mutate(id),
+                                                            },
+                                                        ]
+                                                    )
+                                                }}
+                                                disabled={restartMutation.isPending}
+                                                style={{ padding: 4 }}
+                                            >
+                                                <Ionicons
+                                                    name="refresh-circle-outline"
+                                                    size={28}
+                                                    color={
+                                                        restartMutation.isPending
+                                                            ? COLORS.textMuted
+                                                            : COLORS.text
+                                                    }
+                                                />
+                                            </TouchableOpacity>
+                                        </>
+                                    ) : container.State === 'paused' ? (
                                         <TouchableOpacity
-                                            onPress={() => {
-                                                Alert.alert(
-                                                    'Stop Container',
-                                                    'Are you sure you want to stop this container?',
-                                                    [
-                                                        { text: 'Cancel', style: 'cancel' },
-                                                        {
-                                                            text: 'Stop',
-                                                            style: 'destructive',
-                                                            onPress: () => stopMutation.mutate(id),
-                                                        },
-                                                    ]
-                                                )
-                                            }}
-                                            disabled={stopMutation.isPending}
+                                            onPress={() => unpauseMutation.mutate(id)}
+                                            disabled={unpauseMutation.isPending}
                                             style={{ padding: 4 }}
                                         >
                                             <Ionicons
-                                                name="stop-circle-outline"
+                                                name="play-circle-outline"
                                                 size={28}
                                                 color={
-                                                    stopMutation.isPending
+                                                    startMutation.isPending ||
+                                                    unpauseMutation.isPending
                                                         ? COLORS.textMuted
-                                                        : COLORS.errorLight
+                                                        : COLORS.successLight
                                                 }
                                             />
                                         </TouchableOpacity>
+                                    ) : (
                                         <TouchableOpacity
-                                            onPress={() => {
-                                                Alert.alert(
-                                                    'Kill Container',
-                                                    'Are you sure you want to force kill this container? This may cause data loss.',
-                                                    [
-                                                        { text: 'Cancel', style: 'cancel' },
-                                                        {
-                                                            text: 'Kill',
-                                                            style: 'destructive',
-                                                            onPress: () => killMutation.mutate(id),
-                                                        },
-                                                    ]
-                                                )
-                                            }}
-                                            disabled={killMutation.isPending}
+                                            onPress={() => startMutation.mutate(id)}
+                                            disabled={startMutation.isPending}
                                             style={{ padding: 4 }}
                                         >
                                             <Ionicons
-                                                name="close-circle-outline"
+                                                name="play-circle-outline"
                                                 size={28}
                                                 color={
-                                                    killMutation.isPending
+                                                    startMutation.isPending
                                                         ? COLORS.textMuted
-                                                        : COLORS.errorLight
+                                                        : COLORS.successLight
                                                 }
                                             />
                                         </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={() => {
-                                                Alert.alert(
-                                                    'Pause Container',
-                                                    'Are you sure you want to pause this container?',
-                                                    [
-                                                        { text: 'Cancel', style: 'cancel' },
-                                                        {
-                                                            text: 'Pause',
-                                                            onPress: () => pauseMutation.mutate(id),
-                                                        },
-                                                    ]
-                                                )
-                                            }}
-                                            disabled={pauseMutation.isPending}
-                                            style={{ padding: 4 }}
-                                        >
-                                            <Ionicons
-                                                name="pause-circle-outline"
-                                                size={28}
-                                                color={
-                                                    pauseMutation.isPending
-                                                        ? COLORS.textMuted
-                                                        : COLORS.warningLight
-                                                }
-                                            />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={() => {
-                                                Alert.alert(
-                                                    'Restart Container',
-                                                    'Are you sure you want to restart this container?',
-                                                    [
-                                                        { text: 'Cancel', style: 'cancel' },
-                                                        {
-                                                            text: 'Restart',
-                                                            onPress: () =>
-                                                                restartMutation.mutate(id),
-                                                        },
-                                                    ]
-                                                )
-                                            }}
-                                            disabled={restartMutation.isPending}
-                                            style={{ padding: 4 }}
-                                        >
-                                            <Ionicons
-                                                name="refresh-circle-outline"
-                                                size={28}
-                                                color={
-                                                    restartMutation.isPending
-                                                        ? COLORS.textMuted
-                                                        : COLORS.text
-                                                }
-                                            />
-                                        </TouchableOpacity>
-                                    </>
-                                ) : container.State === 'paused' ? (
-                                    <TouchableOpacity
-                                        onPress={() => unpauseMutation.mutate(id)}
-                                        disabled={unpauseMutation.isPending}
-                                        style={{ padding: 4 }}
-                                    >
-                                        <Ionicons
-                                            name="play-circle-outline"
-                                            size={28}
-                                            color={
-                                                startMutation.isPending || unpauseMutation.isPending
-                                                    ? COLORS.textMuted
-                                                    : COLORS.successLight
-                                            }
-                                        />
-                                    </TouchableOpacity>
-                                ) : (
-                                    <TouchableOpacity
-                                        onPress={() => startMutation.mutate(id)}
-                                        disabled={startMutation.isPending}
-                                        style={{ padding: 4 }}
-                                    >
-                                        <Ionicons
-                                            name="play-circle-outline"
-                                            size={28}
-                                            color={
-                                                startMutation.isPending
-                                                    ? COLORS.textMuted
-                                                    : COLORS.successLight
-                                            }
-                                        />
-                                    </TouchableOpacity>
-                                )}
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* Info Cards */}
-                    <View style={styles.card}>
-                        <Text style={styles.cardLabel}>Container ID</Text>
-                        <Text style={styles.cardText}>{container.Id.substring(0, 12)}</Text>
-                    </View>
-
-                    <View style={styles.card}>
-                        <Text style={styles.cardLabel}>Image</Text>
-                        <Text style={styles.cardText}>{container.Image}</Text>
-                    </View>
-
-                    <View style={styles.card}>
-                        <Text style={styles.cardLabel}>Created</Text>
-                        <Text style={styles.cardText}>
-                            {new Date(container.Created * 1000).toLocaleString()}
-                        </Text>
-                    </View>
-
-                    {/* Network Info Card */}
-                    <View style={styles.card}>
-                        <Text style={styles.cardLabel}>Network</Text>
-                        {Object.entries(container.NetworkSettings.Networks).map(
-                            ([networkName, network]) => (
-                                <View key={networkName} style={{ marginBottom: 12 }}>
-                                    <Text style={styles.cardLabel}>{networkName}</Text>
-                                    <Text style={styles.cardText}>IP: {network.IPAddress}</Text>
-                                    <Text style={styles.cardText}>Gateway: {network.Gateway}</Text>
-                                    {network.MacAddress && (
-                                        <Text style={styles.cardText}>
-                                            MAC: {network.MacAddress}
-                                        </Text>
                                     )}
                                 </View>
-                            )
+                            </View>
+                        </View>
+
+                        {/* Info Cards */}
+                        <View style={styles.card}>
+                            <Text style={styles.cardLabel}>Container ID</Text>
+                            <Text style={styles.cardText}>{container.Id.substring(0, 12)}</Text>
+                        </View>
+
+                        <View style={styles.card}>
+                            <Text style={styles.cardLabel}>Image</Text>
+                            <Text style={styles.cardText}>{container.Image}</Text>
+                        </View>
+
+                        {container.Created && (
+                            <View style={styles.card}>
+                                <Text style={styles.cardLabel}>Created</Text>
+                                <Text style={styles.cardText}>
+                                    {new Date(container.Created * 1000).toLocaleString()}
+                                </Text>
+                            </View>
                         )}
-                    </View>
 
-                    {/* Ports Card */}
-                    {container.Ports.length > 0 && (
-                        <View style={styles.card}>
-                            <Text style={styles.cardLabel}>Port Mappings</Text>
-                            {container.Ports.map((port, index) => (
-                                <View key={index} style={{ marginBottom: 8 }}>
-                                    <Text style={styles.cardText}>
-                                        {port.PublicPort ? `${port.PublicPort}:` : ''}
-                                        {port.PrivatePort} ({port.Type})
-                                        {port.IP ? ` on ${port.IP}` : ''}
-                                    </Text>
-                                </View>
-                            ))}
-                        </View>
-                    )}
+                        {/* Network Info Card */}
+                        {container.NetworkSettings?.Networks && (
+                            <View style={styles.card}>
+                                <Text style={styles.cardLabel}>Network</Text>
+                                {Object.entries(container.NetworkSettings.Networks).map(
+                                    ([networkName, network]) => (
+                                        <View key={networkName} style={{ marginBottom: 12 }}>
+                                            <Text style={styles.cardLabel}>{networkName}</Text>
+                                            <Text style={styles.cardText}>
+                                                IP: {network.IPAddress}
+                                            </Text>
+                                            <Text style={styles.cardText}>
+                                                Gateway: {network.Gateway}
+                                            </Text>
+                                            {network.MacAddress && (
+                                                <Text style={styles.cardText}>
+                                                    MAC: {network.MacAddress}
+                                                </Text>
+                                            )}
+                                        </View>
+                                    )
+                                )}
+                            </View>
+                        )}
 
-                    {/* Mounts Card */}
-                    {container.Mounts.length > 0 && (
-                        <View style={styles.card}>
-                            <Text style={styles.cardLabel}>Volumes & Mounts</Text>
-                            {container.Mounts.map((mount, index) => (
-                                <View key={index} style={{ marginBottom: 12 }}>
-                                    <Text style={styles.cardLabel}>
-                                        {mount.Name || mount.Source}
-                                    </Text>
-                                    <Text style={styles.cardText}>→ {mount.Destination}</Text>
-                                    <Text style={styles.cardText}>
-                                        {mount.Type} ({mount.RW ? 'RW' : 'RO'})
-                                    </Text>
-                                </View>
-                            ))}
-                        </View>
-                    )}
-
-                    {/* Command Card */}
-                    <View style={styles.card}>
-                        <Text style={styles.cardLabel}>Command</Text>
-                        <Text style={styles.monospaceText}>{container.Command}</Text>
-                    </View>
-
-                    {/* Labels Card */}
-                    {Object.entries(container.Labels).filter(([key, value]) =>
-                        Boolean(value.trim())
-                    ).length > 0 && (
-                        <View style={styles.card}>
-                            <Text style={styles.cardLabel}>Labels</Text>
-                            {Object.entries(container.Labels)
-                                .filter(([key, value]) => Boolean(value.trim()))
-                                .map(([key, value]) => (
-                                    <View key={key} style={{ marginBottom: 4 }}>
-                                        <Text style={styles.labelKey}>{key}</Text>
-                                        <Text style={styles.cardText}>{value}</Text>
+                        {/* Ports Card */}
+                        {container.Ports && container.Ports.length > 0 && (
+                            <View style={styles.card}>
+                                <Text style={styles.cardLabel}>Port Mappings</Text>
+                                {container.Ports.map((port, index) => (
+                                    <View key={index} style={{ marginBottom: 8 }}>
+                                        <Text style={styles.cardText}>
+                                            {port.PublicPort ? `${port.PublicPort}:` : ''}
+                                            {port.PrivatePort} ({port.Type})
+                                            {port.IP ? ` on ${port.IP}` : ''}
+                                        </Text>
                                     </View>
                                 ))}
+                            </View>
+                        )}
+
+                        {/* Mounts Card */}
+                        {container.Mounts && container.Mounts.length > 0 && (
+                            <View style={styles.card}>
+                                <Text style={styles.cardLabel}>Volumes & Mounts</Text>
+                                {container.Mounts.map((mount, index) => (
+                                    <View key={index} style={{ marginBottom: 12 }}>
+                                        <Text style={styles.cardLabel}>
+                                            {mount.Name || mount.Source}
+                                        </Text>
+                                        <Text style={styles.cardText}>→ {mount.Destination}</Text>
+                                        <Text style={styles.cardText}>
+                                            {mount.Type} ({mount.RW ? 'RW' : 'RO'})
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+
+                        {/* Command Card */}
+                        <View style={styles.card}>
+                            <Text style={styles.cardLabel}>Command</Text>
+                            <Text style={styles.monospaceText}>{container.Command}</Text>
                         </View>
-                    )}
-                </View>
-            </ScrollView>
+
+                        {/* Labels Card */}
+                        {container.Labels &&
+                            Object.entries(container.Labels).filter(([key, value]) =>
+                                Boolean(value.trim())
+                            ).length > 0 && (
+                                <View style={styles.card}>
+                                    <Text style={styles.cardLabel}>Labels</Text>
+                                    {Object.entries(container.Labels)
+                                        .filter(([key, value]) => Boolean(value.trim()))
+                                        .map(([key, value]) => (
+                                            <View key={key} style={{ marginBottom: 4 }}>
+                                                <Text style={styles.labelKey}>{key}</Text>
+                                                <Text style={styles.cardText}>{value}</Text>
+                                            </View>
+                                        ))}
+                                </View>
+                            )}
+                    </View>
+                </ScrollView>
+            )}
         </>
     )
 }

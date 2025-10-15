@@ -1,27 +1,22 @@
 import { fetchNetworks } from '@/api/queries'
 import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
 import { Badge } from '@/components/Badge'
+import buildPlaceholder from '@/components/base/Placeholder'
+import RefreshControl from '@/components/base/RefreshControl'
+import type { components } from '@/lib/docker/schema'
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
-import type { Network } from '@/types/network'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigation } from 'expo-router'
-import { useLayoutEffect, useState } from 'react'
-import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native'
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
+import { FlatList, Text, TouchableOpacity, View } from 'react-native'
 import { StyleSheet } from 'react-native'
 
 function NetworkRow({
     network,
     onPress,
 }: {
-    network: Network
+    network: components['schemas']['Network']
     onPress: () => void
 }) {
     return (
@@ -33,18 +28,22 @@ function NetworkRow({
                 <Badge label={network.Id.substring(0, 12)} monospace={true} />
 
                 {/* Driver Badge */}
-                <Badge
-                    label={network.Driver}
-                    color={COLORS.primaryLight}
-                    backgroundColor={COLORS.primaryDark}
-                />
+                {network.Driver && (
+                    <Badge
+                        label={network.Driver}
+                        color={COLORS.primaryLight}
+                        backgroundColor={COLORS.primaryDark}
+                    />
+                )}
 
                 {/* Scope Badge */}
-                <Badge
-                    label={network.Scope}
-                    color={COLORS.successLight}
-                    backgroundColor={COLORS.successDark}
-                />
+                {network.Scope && (
+                    <Badge
+                        label={network.Scope}
+                        color={COLORS.successLight}
+                        backgroundColor={COLORS.successDark}
+                    />
+                )}
 
                 {/* IPv6 Badge */}
                 {network.EnableIPv6 && (
@@ -74,11 +73,14 @@ function NetworkRow({
                 )}
 
                 {/* IPAM Info */}
-                {network.IPAM.Config && network.IPAM.Config.length > 0 && (
+                {network.IPAM?.Config && network.IPAM.Config.length > 0 && (
                     <>
-                        <Badge label={network.IPAM.Config[0].Subnet} monospace={true} />
+                        <Badge
+                            label={network.IPAM.Config[0]!.Subnet || 'Unnamed subnet'}
+                            monospace={true}
+                        />
 
-                        {network.IPAM.Config[0].Gateway && (
+                        {network.IPAM.Config[0]!.Gateway && (
                             <Badge
                                 label={`GW: ${network.IPAM.Config[0].Gateway}`}
                                 monospace={true}
@@ -100,6 +102,50 @@ export default function NetworksScreen() {
         queryFn: fetchNetworks,
     })
 
+    const filteredNetworks = useMemo(() => {
+        if (!networksQuery.data) return []
+        return networksQuery.data.filter((network) => {
+            const query = searchQuery.toLowerCase()
+            return (
+                network.Name?.toLowerCase().includes(query) ||
+                network.Id.toLowerCase().includes(query) ||
+                network.Driver?.toLowerCase().includes(query)
+            )
+        })
+    }, [networksQuery.data, searchQuery])
+
+    const handleNetworkPress = useCallback((network: components['schemas']['Network']) => {
+        const options: ActionSheetOption[] = [
+            {
+                label: 'Copy ID',
+                onPress: () => {
+                    Clipboard.setString(network.Id)
+                },
+            },
+            {
+                label: 'Cancel',
+                cancel: true,
+                onPress: () => {},
+            },
+        ]
+
+        showActionSheet(network?.Name || 'Network', options)
+    }, [])
+
+    const Placeholder = useMemo(() => {
+        const isSearch = searchQuery.trim() !== ''
+
+        const emptyNetworks = buildPlaceholder({
+            isLoading: networksQuery.isLoading,
+            isError: networksQuery.isError,
+            hasData: filteredNetworks.length > 0,
+            emptyLabel: isSearch ? 'No networks match your search' : 'No networks found',
+            errorLabel: 'Error loading networks',
+        })
+
+        return emptyNetworks
+    }, [networksQuery.isLoading, networksQuery.isError, filteredNetworks.length, searchQuery])
+
     useLayoutEffect(() => {
         navigation.setOptions({
             headerSearchBarOptions: {
@@ -118,49 +164,8 @@ export default function NetworksScreen() {
         })
     }, [navigation])
 
-    // Show loading state
-    if (networksQuery.isLoading) {
-        return (
-            <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color={styles.loadingIndicator.color} />
-            </View>
-        )
-    }
-
-    // Show error if query has an error
-    if (networksQuery.error) {
-        return (
-            <View style={styles.centerContainer}>
-                <Text>Error loading networks</Text>
-            </View>
-        )
-    }
-
-    const filteredNetworks = networksQuery.data?.filter((network) => {
-        const query = searchQuery.toLowerCase()
-        return (
-            network.Name.toLowerCase().includes(query) ||
-            network.Id.toLowerCase().includes(query) ||
-            network.Driver.toLowerCase().includes(query)
-        )
-    })
-
-    const handleNetworkPress = (network: Network) => {
-        const options: ActionSheetOption[] = [
-            {
-                label: 'Copy ID',
-                onPress: () => {
-                    Clipboard.setString(network.Id)
-                },
-            },
-            {
-                label: 'Cancel',
-                cancel: true,
-                onPress: () => {},
-            },
-        ]
-
-        showActionSheet(network.Name, options)
+    if (Placeholder) {
+        return Placeholder
     }
 
     return (
@@ -170,18 +175,8 @@ export default function NetworksScreen() {
                 <NetworkRow network={network} onPress={() => handleNetworkPress(network)} />
             )}
             keyExtractor={(network) => network.Id}
-            ListEmptyComponent={
-                <View style={styles.noResultsContainer}>
-                    <Text style={styles.noResultsText}>No networks match your search</Text>
-                </View>
-            }
             contentInsetAdjustmentBehavior="automatic"
-            refreshControl={
-                <RefreshControl
-                    refreshing={networksQuery.isRefetching}
-                    onRefresh={networksQuery.refetch}
-                />
-            }
+            refreshControl={<RefreshControl onRefresh={networksQuery.refetch} />}
         />
     )
 }

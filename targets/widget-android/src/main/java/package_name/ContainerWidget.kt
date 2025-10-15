@@ -12,6 +12,8 @@ import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.action.actionStartActivity
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Column
@@ -65,18 +67,30 @@ fun WidgetContent() {
     val rawConnections = state[ContainerWidgetReceiver.connectionsKey] ?: "[]"
     val connections = Gson().fromJson(rawConnections, Array<Connection>::class.java) ?: emptyArray()
     val isAuthorized = connections.isNotEmpty()
+	val isSubscribed = state[ContainerWidgetReceiver.isSubscribedValueKey] ?: false
+	
+	val customUri = isSubscribed ? "pourtainer://" : "pourtainer://?showPaywall=1"
+	val intent = Intent(Intent.ACTION_VIEW, customUri.toUri())
+	
 
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
             .padding(16.dp)
             .background(GlanceTheme.colors.background)
+			.clickable(actionStartActivity(intent))
     ) {
         // No connections - user needs to sign in
         if (!isAuthorized) {
             StatusView("Unauthorized", "Sign in with Pourtainer app", context)
             return@Column
         }
+
+		// Not subscribed
+		if (!isSubscribed) {
+			StatusView("Subscription missing", "Tap here to enable", context)
+			return@Column
+		}
 
         // No containers available
         if (widgetState == WidgetIntentState.NO_CONTAINERS) {

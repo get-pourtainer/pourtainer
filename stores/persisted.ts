@@ -1,9 +1,9 @@
 import { queryClient } from '@/lib/query'
 import { mmkvStorage } from '@/lib/storage'
+import WidgetKitModule from '@/modules/widgetkit'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-// rename to CONNECTION
 export interface Connection {
     id: string
     apiToken: string
@@ -14,15 +14,25 @@ export interface Connection {
 interface PersistedState {
     connections: Connection[]
     currentConnection: Connection | null
-    switchConnection: (connectionId: string) => void
+    switchConnection: (
+        props:
+            | {
+                  connectionId: string
+              }
+            | {
+                  connectionId: string
+                  endpointId: string
+              }
+    ) => void
     removeConnection: (connectionId: string) => void
     addConnection: (connection: Connection) => void
-    switchEndpoint: (endpointId: string) => void
 
     countToReviewPrompt: number
     setCountToReviewPrompt: (count: number) => void
     lastShownReviewPrompt: number | null
     setLastShownReviewPrompt: (ts: number) => void
+
+    hasSeenOnboarding: boolean
 }
 
 export const usePersistedStore = create<PersistedState>()(
@@ -30,54 +40,64 @@ export const usePersistedStore = create<PersistedState>()(
         (set, get) => ({
             connections: [],
             currentConnection: null,
-            switchConnection: (connectionId: string) => {
-                const connection = get().connections.find((c) => c.id === connectionId)
-                if (!connection) return
-                set({ currentConnection: connection })
-            },
-            removeConnection: (connectionId: string) => {
-                const newConnections = get().connections.filter((c) => c.id !== connectionId)
-
-                set({
-                    connections: newConnections,
-                    currentConnection: newConnections[0] || null,
-                })
-            },
-            addConnection: ({ id, apiToken, baseUrl }: Connection) => {
-                const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
-
-                set((state) => ({
-                    connections: [
-                        ...state.connections,
-                        {
-                            id,
-                            apiToken,
-                            baseUrl: normalizedBaseUrl,
-                            currentEndpointId: null,
-                        },
-                    ],
-                }))
-            },
-            switchEndpoint: (endpointId: string) => {
+            switchConnection: (
+                props:
+                    | {
+                          connectionId: string
+                          endpointId: string
+                      }
+                    | {
+                          connectionId: string
+                      }
+            ) => {
                 const state = get()
 
-                const connection = state.connections.find(
-                    (c) => c.id == state.currentConnection?.id
-                )
+                const connection = state.connections.find((c) => c.id === props.connectionId)
                 if (!connection) return
 
                 const newConnection = {
                     ...connection,
-                    currentEndpointId: endpointId,
+                    currentEndpointId:
+                        'endpointId' in props ? props.endpointId : connection.currentEndpointId,
                 }
 
                 const newConnections = state.connections.map((c) =>
                     c.id === newConnection.id ? newConnection : c
                 )
 
-                set({ connections: newConnections, currentConnection: newConnection })
+                set({
+                    connections: newConnections,
+                    currentConnection: newConnection,
+                })
 
-                queryClient.invalidateQueries()
+                queryClient.resetQueries()
+            },
+            removeConnection: (connectionId: string) => {
+                WidgetKitModule.removeConnection(connectionId)
+
+                const state = get()
+
+                const newConnections = state.connections.filter((c) => c.id !== connectionId)
+
+                set({
+                    connections: newConnections,
+                    currentConnection: newConnections[0] || null,
+                })
+
+                if (state.currentConnection?.id === connectionId) {
+                    queryClient.resetQueries()
+                }
+            },
+            addConnection: (connection: Connection) => {
+                WidgetKitModule.addConnection({
+                    id: connection.id,
+                    url: connection.baseUrl,
+                    accessToken: connection.apiToken,
+                })
+
+                set((state) => ({
+                    connections: [...state.connections, connection],
+                }))
             },
 
             countToReviewPrompt: 12,
@@ -88,6 +108,8 @@ export const usePersistedStore = create<PersistedState>()(
             setLastShownReviewPrompt: (ts: number) => {
                 set({ lastShownReviewPrompt: ts })
             },
+
+            hasSeenOnboarding: false,
         }),
         {
             name: 'auth-storage',

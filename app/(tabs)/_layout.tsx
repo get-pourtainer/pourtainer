@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function TabLayout() {
     const currentConnection = usePersistedStore((state) => state.currentConnection)
-    const switchEndpoint = usePersistedStore((state) => state.switchEndpoint)
+    const switchConnection = usePersistedStore((state) => state.switchConnection)
 
     const { bottom: bottomInset } = useSafeAreaInsets()
 
@@ -24,7 +24,7 @@ export default function TabLayout() {
 
     const endpointsQuery = useQuery({
         queryKey: ['endpoints'],
-        queryFn: fetchEndpoints,
+        queryFn: async () => await fetchEndpoints(),
     })
 
     useEffect(() => {
@@ -33,10 +33,15 @@ export default function TabLayout() {
 
         if (!endpointsQuery.data || endpointsQuery.data.length === 0) return
 
+        if (!currentConnection?.id) return
+
         if (!currentEndpointId) {
             for (const endpoint of endpointsQuery.data) {
                 if (endpoint.Id) {
-                    switchEndpoint(endpoint.Id.toString())
+                    switchConnection({
+                        connectionId: currentConnection.id,
+                        endpointId: endpoint.Id.toString(),
+                    })
                     break
                 }
             }
@@ -49,12 +54,15 @@ export default function TabLayout() {
         ) {
             for (const endpoint of endpointsQuery.data) {
                 if (endpoint.Id) {
-                    switchEndpoint(endpoint.Id.toString())
+                    switchConnection({
+                        connectionId: currentConnection.id,
+                        endpointId: endpoint.Id.toString(),
+                    })
                     break
                 }
             }
         }
-    }, [currentEndpointId, switchEndpoint, endpointsQuery.data])
+    }, [currentEndpointId, currentConnection?.id, switchConnection, endpointsQuery.data])
 
     return (
         <Tabs

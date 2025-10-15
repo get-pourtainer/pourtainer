@@ -11,6 +11,7 @@ class WidgetKitModule : Module() {
     companion object {
         const val groupName = "group.com.pourtainer.mobile"
         const val connectionsKey = "pourtainer::connections"
+		const val isSubscribedKey = "pourtainer::subscribed"
     }
 
     private fun notifyAllWidgets() {
@@ -32,7 +33,6 @@ class WidgetKitModule : Module() {
     }
 
     override fun definition() = ModuleDefinition {
-
         Name("PourtainerWidgetKit")
 
         Function("getConnections") {
@@ -44,8 +44,19 @@ class WidgetKitModule : Module() {
                 )
             }
         }
+		
+		Function("setIsSubscribed") { isSubscribed: Boolean ->
+            appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
+                prefs.edit() {
+                    putBoolean(isSubscribedKey, isSubscribed)
+                    apply()
+                }
 
-        Function("registerConnection") { connection: Connection ->
+                notifyAllWidgets()
+            }
+        }
+
+        Function("addConnection") { connection: Connection ->
             appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
                 val connections = this@WidgetKitModule.getConnections().toMutableList()
 
@@ -66,7 +77,21 @@ class WidgetKitModule : Module() {
                 notifyAllWidgets()
             }
         }
+		
+		Function("removeConnection") { id: String ->
+            appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
+                val connections = this@WidgetKitModule.getConnections().toMutableList().filter { it.id != id}
 
+                prefs.edit() {
+                    putString(connectionsKey, Gson().toJson(connections))
+                    apply()
+                }
+
+                notifyAllWidgets()
+            }
+        }
+
+		// also clears isSubscribed
         Function("clearAllConnections") {
             appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
                 prefs.edit() {

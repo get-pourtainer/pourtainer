@@ -2,28 +2,24 @@ import { deleteVolume } from '@/api/mutations'
 import { fetchVolumeContent, fetchVolumes } from '@/api/queries'
 import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
 import { Badge } from '@/components/Badge'
+import buildPlaceholder from '@/components/base/Placeholder'
+import RefreshControl from '@/components/base/RefreshControl'
+import type { components } from '@/lib/docker/schema'
+import WidgetKitModule from '@/modules/widgetkit'
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
-import type { Volume } from '@/types/volume'
 import Clipboard from '@react-native-clipboard/clipboard'
+import Superwall from '@superwall/react-native-superwall'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigation, useRouter } from 'expo-router'
-import { useEffect, useLayoutEffect, useState } from 'react'
-import { StyleSheet } from 'react-native'
-import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    RefreshControl,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { Linking, StyleSheet } from 'react-native'
+import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native'
 
 function VolumeRow({
     volume,
     isBrowsingSupported,
 }: {
-    volume: Volume
+    volume: components['schemas']['Volume']
     isBrowsingSupported: boolean
 }) {
     const router = useRouter()
@@ -32,14 +28,61 @@ function VolumeRow({
     const handlePress = () => {
         const options: ActionSheetOption[] = []
 
-        if (isBrowsingSupported) {
-            options.push({
-                label: 'Browse',
-                onPress: () => {
+        options.push({
+            label: 'Browse',
+            onPress: () => {
+                if (__DEV__) {
+                    WidgetKitModule.setIsSubscribed(true)
+                    if (!isBrowsingSupported) {
+                        alert('Browsing not supported')
+                        return
+                    }
                     router.push(`/volume/${encodeURIComponent(volume.Name)}`)
-                },
-            })
-        }
+                    return
+                }
+
+                Superwall.shared
+                    .register({
+                        placement: 'BrowseVolume',
+                        feature: () => {
+                            WidgetKitModule.setIsSubscribed(true)
+                            if (!isBrowsingSupported) {
+                                Alert.alert(
+                                    'Browsing requires having Portainer Agent installed on your instance.',
+                                    'Do you want to see a guide on how to install it?',
+                                    [
+                                        {
+                                            text: 'Cancel',
+                                            style: 'cancel',
+                                        },
+                                        {
+                                            text: 'Yes',
+                                            onPress: () => {
+                                                try {
+                                                    Linking.openURL(
+                                                        'https://docs.portainer.io/admin/environments/add/docker/agent'
+                                                    )
+                                                } catch {
+                                                    Alert.alert(
+                                                        'Could not open URL',
+                                                        'Something went wrong, please try again.'
+                                                    )
+                                                }
+                                            },
+                                        },
+                                    ]
+                                )
+                                return
+                            }
+                            router.push(`/volume/${encodeURIComponent(volume.Name)}`)
+                        },
+                    })
+                    .catch((error) => {
+                        console.error('Error registering BrowseVolume', error)
+                        Alert.alert('Error', 'Something went wrong, please try again.')
+                    })
+            },
+        })
 
         options.push(
             {
@@ -84,11 +127,13 @@ function VolumeRow({
                     backgroundColor={COLORS.primaryDark}
                 />
 
-                <Badge
-                    label={new Date(volume.CreatedAt).toLocaleDateString()}
-                    color={COLORS.successLight}
-                    backgroundColor={COLORS.successDark}
-                />
+                {volume.CreatedAt && (
+                    <Badge
+                        label={new Date(volume.CreatedAt).toLocaleDateString()}
+                        color={COLORS.successLight}
+                        backgroundColor={COLORS.successDark}
+                    />
+                )}
 
                 {volume.Labels?.['com.docker.compose.project'] && (
                     <Badge label={volume.Labels['com.docker.compose.project']} />
@@ -108,6 +153,16 @@ export default function VolumesScreen() {
         queryFn: fetchVolumes,
     })
 
+    const filteredVolumes = useMemo(() => {
+        if (!volumesQuery.data) return []
+        return volumesQuery.data.filter((volume) => {
+            const query = searchQuery.toLowerCase()
+            const volumeName = volume.Name.toLowerCase()
+            const stackName = volume.Labels?.['com.docker.compose.project']?.toLowerCase() || ''
+            return volumeName.includes(query) || stackName.includes(query)
+        })
+    }, [volumesQuery.data, searchQuery])
+
     // Check browsing support once when volumes are loaded
     useEffect(() => {
         if (!volumesQuery.isSuccess || !volumesQuery.data || volumesQuery.data.length === 0) return
@@ -117,6 +172,20 @@ export default function VolumesScreen() {
             .then(() => setIsBrowsingSupported(true))
             .catch(() => setIsBrowsingSupported(false))
     }, [volumesQuery.data, volumesQuery.isSuccess])
+
+    const Placeholder = useMemo(() => {
+        const isSearch = searchQuery.trim() !== ''
+
+        const emptyVolumes = buildPlaceholder({
+            isLoading: volumesQuery.isLoading,
+            isError: volumesQuery.isError,
+            hasData: filteredVolumes.length > 0,
+            emptyLabel: isSearch ? 'No volumes match your search' : 'No volumes found',
+            errorLabel: 'Error loading volumes',
+        })
+
+        return emptyVolumes
+    }, [volumesQuery.isLoading, volumesQuery.isError, filteredVolumes.length, searchQuery])
 
     // Set up the search bar in the navigation header
     useLayoutEffect(() => {
@@ -137,30 +206,9 @@ export default function VolumesScreen() {
         })
     }, [navigation])
 
-    // Show loading state
-    if (volumesQuery.isLoading) {
-        return (
-            <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color={styles.loadingIndicator.color} />
-            </View>
-        )
+    if (Placeholder) {
+        return Placeholder
     }
-
-    // Show error if query has an error
-    if (volumesQuery.error) {
-        return (
-            <View style={styles.centerContainer}>
-                <Text>Error loading volumes</Text>
-            </View>
-        )
-    }
-
-    const filteredVolumes = volumesQuery.data?.filter((volume) => {
-        const query = searchQuery.toLowerCase()
-        const volumeName = volume.Name.toLowerCase()
-        const stackName = volume.Labels?.['com.docker.compose.project']?.toLowerCase() || ''
-        return volumeName.includes(query) || stackName.includes(query)
-    })
 
     return (
         <FlatList
@@ -169,18 +217,8 @@ export default function VolumesScreen() {
                 <VolumeRow volume={volume} isBrowsingSupported={isBrowsingSupported} />
             )}
             keyExtractor={(volume) => volume.Name}
-            ListEmptyComponent={
-                <View style={styles.noResultsContainer}>
-                    <Text style={styles.noResultsText}>No volumes match your search</Text>
-                </View>
-            }
             contentInsetAdjustmentBehavior="automatic"
-            refreshControl={
-                <RefreshControl
-                    refreshing={volumesQuery.isRefetching}
-                    onRefresh={volumesQuery.refetch}
-                />
-            }
+            refreshControl={<RefreshControl onRefresh={volumesQuery.refetch} />}
         />
     )
 }
