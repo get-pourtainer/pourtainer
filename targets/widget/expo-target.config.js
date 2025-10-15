@@ -2,7 +2,10 @@
 module.exports = (config) => ({
     type: 'widget',
     icon: './icon.png',
-    entitlements: {},
+    entitlements: {
+        'com.apple.security.application-groups':
+            config.ios.entitlements['com.apple.security.application-groups'],
+    },
     colors: {
         $success: '#4ade80',
         $error: '#ef4444',
