@@ -3,7 +3,7 @@ import { isLiquidGlassAvailable } from 'expo-glass-effect'
 import { Stack } from 'expo-router'
 import { Platform } from 'react-native'
 
-export default function VolumesLayout() {
+export default function StackIndexLayout() {
     return (
         <Stack
             screenOptions={{
@@ -25,12 +25,7 @@ export default function VolumesLayout() {
                 },
             }}
         >
-            <Stack.Screen
-                name="index"
-                options={{
-                    title: 'Volumes',
-                }}
-            />
+            <Stack.Screen name="index" />
         </Stack>
     )
 }

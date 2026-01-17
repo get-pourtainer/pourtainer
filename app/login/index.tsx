@@ -3,7 +3,9 @@ import { usePersistedStore } from '@/stores/persisted'
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import type { Endpoint } from '@/types/endpoint'
 import { Ionicons } from '@expo/vector-icons'
+import { useMutation } from '@tanstack/react-query'
 import { router, useNavigation } from 'expo-router'
+import { usePlacement } from 'expo-superwall'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
     Alert,
@@ -18,14 +20,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
-import Animated, {
-    interpolate,
-    useAnimatedKeyboard,
-    useAnimatedStyle,
-    withTiming,
-} from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { KeyboardAwareScrollView, useAnimatedKeyboard } from 'react-native-keyboard-controller'
+import Animated, { interpolate, useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 // remove trailing slashes from url
 const sanitizeUrl = (url: string) => {
@@ -34,22 +31,19 @@ const sanitizeUrl = (url: string) => {
 
 export default function LoginScreen() {
     const navigation = useNavigation()
+    const { registerPlacement } = usePlacement()
 
     const addConnection = usePersistedStore((state) => state.addConnection)
     const switchConnection = usePersistedStore((state) => state.switchConnection)
     const connections = usePersistedStore((state) => state.connections)
 
-    const { bottom: bottomInset, top: topInset } = useSafeAreaInsets()
+    const { bottom: bottomInset } = useSafeAreaInsets()
 
     const [isModal, setIsModal] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
 
     const baseUrlRef = useRef<string>('')
     const apiTokenRef = useRef<string>('')
-    const keyboard = useAnimatedKeyboard({
-        isStatusBarTranslucentAndroid: true,
-        isNavigationBarTranslucentAndroid: true,
-    })
+    const keyboard = useAnimatedKeyboard()
 
     const showCloseButton = useMemo(() => {
         return Platform.OS === 'android' && isModal
@@ -93,62 +87,74 @@ export default function LoginScreen() {
         }
     }, [])
 
-    const handleLogin = useCallback(async () => {
-        const baseUrl = baseUrlRef.current.trim() || ''
-        const apiToken = apiTokenRef.current.trim() || ''
+    const loginMutation = useMutation({
+        mutationFn: async () => {
+            const baseUrl = baseUrlRef.current.trim() || ''
+            const apiToken = apiTokenRef.current.trim() || ''
 
-        if (!baseUrl || !apiToken) {
-            Alert.alert('Error', 'Please fill in all fields')
-            return
+            if (!baseUrl || !apiToken) {
+                throw new Error('Please fill in all fields')
+            }
+
+            const sanitizedUrl = sanitizeUrl(baseUrl)
+            const instanceId = await validateConnection(sanitizedUrl, apiToken)
+
+            if (!instanceId) {
+                throw new Error('Invalid token')
+            }
+
+            if (connections.find((c) => c.id === instanceId)) {
+                throw new Error('You are already connected to this instance')
+            }
+
+            const endpointsResponse = await guestClient(
+                sanitizedUrl,
+                '/api/endpoints?excludeSnapshots=true',
+                apiToken
+            )
+
+            if (endpointsResponse.respInfo.status >= 300) {
+                throw new Error('Could not fetch endpoints. Please check your server.')
+            }
+
+            const endpoints = endpointsResponse.json() as Endpoint[]
+            console.log(endpoints)
+
+            const firstId = endpoints.at(0)?.Id
+            if (!firstId) {
+                throw new Error('Your server does not have any endpoints.')
+            }
+
+            return { instanceId, apiToken, sanitizedUrl, firstId }
+        },
+        onSuccess: ({ instanceId, apiToken, sanitizedUrl, firstId }) => {
+            addConnection({
+                id: instanceId,
+                apiToken,
+                baseUrl: sanitizedUrl,
+                currentEndpointId: null,
+            })
+            switchConnection({ connectionId: instanceId, endpointId: firstId.toString() })
+
+            if (connections.length === 1) {
+                registerPlacement({
+                    placement: 'SuccessfulLogin',
+                }).catch()
+            }
+
+            router.replace('/')
+        },
+        onError: (error) => {
+            Alert.alert('Error', error.message)
+        },
+    })
+
+    const buttonTextColor = useMemo(() => {
+        if (Platform.OS === 'android') {
+            return loginMutation.isPending ? COLORS.text : COLORS.primary
         }
-
-        const sanitizedUrl = sanitizeUrl(baseUrl)
-        const instanceId = await validateConnection(sanitizedUrl, apiToken)
-
-        if (!instanceId) {
-            Alert.alert('Error', 'Invalid token')
-            return
-        }
-
-        if (connections.find((c) => c.id === instanceId)) {
-            Alert.alert('Error', 'You are already connected to this instance')
-            return
-        }
-
-        setIsLoading(true)
-
-        const endpointsResponse = await guestClient(
-            sanitizedUrl,
-            '/api/endpoints?excludeSnapshots=true',
-            apiToken
-        )
-
-        if (endpointsResponse.respInfo.status >= 300) {
-            Alert.alert('Error', 'Could not fetch endpoints. Please check your server.')
-            return
-        }
-
-        const endpoints = endpointsResponse.json() as Endpoint[]
-        console.log(endpoints)
-
-        const firstId = endpoints.at(0)?.Id
-        if (!firstId) {
-            Alert.alert('Error', 'Your server does not have any endpoints.')
-            return
-        }
-
-        addConnection({
-            id: instanceId,
-            apiToken,
-            baseUrl: sanitizedUrl,
-            currentEndpointId: null,
-        })
-        switchConnection({ connectionId: instanceId, endpointId: firstId.toString() })
-
-        router.replace('/')
-
-        setIsLoading(false)
-    }, [addConnection, switchConnection, validateConnection, connections])
+        return loginMutation.isPending ? COLORS.primaryLight : COLORS.primary
+    }, [loginMutation.isPending])
 
     const openApiDocs = () => {
         Linking.openURL('https://docs.portainer.io/api/access')
@@ -167,103 +173,117 @@ export default function LoginScreen() {
 
     return (
         <>
-            <KeyboardAwareScrollView
-                bottomOffset={20}
-                keyboardShouldPersistTaps="handled"
-                style={{
-                    flex: 1,
-                    backgroundColor: COLORS.bgApp,
-                    paddingTop: topInset,
-                }}
-            >
-                {showCloseButton && (
-                    <TouchableOpacity
-                        style={{
-                            position: 'absolute',
-                            top: -42,
-                            right: 30,
-                            backgroundColor: '#ffffff28',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            borderRadius: 16,
-                            height: 32,
-                            width: 32,
-                        }}
-                        onPress={() => router.back()}
-                    >
-                        <Ionicons name="close" size={20} color={COLORS.text} />
-                    </TouchableOpacity>
-                )}
-                <View style={styles.content}>
-                    <Image
-                        source={require('../../assets/whale.png')}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
-                    <Text style={styles.title}>Pourtainer</Text>
-                    <Text style={styles.subtitle}>Connect to your instance</Text>
+            <SafeAreaView style={{ flex: 1 }} edges={Platform.OS === 'android' ? ['top'] : []}>
+                <KeyboardAwareScrollView
+                    bottomOffset={20}
+                    extraKeyboardSpace={70}
+                    keyboardShouldPersistTaps="handled"
+                    style={{
+                        flex: 1,
+                        backgroundColor: COLORS.bgApp,
+                    }}
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        paddingTop: 120,
+                        paddingBottom: 280,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {showCloseButton && (
+                        <TouchableOpacity
+                            style={{
+                                position: 'absolute',
+                                top: -42,
+                                right: 30,
+                                backgroundColor: '#ffffff28',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                borderRadius: 16,
+                                height: 32,
+                                width: 32,
+                            }}
+                            onPress={() => router.back()}
+                        >
+                            <Ionicons name="close" size={20} color={COLORS.text} />
+                        </TouchableOpacity>
+                    )}
+                    <View style={styles.content}>
+                        <Image
+                            source={require('../../assets/whale.png')}
+                            style={styles.logo}
+                            resizeMode="contain"
+                        />
+                        <Text style={styles.title}>Pourtainer</Text>
+                        <Text style={styles.subtitle}>Connect to your instance</Text>
 
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Server Address</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="https://192.168.1.100:9443"
-                            placeholderTextColor={COLORS.textMuted}
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            onChangeText={(text) => {
-                                baseUrlRef.current = text
-                            }}
-                        />
-                        <Text style={styles.label}>API Token</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter your API token"
-                            placeholderTextColor={COLORS.textMuted}
-                            secureTextEntry={true}
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            onChangeText={(text) => {
-                                apiTokenRef.current = text
-                            }}
-                            returnKeyLabel="Connect"
-                            returnKeyType="go"
-                            onSubmitEditing={handleLogin}
-                        />
-                        <View style={styles.buttonContainer}>
-                            <Button
-                                title={isLoading ? 'Connecting...' : 'Connect'}
-                                onPress={handleLogin}
-                                color={isLoading ? COLORS.primaryLight : COLORS.primary}
-                                disabled={isLoading}
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Server Address</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="https://192.168.1.100:9443"
+                                placeholderTextColor={COLORS.textMuted}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                autoComplete="off"
+                                keyboardAppearance="dark"
+                                onChangeText={(text) => {
+                                    baseUrlRef.current = text
+                                }}
                             />
+                            <Text style={styles.label}>API Token</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Enter your API token"
+                                placeholderTextColor={COLORS.textMuted}
+                                secureTextEntry={true}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                autoComplete="off"
+                                keyboardAppearance="dark"
+                                onChangeText={(text) => {
+                                    apiTokenRef.current = text
+                                }}
+                                returnKeyLabel="Connect"
+                                returnKeyType="go"
+                                onSubmitEditing={() => loginMutation.mutate()}
+                            />
+                            <View style={styles.buttonContainer}>
+                                <Button
+                                    title={loginMutation.isPending ? 'Connecting...' : 'Connect'}
+                                    onPress={() => loginMutation.mutate()}
+                                    color={buttonTextColor}
+                                    disabled={loginMutation.isPending}
+                                />
+                            </View>
                         </View>
                     </View>
-                </View>
-            </KeyboardAwareScrollView>
-            <Animated.View style={[helpBoxAnimatedStyles]}>
-                <Pressable
-                    style={[
-                        styles.helpBox,
-                        {
-                            marginBottom: Math.max(bottomInset, 25),
-                        },
-                    ]}
-                    onPress={openApiDocs}
-                >
-                    <Text style={styles.helpTitle}>Need help finding your API key?</Text>
-                    <Text style={styles.helpText}>
-                        Tap to learn how to generate a Portainer API key.
-                    </Text>
-                </Pressable>
-            </Animated.View>
+                </KeyboardAwareScrollView>
+            </SafeAreaView>
+            {!isModal && (
+                <Animated.View style={[helpBoxAnimatedStyles]}>
+                    <Pressable
+                        style={[
+                            styles.helpBox,
+                            {
+                                marginBottom: Math.max(bottomInset, 25),
+                            },
+                        ]}
+                        onPress={openApiDocs}
+                    >
+                        <Text style={styles.helpTitle}>Need help finding your API key?</Text>
+                        <Text style={styles.helpText}>
+                            Tap to learn how to generate a Portainer API key.
+                        </Text>
+                    </Pressable>
+                </Animated.View>
+            )}
         </>
     )
 }
 
 const styles = StyleSheet.create({
     content: {
-        flex: 1,
+        flexGrow: 1,
         justifyContent: 'center',
         paddingHorizontal: SPACING.lg,
         maxWidth: 400,

@@ -1,23 +1,14 @@
 import WidgetKitModule from '@/modules/widgetkit'
 import { COLORS } from '@/theme'
-import Superwall from '@superwall/react-native-superwall'
-import { useEffect, useState } from 'react'
+import * as Sentry from '@sentry/react-native'
+import { usePlacement, useUser } from 'expo-superwall'
 import { Alert, Text, TouchableOpacity } from 'react-native'
 
 export default function ContainerWidgetMessage() {
-    const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null)
+    const { registerPlacement } = usePlacement()
+    const { subscriptionStatus } = useUser()
 
-    useEffect(() => {
-        Superwall.shared.getSubscriptionStatus().then(({ status }) => {
-            setIsSubscribed(status === 'ACTIVE')
-        })
-    }, [])
-
-    if (isSubscribed === null) {
-        return null
-    }
-
-    if (isSubscribed) {
+    if (subscriptionStatus.status !== 'INACTIVE') {
         return null
     }
 
@@ -30,20 +21,20 @@ export default function ContainerWidgetMessage() {
                 backgroundColor: COLORS.primaryDark,
             }}
             onPress={() => {
-                Superwall.shared
-                    .register({
-                        placement: 'TapWidget',
-                        feature: () => {
-                            WidgetKitModule.setIsSubscribed(true)
-                            Alert.alert(
-                                'Congrats, you can now go to your homescreen and search for "Pourtainer" widgets'
-                            )
-                        },
-                    })
-                    .catch((error) => {
-                        console.error('Error registering TapWidget', error)
-                        Alert.alert('Error', 'Something went wrong, please try again.')
-                    })
+                registerPlacement({
+                    placement: 'TapWidget',
+                    feature: () => {
+                        WidgetKitModule.setIsSubscribed(true)
+                        Alert.alert(
+                            'Congrats!',
+                            'You can now go to your homescreen and search for "Pourtainer" widgets'
+                        )
+                    },
+                }).catch((error) => {
+                    Sentry.captureException(error)
+                    console.error('Error registering TapWidget', error)
+                    Alert.alert('Error', 'Something went wrong, please try again.')
+                })
             }}
         >
             <Text style={{ color: COLORS.text, fontSize: 14, fontWeight: '500' }}>

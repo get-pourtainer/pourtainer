@@ -33,6 +33,13 @@ interface PersistedState {
     setLastShownReviewPrompt: (ts: number) => void
 
     hasSeenOnboarding: boolean
+
+    acknowledgments: {
+        swipeLeftStack: boolean
+    }
+    acknowledge: (type: keyof PersistedState['acknowledgments']) => void
+
+    installationTs: number
 }
 
 export const usePersistedStore = create<PersistedState>()(
@@ -110,6 +117,20 @@ export const usePersistedStore = create<PersistedState>()(
             },
 
             hasSeenOnboarding: false,
+
+            acknowledgments: {
+                swipeLeftStack: false,
+            },
+            acknowledge: (type: keyof PersistedState['acknowledgments']) => {
+                set((state) => ({
+                    acknowledgments: {
+                        ...state.acknowledgments,
+                        [type]: true,
+                    },
+                }))
+            },
+
+            installationTs: Date.now(),
         }),
         {
             name: 'auth-storage',

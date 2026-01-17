@@ -54,7 +54,8 @@ export default function client({
 
             const skipPayload = IGNORE_BODY_URLS.some((url) => input.url.includes(url))
 
-            const returnBody = req.respInfo.status === 200 && !skipPayload ? req.data : '{}'
+            const returnBody =
+                [200, 201, 204].includes(req.respInfo.status) && !skipPayload ? req.data : '{}'
 
             const res = new Response(returnBody, {
                 status: req.respInfo.status,

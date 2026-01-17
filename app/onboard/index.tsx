@@ -1,5 +1,6 @@
 import { usePersistedStore } from '@/stores/persisted'
 import { COLORS } from '@/theme'
+import { Ionicons } from '@expo/vector-icons'
 import { type OnboardingFeature, OnboardingView } from 'expo-onboarding'
 import { router } from 'expo-router'
 import { Text, TouchableOpacity, View } from 'react-native'
@@ -9,6 +10,7 @@ const FEATURES: OnboardingFeature[] = [
         title: 'Manage Portainer',
         description:
             'Operate stacks, browse volumes, and check on your containers using home screen widgets.',
+        icon: () => <Ionicons name="server" size={42} color={COLORS.primary} />,
         systemImage: 'server.rack',
     },
     {
@@ -16,10 +18,11 @@ const FEATURES: OnboardingFeature[] = [
         description:
             'You are using Open Source Software (OSS) crafted by container-loving people. Give it a star!',
         systemImage: 'star.fill',
+        icon: () => <Ionicons name="star" size={42} color={COLORS.primary} />,
         links: [
             {
                 sectionText: 'Give it a star!',
-                sectionUrl: 'https://github.com/getpourtainer/pourtainer',
+                sectionUrl: 'https://github.com/get-pourtainer/pourtainer',
             },
         ],
     },
@@ -27,6 +30,7 @@ const FEATURES: OnboardingFeature[] = [
         title: 'Local Only',
         description:
             'Your data never leaves the app, this includes your API token which is locally stored.',
+        icon: () => <Ionicons name="shield" size={42} color={COLORS.primary} />,
         systemImage: 'shield.fill',
     },
 ]

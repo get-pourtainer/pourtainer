@@ -1,6 +1,6 @@
-import { MMKV } from 'react-native-mmkv'
+import { createMMKV } from 'react-native-mmkv'
 
-export const storage = new MMKV({
+const storage = createMMKV({
     id: 'pourtainer-mobile',
 })
 
@@ -13,6 +13,6 @@ export const mmkvStorage = {
         storage.set(key, value)
     },
     removeItem: (key: string) => {
-        storage.delete(key)
+        storage.remove(key)
     },
 }

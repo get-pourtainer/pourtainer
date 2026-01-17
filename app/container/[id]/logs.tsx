@@ -2,10 +2,11 @@ import { fetchLogs } from '@/api/queries'
 import buildPlaceholder from '@/components/base/Placeholder'
 import { COLORS } from '@/theme'
 import { useQuery } from '@tanstack/react-query'
+import { isLiquidGlassAvailable } from 'expo-glass-effect'
 import { useLocalSearchParams } from 'expo-router'
 import debounce from 'lodash/debounce'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { StyleSheet } from 'react-native'
+import { FlatList, StyleSheet } from 'react-native'
 import {
     Animated,
     KeyboardAvoidingView,
@@ -14,7 +15,6 @@ import {
     type NativeScrollEvent,
     type NativeSyntheticEvent,
     Platform,
-    ScrollView,
     Text,
     TextInput,
     TouchableOpacity,
@@ -82,7 +82,6 @@ export default function ContainerLogsScreen() {
 
     // Add refs for scroll tracking
     const lastScrollY = useRef(0)
-    const scrollViewRef = useRef<ScrollView>(null)
     const [contentHeight, setContentHeight] = useState(0)
     const [containerHeight, setContainerHeight] = useState(0)
 
@@ -182,6 +181,29 @@ export default function ContainerLogsScreen() {
         })
     }, [logsQuery.isLoading, logsQuery.isError, logsQuery.data])
 
+    const logLines = useMemo(() => {
+        return logsQuery.data ? logsQuery.data.split('\n') : []
+    }, [logsQuery.data])
+
+    const renderLogItem = useCallback(
+        ({ item }: { item: string }) => (
+            <Text
+                style={{
+                    color: COLORS.terminalGreen,
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    lineHeight: 20,
+                    marginBottom: 2,
+                }}
+            >
+                {item}
+            </Text>
+        ),
+        []
+    )
+
+    const keyExtractor = useCallback((_item: string, index: number) => `log-${index}`, [])
+
     return (
         <KeyboardAvoidingView
             style={{ flex: 1 }}
@@ -196,30 +218,20 @@ export default function ContainerLogsScreen() {
                     {Placeholder || !logsQuery.data ? (
                         Placeholder
                     ) : (
-                        <ScrollView
-                            ref={scrollViewRef}
+                        <FlatList
+                            data={logLines}
+                            renderItem={renderLogItem}
+                            keyExtractor={keyExtractor}
                             style={{ padding: 12 }}
                             onScroll={handleScroll}
                             scrollEventThrottle={32}
                             onLayout={handleLayout}
                             onContentSizeChange={handleContentSizeChange}
-                            contentContainerStyle={{ paddingBottom: 100 }}
-                        >
-                            {logsQuery.data.split('\n').map((log, index) => (
-                                <Text
-                                    key={index}
-                                    style={{
-                                        color: COLORS.terminalGreen,
-                                        fontFamily: 'monospace',
-                                        fontSize: 12,
-                                        lineHeight: 20,
-                                        marginBottom: 2,
-                                    }}
-                                >
-                                    {log}
-                                </Text>
-                            ))}
-                        </ScrollView>
+                            contentContainerStyle={{
+                                paddingBottom: 100,
+                                paddingTop: isLiquidGlassAvailable() ? 100 : undefined,
+                            }}
+                        />
                     )}
                 </View>
 
@@ -256,24 +268,19 @@ export default function ContainerLogsScreen() {
                         {/* Lines Control */}
                         <View style={styles.controlGroup}>
                             <Text style={[styles.baseText, styles.controlLabel]}>Lines</Text>
-                            <View style={styles.baseControl}>
-                                <TextInput
-                                    style={[
-                                        styles.baseText,
-                                        styles.controlText,
-                                        { width: '100%', height: '100%' },
-                                    ]}
-                                    value={options.tail.toString()}
-                                    onChangeText={handleTailChange}
-                                    keyboardType="numeric"
-                                    returnKeyType="done"
-                                    blurOnSubmit={true}
-                                    enablesReturnKeyAutomatically={true}
-                                    autoComplete="off"
-                                    autoCorrect={false}
-                                    spellCheck={false}
-                                />
-                            </View>
+                            <TextInput
+                                style={[styles.baseText, styles.controlText, styles.baseControl]}
+                                value={String(options.tail)}
+                                onChangeText={handleTailChange}
+                                keyboardType="numeric"
+                                returnKeyType="done"
+                                submitBehavior="blurAndSubmit"
+                                enablesReturnKeyAutomatically={true}
+                                autoComplete="off"
+                                autoCorrect={false}
+                                autoCapitalize="none"
+                                keyboardAppearance="dark"
+                            />
                         </View>
 
                         {/* Period Control */}

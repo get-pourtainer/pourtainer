@@ -2,6 +2,7 @@ import dockerClient from '@/lib/docker'
 import portainerClient from '@/lib/portainer'
 import { usePersistedStore } from '@/stores/persisted'
 import ReactNativeBlobUtil from 'react-native-blob-util'
+import stripAnsi from 'strip-ansi'
 
 export async function fetchNetworks() {
     console.log('Fetching NETWORKS from API...')
@@ -152,18 +153,6 @@ export async function fetchContainers() {
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        // todo remove me sometime in the future
-        // register instance for users who were already signed in
-        // if (WidgetKitModule.getConnections().length === 0) {
-        //     if (currentConnection) {
-        //         WidgetKitModule.registerConnection({
-        //             id: currentConnection.id,
-        //             url: currentConnection.baseUrl,
-        //             accessToken: currentConnection.apiToken,
-        //         })
-        //     }
-        // }
-
         const response = await dockerClient({
             connectionId: currentConnection?.id,
             endpointId: currentConnection?.currentEndpointId!,
@@ -298,7 +287,7 @@ export async function fetchLogs(
             position += length
         }
 
-        return result
+        return stripAnsi(result)
     } catch (error) {
         console.error('Error fetching logs:', error)
         throw error
@@ -362,6 +351,88 @@ export async function fetchEndpoints({ connectionId }: { connectionId?: string }
         return response.data
     } catch (error) {
         console.error('Error fetching endpoints:', error)
+        console.log(JSON.stringify(error, null, 2))
+        throw error
+    }
+}
+
+export async function fetchStacks() {
+    console.log('Fetching stacks from API...')
+    const currentConnection = usePersistedStore.getState().currentConnection
+
+    try {
+        // First try without filters to see if the endpoint works
+        const response = await portainerClient().GET('/stacks')
+
+        if (response.error) {
+            throw new Error('Failed to fetch stacks')
+        }
+
+        // Handle 204 (no content) or empty array responses
+        const allStacks = response.data || []
+
+        // Filter by current endpoint if we have stacks
+        if (currentConnection?.currentEndpointId && Array.isArray(allStacks)) {
+            return allStacks.filter(
+                (stack) => stack.EndpointId === Number(currentConnection.currentEndpointId)
+            )
+        }
+
+        return allStacks
+    } catch (error) {
+        console.error('Error fetching stacks:', error)
+        console.log(JSON.stringify(error, null, 2))
+        throw error
+    }
+}
+
+export async function fetchStack(stackId: number) {
+    console.log('Fetching stack from API...', stackId)
+
+    try {
+        const response = await portainerClient().GET('/stacks/{id}', {
+            params: {
+                path: {
+                    id: stackId,
+                },
+            },
+        })
+
+        if (response.error) {
+            throw new Error('Failed to fetch stack')
+        }
+
+        if (!response.data) {
+            throw new Error('No data returned from API')
+        }
+
+        return response.data
+    } catch (error) {
+        console.error('Error fetching stack:', error)
+        console.log(JSON.stringify(error, null, 2))
+        throw error
+    }
+}
+
+export async function fetchStackFile(stackId: number) {
+    console.log('Fetching stack file from API...', stackId)
+
+    try {
+        const response = await portainerClient().GET('/stacks/{id}/file', {
+            params: {
+                path: {
+                    id: stackId,
+                },
+            },
+        })
+
+        if (!response.data) {
+            throw new Error('No data returned from API')
+        }
+
+        return response.data
+    } catch (error) {
+        console.error('Error fetching stack file:', error)
         console.log(JSON.stringify(error, null, 2))
         throw error
     }

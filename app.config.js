@@ -40,11 +40,10 @@ module.exports = ({ config }) => {
             package: process.env.EXPO_PUBLIC_ANDROID_PACKAGE,
             adaptiveIcon: {
                 foregroundImage: './assets/icon.png',
-                backgroundColor: '#0f172a',
+                backgroundColor: '#141414',
             },
-            // googleServicesFile: './google-services.json',
             playStoreUrl: process.env.EXPO_PUBLIC_ANDROID_STORE_URL,
-            predictiveBackGestureEnabled: true,
+            predictiveBackGestureEnabled: false,
         },
 
         plugins: [
@@ -55,16 +54,19 @@ module.exports = ({ config }) => {
                         networkInspector: false,
                     },
                     android: {
-                        minSdkVersion: 26,
+                        minSdkVersion: 24,
+                        targetSdkVersion: 35,
+                        enablePngCrunchInReleaseBuilds: false,
                     },
                 },
             ],
+            './plugins/withAndroidHeap',
             'expo-router',
             [
                 'expo-splash-screen',
                 {
-                    image: './assets/splash/dark.png',
-                    backgroundColor: '#0f172a',
+                    image: './assets/splash.png',
+                    backgroundColor: '#141414',
                     imageWidth: 200,
                 },
             ],
@@ -79,13 +81,21 @@ module.exports = ({ config }) => {
             ],
             './plugins/withBlobSelfSignedServer',
             '@bacons/apple-targets',
+            'expo-quick-actions',
             [
                 './plugins/withAndroidWidget',
                 {
                     src: './targets/widget-android',
-                    glanceVersion: '1.1.1',
-                    kotlinExtensionVersion: '1.5.15',
                     receiverName: 'ContainerWidgetReceiver',
+                    versions: {
+                        glance: '1.1.1',
+                        kotlinExtension: '2.0.0',
+                        gson: '2.13.2',
+                        activityCompose: '1.11.0',
+                        composeUi: '1.9.3',
+                        material3: '1.4.0',
+                        workRuntime: '2.10.5',
+                    },
                 },
             ],
         ],

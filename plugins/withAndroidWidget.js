@@ -1,35 +1,49 @@
-const { AndroidConfig, withAppBuildGradle, withAndroidManifest } = require('@expo/config-plugins')
+const {
+    AndroidConfig,
+    withAppBuildGradle,
+    withAndroidManifest,
+    withProjectBuildGradle,
+} = require('@expo/config-plugins')
 const { mergeContents } = require('@expo/config-plugins/build/utils/generateCode')
-const withSourceFiles = require('./withSourceFiles')
+const withAndroidSourceFiles = require('./withAndroidSourceFiles')
 
 const withModifiedAppBuildGradle = (config, opts) =>
+    // implementation("androidx.glance:glance:${opts.versions.glance}")
     withAppBuildGradle(config, (config) => {
         const gradleDependencies = `
-    implementation("androidx.glance:glance:${opts.glanceVersion}")
-    implementation("androidx.glance:glance-appwidget:${opts.glanceVersion}")
-    implementation("androidx.glance:glance-preview:${opts.glanceVersion}")
-    implementation("androidx.glance:glance-material3:${opts.glanceVersion}")
-    implementation("androidx.glance:glance-appwidget-preview:${opts.glanceVersion}")
-    implementation("com.google.code.gson:gson:2.12.1")
-    implementation("androidx.activity:activity-compose:1.10.0")
-    implementation("androidx.compose.ui:ui:1.7.8")
-    implementation("androidx.compose.material3:material3:1.3.1")
-    implementation("androidx.work:work-runtime:2.10.0")
-    `
+implementation("androidx.glance:glance-appwidget:${opts.versions.glance}")
+implementation("androidx.glance:glance-preview:${opts.versions.glance}")
+implementation("androidx.glance:glance-material3:${opts.versions.glance}")
+implementation("androidx.glance:glance-appwidget-preview:${opts.versions.glance}")
+implementation("com.google.code.gson:gson:${opts.versions.gson}")
+implementation("androidx.activity:activity-compose:${opts.versions.activityCompose}")
+implementation("androidx.compose.ui:ui:${opts.versions.composeUi}")
+implementation("androidx.compose.material3:material3:${opts.versions.material3}")
+implementation("androidx.work:work-runtime:${opts.versions.workRuntime}")
+`
 
         const gradleAndroidConfig = `
 android {
     buildFeatures {
         compose = true
     }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "${opts.kotlinExtensionVersion}"
-    }
 }
 `
+        // composeOptions {
+        // 	kotlinCompilerExtensionVersion = "${opts.versions.kotlinExtension}"
+        // }
 
         let newFileContents = config.modResults.contents
+
+        // Apply Kotlin Compose Gradle plugin (required for Kotlin 2.0+ when compose is enabled)
+        newFileContents = mergeContents({
+            src: newFileContents,
+            newSrc: 'apply plugin: "org.jetbrains.kotlin.plugin.compose"',
+            tag: 'KotlinComposeGradlePlugin',
+            anchor: /apply plugin: "org.jetbrains.kotlin.android"/,
+            offset: 1,
+            comment: '//',
+        }).contents
 
         newFileContents = mergeContents({
             src: newFileContents,
@@ -46,6 +60,25 @@ android {
             tag: 'GlanceAndroidConfig',
             anchor: /dependencies \{/,
             offset: -1,
+            comment: '//',
+        }).contents
+
+        config.modResults.contents = newFileContents
+
+        return config
+    })
+
+const withRootKotlinComposeClasspath = (config, opts) =>
+    withProjectBuildGradle(config, (config) => {
+        let newFileContents = config.modResults.contents
+
+        // Ensure the Kotlin Compose Gradle plugin is available on the buildscript classpath
+        newFileContents = mergeContents({
+            src: newFileContents,
+            newSrc: `    classpath('org.jetbrains.kotlin:compose-compiler-gradle-plugin:${opts.versions.kotlinExtension}')`,
+            tag: 'KotlinComposeGradlePluginClasspath',
+            anchor: /classpath\('org\.jetbrains\.kotlin:kotlin-gradle-plugin'\)/,
+            offset: 1,
             comment: '//',
         }).contents
 
@@ -115,9 +148,10 @@ const withModifiedAndroidManifest = (config, opts) =>
     })
 
 const withAndroidWidget = (config, opts) => {
+    config = withRootKotlinComposeClasspath(config, opts)
     config = withModifiedAppBuildGradle(config, opts)
     config = withModifiedAndroidManifest(config, opts)
-    config = withSourceFiles(config, { src: opts.src })
+    config = withAndroidSourceFiles(config, { src: opts.src })
 
     return config
 }

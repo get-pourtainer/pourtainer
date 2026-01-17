@@ -9,16 +9,17 @@ import { COLORS } from '@/theme'
 import { Ionicons } from '@expo/vector-icons'
 import * as Sentry from '@sentry/react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import * as Haptics from 'expo-haptics'
 import { useGlobalSearchParams, useRouter } from 'expo-router'
-import { useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import ContextMenu from 'react-native-context-menu-view'
 
-// Section Container Component
 const SectionContainer = ({
     title,
     children,
     endContent,
-}: { title: string; children: React.ReactNode; endContent?: React.ReactNode }) => (
+}: { title: string; children: ReactNode; endContent?: ReactNode }) => (
     <View>
         <View
             style={{
@@ -27,6 +28,8 @@ const SectionContainer = ({
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                borderBottomWidth: 1,
+                borderColor: COLORS.hr,
             }}
         >
             <Text
@@ -40,12 +43,11 @@ const SectionContainer = ({
             </Text>
             {endContent}
         </View>
-        <View style={{ backgroundColor: COLORS.bgSecondary }}>{children}</View>
+        <View style={{ backgroundColor: COLORS.bgSecondary + '50' }}>{children}</View>
     </View>
 )
 
-// Field Row Component
-const FieldRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+const FieldRow = ({ label, children }: { label: string; children: ReactNode }) => (
     <View
         style={{
             paddingHorizontal: 20,
@@ -60,8 +62,7 @@ const FieldRow = ({ label, children }: { label: string; children: React.ReactNod
     </View>
 )
 
-// Context Menu Component (simplified)
-const ContextMenu = ({
+const ContextTypePicker = ({
     value,
     options,
     onSelect,
@@ -69,28 +70,39 @@ const ContextMenu = ({
     value: string
     options: { label: string; value: string }[]
     onSelect: (value: string) => void
-}) => (
-    <TouchableOpacity
-        style={{
-            backgroundColor: COLORS.primaryDark,
-            padding: 12,
-            borderRadius: 6,
-        }}
-        onPress={() => {
-            Alert.alert('Select Option', '', [
-                ...options.map((opt) => ({
-                    text: opt.label,
-                    onPress: () => onSelect(opt.value),
-                })),
-                { text: 'Cancel', style: 'cancel' as const },
-            ])
-        }}
-    >
-        <Text style={{ color: COLORS.text }}>
-            {options.find((o) => o.value === value)?.label || value}
-        </Text>
-    </TouchableOpacity>
-)
+}) => {
+    const valueMap: Record<string, string> = {}
+    const labelMap: Record<string, string> = {}
+
+    for (const option of options) {
+        valueMap[option.label] = option.value
+        labelMap[option.value] = option.label
+    }
+
+    return (
+        <ContextMenu
+            dropdownMenuMode={true}
+            actions={options.map((opt) => ({ title: opt.label }))}
+            onPress={(e) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                const selectedValue = valueMap[e.nativeEvent.name]
+                if (selectedValue !== undefined) {
+                    onSelect(selectedValue)
+                }
+            }}
+        >
+            <TouchableOpacity
+                style={{
+                    backgroundColor: COLORS.primaryDark,
+                    padding: 12,
+                    borderRadius: 6,
+                }}
+            >
+                <Text style={{ color: COLORS.text }}>{labelMap[value] || value}</Text>
+            </TouchableOpacity>
+        </ContextMenu>
+    )
+}
 
 export default function EditContainerScreen() {
     const { id } = useGlobalSearchParams<{ id: string }>()
@@ -124,11 +136,11 @@ export default function EditContainerScreen() {
         onSuccess: (createdContainerResponse) => {
             router.dismissAll()
             queryClient.resetQueries({ queryKey: ['containers'] })
-            router.push(`/container/${createdContainerResponse.Id}`)
+            router.push(`/container/${createdContainerResponse.Id}/`)
         },
         onError: (error) => {
             Sentry.captureException(error)
-            Alert.alert('Error', `Failed to update container: ${error.message}`)
+            Alert.alert('Error updating container', error.message)
         },
     })
 
@@ -161,6 +173,10 @@ export default function EditContainerScreen() {
                         }
                         placeholder="Container name"
                         placeholderTextColor={COLORS.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="off"
+                        keyboardAppearance="dark"
                     />
                 </FieldRow>
 
@@ -180,11 +196,15 @@ export default function EditContainerScreen() {
                         }
                         placeholder="nginx:latest"
                         placeholderTextColor={COLORS.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="off"
+                        keyboardAppearance="dark"
                     />
                 </FieldRow>
 
                 <FieldRow label="Logging">
-                    <ContextMenu
+                    <ContextTypePicker
                         value={formData.basic.logging}
                         options={[
                             { label: 'JSON File', value: 'json-file' },
@@ -209,7 +229,7 @@ export default function EditContainerScreen() {
                 </FieldRow>
 
                 <FieldRow label="Restart Policy">
-                    <ContextMenu
+                    <ContextTypePicker
                         value={formData.basic.restartPolicy}
                         options={[
                             { label: 'None', value: '' },
@@ -293,6 +313,10 @@ export default function EditContainerScreen() {
                             placeholder="Host port"
                             placeholderTextColor={COLORS.textMuted}
                             keyboardType="numeric"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            autoComplete="off"
+                            keyboardAppearance="dark"
                         />
                         <Text style={{ color: COLORS.text, paddingHorizontal: 8, fontSize: 18 }}>
                             →
@@ -314,9 +338,13 @@ export default function EditContainerScreen() {
                             placeholder="Container port"
                             placeholderTextColor={COLORS.textMuted}
                             keyboardType="numeric"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            autoComplete="off"
+                            keyboardAppearance="dark"
                         />
                         <View style={{ width: 60 }}>
-                            <ContextMenu
+                            <ContextTypePicker
                                 value={port.protocol}
                                 options={[
                                     { label: 'TCP', value: 'tcp' },
@@ -377,6 +405,10 @@ export default function EditContainerScreen() {
                         }
                         placeholder="leave empty for default"
                         placeholderTextColor={COLORS.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="off"
+                        keyboardAppearance="dark"
                     />
                 </FieldRow>
 
@@ -404,6 +436,10 @@ export default function EditContainerScreen() {
                         }
                         placeholder="leave empty for default"
                         placeholderTextColor={COLORS.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="off"
+                        keyboardAppearance="dark"
                     />
                 </FieldRow>
 
@@ -425,6 +461,10 @@ export default function EditContainerScreen() {
                         }
                         placeholder="e.g. /myapp"
                         placeholderTextColor={COLORS.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="off"
+                        keyboardAppearance="dark"
                     />
                 </FieldRow>
 
@@ -446,11 +486,15 @@ export default function EditContainerScreen() {
                         }
                         placeholder="e.g. nginx"
                         placeholderTextColor={COLORS.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="off"
+                        keyboardAppearance="dark"
                     />
                 </FieldRow>
 
                 <FieldRow label="Console">
-                    <ContextMenu
+                    <ContextTypePicker
                         value={formData.commands.console}
                         options={[
                             { label: 'Interactive & TTY', value: 'interactive-tty' },
@@ -526,6 +570,10 @@ export default function EditContainerScreen() {
                             }}
                             placeholder="Name"
                             placeholderTextColor={COLORS.textMuted}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            autoComplete="off"
+                            keyboardAppearance="dark"
                         />
                         <Text style={{ color: COLORS.text, paddingHorizontal: 8, fontSize: 18 }}>
                             =
@@ -546,6 +594,10 @@ export default function EditContainerScreen() {
                             }}
                             placeholder="Value"
                             placeholderTextColor={COLORS.textMuted}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            autoComplete="off"
+                            keyboardAppearance="dark"
                         />
                         <TouchableOpacity
                             onPress={() => {
@@ -623,6 +675,10 @@ export default function EditContainerScreen() {
                             }}
                             placeholder="Name"
                             placeholderTextColor={COLORS.textMuted}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            autoComplete="off"
+                            keyboardAppearance="dark"
                         />
                         <Text style={{ color: COLORS.text, paddingHorizontal: 8, fontSize: 18 }}>
                             =
@@ -645,6 +701,10 @@ export default function EditContainerScreen() {
                             }}
                             placeholder="Value"
                             placeholderTextColor={COLORS.textMuted}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            autoComplete="off"
+                            keyboardAppearance="dark"
                         />
                         <TouchableOpacity
                             onPress={() => {
@@ -734,9 +794,13 @@ export default function EditContainerScreen() {
                                 }}
                                 placeholder="Container path"
                                 placeholderTextColor={COLORS.textMuted}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                autoComplete="off"
+                                keyboardAppearance="dark"
                             />
                             <View style={{ width: 80 }}>
-                                <ContextMenu
+                                <ContextTypePicker
                                     value={volume.type}
                                     options={[
                                         { label: 'Volume', value: 'volume' },
@@ -780,9 +844,13 @@ export default function EditContainerScreen() {
                                 }}
                                 placeholder={volume.type === 'volume' ? 'Volume name' : 'Host path'}
                                 placeholderTextColor={COLORS.textMuted}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                autoComplete="off"
+                                keyboardAppearance="dark"
                             />
                             <View style={{ width: 80 }}>
-                                <ContextMenu
+                                <ContextTypePicker
                                     value={volume.readOnly ? 'readonly' : 'writable'}
                                     options={[
                                         { label: 'Writable', value: 'writable' },

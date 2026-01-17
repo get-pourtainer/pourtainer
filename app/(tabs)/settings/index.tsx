@@ -4,18 +4,20 @@ import ActivityIndicator from '@/components/base/ActivityIndicator'
 import { usePersistedStore } from '@/stores/persisted'
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import WidgetKitModule from '@/widgetkit'
+import Alert from '@blazejkustra/react-native-alert'
 import * as Sentry from '@sentry/react-native'
-import Superwall from '@superwall/react-native-superwall'
 import { useMutation, useQueries } from '@tanstack/react-query'
-import * as FileSystem from 'expo-file-system'
+import * as FileSystem from 'expo-file-system/legacy'
 import * as Haptics from 'expo-haptics'
 import { router } from 'expo-router'
 import * as Sharing from 'expo-sharing'
+import { usePlacement } from 'expo-superwall'
 import { useCallback, useMemo } from 'react'
-import { Alert, Platform, StyleSheet, TouchableOpacity } from 'react-native'
+import { Platform, StyleSheet, TouchableOpacity } from 'react-native'
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 
 export default function SettingsScreen() {
+    const { registerPlacement } = usePlacement()
     const connections = usePersistedStore((state) => state.connections)
     const switchConnection = usePersistedStore((state) => state.switchConnection)
     const currentConnection = usePersistedStore((state) => state.currentConnection)
@@ -74,7 +76,7 @@ export default function SettingsScreen() {
         },
         onError: (error) => {
             Sentry.captureException(error)
-            console.error('Config backup failed', error)
+            Alert.alert('Error backing up config', error.message)
         },
     })
 
@@ -187,7 +189,12 @@ export default function SettingsScreen() {
                                                 text: 'Remove connection',
                                                 style: 'destructive',
                                                 onPress: () => {
+                                                    const isLastConnection =
+                                                        connections.length === 1
                                                     removeConnection(connectionId)
+                                                    if (isLastConnection) {
+                                                        router.replace('/login/')
+                                                    }
                                                 },
                                             },
                                         ])
@@ -217,7 +224,7 @@ export default function SettingsScreen() {
                                                 {
                                                     text: 'Backup config',
                                                     style: 'default',
-                                                    onPress: (password) => {
+                                                    onPress: (password?: string) => {
                                                         backupConfigMutation.mutate(password)
                                                     },
                                                 },
@@ -250,26 +257,26 @@ export default function SettingsScreen() {
             <TouchableOpacity
                 style={styles.addConnectionButton}
                 onPress={() => {
-                    if (__DEV__) {
-                        router.push('/login')
+                    const featureFn = () => {
+                        router.push('/login/')
                         WidgetKitModule.setIsSubscribed(true)
-                        return
                     }
+
+                    // if (__DEV__) {
+                    //     featureFn()
+                    //     return
+                    // }
 
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 
-                    Superwall.shared
-                        .register({
-                            placement: 'AddConnection',
-                            feature: () => {
-                                router.push('/login')
-                                WidgetKitModule.setIsSubscribed(true)
-                            },
-                        })
-                        .catch((error) => {
-                            console.error('Error registering AddConnection', error)
-                            Alert.alert('Error', 'Something went wrong, please try again.')
-                        })
+                    registerPlacement({
+                        placement: 'AddConnection',
+                        feature: featureFn,
+                    }).catch((error) => {
+                        Sentry.captureException(error)
+                        console.error('Error registering AddConnection', error)
+                        Alert.alert('Error', 'Something went wrong, please try again.')
+                    })
                 }}
             >
                 <Text style={{ color: COLORS.text, fontSize: 16, fontWeight: 700 }}>

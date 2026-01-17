@@ -1,7 +1,8 @@
 import ActivityIndicator from '@/components/base/ActivityIndicator'
 import Text from '@/components/base/Text'
 import { COLORS } from '@/theme'
-import { View } from 'react-native'
+import { useEffect, useMemo, useState } from 'react'
+import { Platform, View } from 'react-native'
 
 export default function buildPlaceholder({
     isLoading,
@@ -13,13 +14,13 @@ export default function buildPlaceholder({
     isLoading: boolean
     isError: boolean
     hasData: boolean | undefined
-    emptyLabel: string
-    errorLabel: string
+    emptyLabel: string | React.ReactNode
+    errorLabel: string | React.ReactNode
 }) {
     if (isLoading) {
         return (
             <PlaceholderRoot>
-                <ActivityIndicator />
+                <LoadingIndicatorWithHint />
             </PlaceholderRoot>
         )
     }
@@ -35,7 +36,7 @@ export default function buildPlaceholder({
                     }}
                     numberOfLines={10}
                 >
-                    {errorLabel}
+                    {typeof errorLabel === 'string' ? <Text>{errorLabel}</Text> : errorLabel}
                 </Text>
             </PlaceholderRoot>
         )
@@ -52,7 +53,7 @@ export default function buildPlaceholder({
                     }}
                     numberOfLines={10}
                 >
-                    {emptyLabel}
+                    {typeof emptyLabel === 'string' ? <Text>{emptyLabel}</Text> : emptyLabel}
                 </Text>
             </PlaceholderRoot>
         )
@@ -60,18 +61,42 @@ export default function buildPlaceholder({
     return undefined
 }
 
-// Memoize the entire component
-// export default React.memo(EmptyListComponent, (prevProps, nextProps) => {
-//     return (
-//         prevProps.isLoading === nextProps.isLoading &&
-//         prevProps.isError === nextProps.isError &&
-//         prevProps.hasData === nextProps.hasData &&
-//         prevProps.emptyLabel === nextProps.emptyLabel &&
-//         prevProps.errorLabel === nextProps.errorLabel
-//     )
-// })
+function LoadingIndicatorWithHint() {
+    const [shouldShowHint, setShouldShowHint] = useState(false)
+
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            setShouldShowHint(true)
+        }, 4000)
+        return () => {
+            clearTimeout(timeoutId)
+        }
+    }, [])
+
+    return (
+        <>
+            <ActivityIndicator />
+            {shouldShowHint ? (
+                <Text
+                    style={{
+                        fontSize: 16,
+                        color: COLORS.text,
+                        textAlign: 'center',
+                        fontWeight: 500,
+                        maxWidth: 320,
+                        marginTop: 16,
+                    }}
+                >
+                    This could take a while...
+                </Text>
+            ) : null}
+        </>
+    )
+}
 
 function PlaceholderRoot({ children }: { children: React.ReactNode }) {
+    const isAndroid = useMemo(() => Platform.OS === 'android', [])
+
     return (
         <View
             style={{
@@ -79,6 +104,7 @@ function PlaceholderRoot({ children }: { children: React.ReactNode }) {
                 justifyContent: 'center',
                 alignItems: 'center',
                 paddingBottom: 150,
+                paddingTop: isAndroid ? 100 : undefined,
             }}
         >
             {children}

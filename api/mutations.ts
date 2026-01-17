@@ -173,7 +173,6 @@ export async function startTerminalSession(
                 },
             },
             body: {
-                'id': id,
                 'AttachStdin': true,
                 'AttachStdout': true,
                 'AttachStderr': true,
@@ -265,7 +264,6 @@ export async function uploadFile(
             name: 'file',
             filename: file.name,
             type: file.type,
-            // todo test in with Android
             data: ReactNativeBlobUtil.wrap(localPath.replace('file://', '')),
         },
         {
@@ -344,8 +342,11 @@ export async function renameFile(volumeId: string, path: string, newName: string
         })
 
         if (response.error) {
-            // @ts-ignore
-            throw new Error(response.error.message)
+            throw new Error(
+                (response.error as unknown) instanceof Error
+                    ? (response.error as Error).message
+                    : 'Unknown error'
+            )
         }
     } catch (error) {
         console.error('Error renaming file:', error)
@@ -423,10 +424,10 @@ export async function updateContainer(
     const { id, name } = extraData
 
     try {
-        // rename current container to "name-old"
-        // create new container with new name
-        // start new container
-        // delete old container
+        // renames current container to "name-old"
+        // creates new container with new name
+        // starts new container
+        // deletes old container
 
         const stopResponse = await dockerClient({
             connectionId: currentConnection?.id,
@@ -543,6 +544,45 @@ export async function updateContainer(
         return createResponse.data
     } catch (error) {
         console.error('Error creating container:', error)
+        throw error
+    }
+}
+
+export async function updateStackFile(
+    stackId: number,
+    stackFileContent: string,
+    options: {
+        env?: Array<{ name: string; value: string }>
+        prune?: boolean
+        pullImage?: boolean
+    } = {}
+): Promise<void> {
+    console.log('Updating stack file:', stackId)
+    const currentConnection = usePersistedStore.getState().currentConnection
+
+    try {
+        const response = await portainerClient().PUT('/stacks/{id}', {
+            params: {
+                path: {
+                    id: stackId,
+                },
+                query: {
+                    endpointId: Number(currentConnection?.currentEndpointId!),
+                },
+            },
+            body: {
+                stackFileContent,
+                env: options.env || [],
+                prune: options.prune ?? false,
+                pullImage: options.pullImage ?? false,
+            },
+        })
+
+        if (response.error) {
+            throw new Error('Failed to update stack file')
+        }
+    } catch (error) {
+        console.error('Error updating stack file:', error)
         throw error
     }
 }

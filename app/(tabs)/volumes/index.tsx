@@ -1,6 +1,5 @@
 import { deleteVolume } from '@/api/mutations'
 import { fetchVolumeContent, fetchVolumes } from '@/api/queries'
-import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
 import { Badge } from '@/components/Badge'
 import buildPlaceholder from '@/components/base/Placeholder'
 import RefreshControl from '@/components/base/RefreshControl'
@@ -8,12 +7,15 @@ import type { components } from '@/lib/docker/schema'
 import WidgetKitModule from '@/modules/widgetkit'
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import Clipboard from '@react-native-clipboard/clipboard'
-import Superwall from '@superwall/react-native-superwall'
+import * as Sentry from '@sentry/react-native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import * as Haptics from 'expo-haptics'
 import { useNavigation, useRouter } from 'expo-router'
+import * as StoreReview from 'expo-store-review'
+import { usePlacement } from 'expo-superwall'
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
-import { Linking, StyleSheet } from 'react-native'
-import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native'
+import { Alert, FlatList, Linking, StyleSheet, Text, View } from 'react-native'
+import ContextMenu from 'react-native-context-menu-view'
 
 function VolumeRow({
     volume,
@@ -22,124 +24,145 @@ function VolumeRow({
     volume: components['schemas']['Volume']
     isBrowsingSupported: boolean
 }) {
+    const { registerPlacement } = usePlacement()
     const router = useRouter()
     const queryClient = useQueryClient()
 
-    const handlePress = () => {
-        const options: ActionSheetOption[] = []
-
-        options.push({
-            label: 'Browse',
-            onPress: () => {
-                if (__DEV__) {
-                    WidgetKitModule.setIsSubscribed(true)
-                    if (!isBrowsingSupported) {
-                        alert('Browsing not supported')
-                        return
-                    }
-                    router.push(`/volume/${encodeURIComponent(volume.Name)}`)
+    const handleAction = (actionName: string) => {
+        if (actionName === 'Browse') {
+            const featureFn = () => {
+                WidgetKitModule.setIsSubscribed(true)
+                if (!isBrowsingSupported) {
+                    Alert.alert(
+                        'Browsing requires having Portainer Agent installed',
+                        'Do you want to see a guide on how to install it?',
+                        [
+                            {
+                                text: 'Cancel',
+                                style: 'cancel',
+                            },
+                            {
+                                text: 'Yes',
+                                onPress: () => {
+                                    try {
+                                        Linking.openURL(
+                                            'https://docs.portainer.io/admin/environments/add/docker/agent'
+                                        )
+                                    } catch {
+                                        Alert.alert(
+                                            'Could not open URL',
+                                            'Something went wrong, please try again.'
+                                        )
+                                    }
+                                },
+                            },
+                        ]
+                    )
                     return
                 }
-
-                Superwall.shared
-                    .register({
-                        placement: 'BrowseVolume',
-                        feature: () => {
-                            WidgetKitModule.setIsSubscribed(true)
-                            if (!isBrowsingSupported) {
-                                Alert.alert(
-                                    'Browsing requires having Portainer Agent installed on your instance.',
-                                    'Do you want to see a guide on how to install it?',
-                                    [
-                                        {
-                                            text: 'Cancel',
-                                            style: 'cancel',
-                                        },
-                                        {
-                                            text: 'Yes',
-                                            onPress: () => {
-                                                try {
-                                                    Linking.openURL(
-                                                        'https://docs.portainer.io/admin/environments/add/docker/agent'
-                                                    )
-                                                } catch {
-                                                    Alert.alert(
-                                                        'Could not open URL',
-                                                        'Something went wrong, please try again.'
-                                                    )
-                                                }
-                                            },
-                                        },
-                                    ]
-                                )
-                                return
-                            }
-                            router.push(`/volume/${encodeURIComponent(volume.Name)}`)
-                        },
-                    })
-                    .catch((error) => {
-                        console.error('Error registering BrowseVolume', error)
-                        Alert.alert('Error', 'Something went wrong, please try again.')
-                    })
-            },
-        })
-
-        options.push(
-            {
-                label: 'Copy ID',
-                onPress: () => {
-                    Clipboard.setString(volume.Name)
-                },
-            },
-            {
-                label: 'Delete',
-                destructive: true,
-                onPress: async () => {
-                    try {
-                        await deleteVolume(volume.Name)
-                        queryClient.invalidateQueries({ queryKey: ['volumes'] })
-                    } catch (error) {
-                        Alert.alert(
-                            'Error',
-                            error instanceof Error ? error.message : 'Failed to delete volume'
-                        )
-                    }
-                },
-            },
-            {
-                label: 'Cancel',
-                cancel: true,
-                onPress: () => {},
+                router.push(`/volume/${encodeURIComponent(volume.Name)}`)
             }
-        )
+            if (__DEV__) {
+                featureFn()
+                return
+            }
 
-        showActionSheet(volume.Name, options)
+            registerPlacement({
+                placement: 'BrowseVolume',
+                feature: featureFn,
+            }).catch((error) => {
+                Sentry.captureException(error)
+                console.error('Error registering BrowseVolume', error)
+                Alert.alert('Error', 'Something went wrong, please try again.')
+            })
+        } else if (actionName === 'Copy ID') {
+            Clipboard.setString(volume.Name)
+        } else if (actionName === 'Delete') {
+            deleteVolume(volume.Name)
+                .then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['volumes'] })
+                })
+                .catch((error) => {
+                    Sentry.captureException(error)
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+                    Alert.alert(
+                        'Error',
+                        error instanceof Error ? error.message : 'Failed to delete volume'
+                    )
+                })
+        } else {
+            Alert.alert(
+                'Coming soon :)',
+                'Give us a quick rating to push this feature even faster?',
+                [
+                    {
+                        text: 'Sure!',
+                        style: 'default',
+                        onPress: () => {
+                            StoreReview.requestReview()
+                        },
+                    },
+                    { text: 'I like waiting', style: 'destructive' },
+                ]
+            )
+        }
     }
 
     return (
-        <TouchableOpacity onPress={handlePress} style={styles.volumeRow}>
-            <Text style={styles.volumeName}>{volume.Name}</Text>
+        <ContextMenu
+            dropdownMenuMode={true}
+            actions={[
+                {
+                    title: 'Browse',
+                    systemIcon: 'folder',
+                },
+                {
+                    title: 'Copy ID',
+                    systemIcon: 'doc.on.doc',
+                },
+                {
+                    title: 'Edit',
+                    systemIcon: 'pencil',
+                },
+                {
+                    title: 'Rename',
+                    systemIcon: 'pencil',
+                },
+                {
+                    title: 'Delete',
+                    destructive: true,
+                    systemIcon: 'trash',
+                },
+            ]}
+            onPress={(e) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                handleAction(e.nativeEvent.name)
+            }}
+        >
+            <View style={styles.volumeRow}>
+                <Text style={styles.volumeName}>{volume.Name}</Text>
 
-            <View style={styles.badgeContainer}>
-                <Badge
-                    label={volume.Driver}
-                    color={COLORS.primaryLight}
-                    backgroundColor={COLORS.primaryDark}
-                />
-
-                {volume.CreatedAt && (
+                <View style={styles.badgeContainer}>
                     <Badge
-                        label={new Date(volume.CreatedAt).toLocaleDateString()}
-                        color={COLORS.successLight}
-                        backgroundColor={COLORS.successDark}
+                        label={volume.Driver}
+                        color={COLORS.primaryLight}
+                        backgroundColor={COLORS.primaryDark}
                     />
-                )}
 
-                {volume.Labels?.['com.docker.compose.project'] && (
-                    <Badge label={volume.Labels['com.docker.compose.project']} />
-                )}
+                    {volume.CreatedAt && (
+                        <Badge
+                            label={new Date(volume.CreatedAt).toLocaleDateString()}
+                            color={COLORS.successLight}
+                            backgroundColor={COLORS.successDark}
+                        />
+                    )}
+
+                    {volume.Labels?.['com.docker.compose.project'] && (
+                        <Badge label={volume.Labels['com.docker.compose.project']} />
+                    )}
+                </View>
             </View>
-        </TouchableOpacity>
+        </ContextMenu>
     )
 }
 
@@ -193,15 +216,13 @@ export default function VolumesScreen() {
             headerSearchBarOptions: {
                 placeholder: 'Search volumes...',
                 hideWhenScrolling: true,
-                barTintColor: COLORS.bgApp,
+                barTintColor: COLORS.bgSecondary,
                 textColor: COLORS.text,
-                tintColor: COLORS.primary,
                 onChangeText: (event: any) => setSearchQuery(event.nativeEvent.text),
-
-                //! do not seem to work
-                hintTextColor: 'red',
-                placeholderTextColor: 'red',
                 autoCapitalize: 'none',
+                tintColor: COLORS.primary,
+                hintTextColor: COLORS.textMuted,
+                headerIconColor: COLORS.primary,
             },
         })
     }, [navigation])

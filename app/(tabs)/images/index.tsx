@@ -1,24 +1,27 @@
 import { deleteImage, pullImage } from '@/api/mutations'
 import { fetchImages } from '@/api/queries'
-import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
 import { Badge } from '@/components/Badge'
 import ActivityIndicator from '@/components/base/ActivityIndicator'
+import HeaderItem from '@/components/base/HeaderItem'
 import { HeaderTouchableOpacity } from '@/components/base/HeaderTouchableOpacity'
 import buildPlaceholder from '@/components/base/Placeholder'
 import RefreshControl from '@/components/base/RefreshControl'
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import type { Image } from '@/types/image'
+import Alert from '@blazejkustra/react-native-alert'
 import { Ionicons } from '@expo/vector-icons'
 import Clipboard from '@react-native-clipboard/clipboard'
 import * as Sentry from '@sentry/react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { isLiquidGlassAvailable } from 'expo-glass-effect'
 import * as Haptics from 'expo-haptics'
 import { useNavigation } from 'expo-router'
+import * as StoreReview from 'expo-store-review'
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { StyleSheet } from 'react-native'
-import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native'
+import { FlatList, Text, View } from 'react-native'
+import ContextMenu from 'react-native-context-menu-view'
 
-// Helper function to format bytes to human readable size
 function formatBytes(bytes: number): string {
     if (bytes === 0) return '0 B'
     const k = 1024
@@ -29,15 +32,13 @@ function formatBytes(bytes: number): string {
 
 function ImageRow({
     image,
-    onPress,
 }: {
     image: Image
-    onPress: () => void
     index?: number
     total?: number
 }) {
     return (
-        <TouchableOpacity onPress={onPress} style={styles.imageRow}>
+        <View style={styles.imageRow}>
             <Text style={styles.imageTitle}>{image.tags?.[0] || image.id.substring(7, 19)}</Text>
 
             <View style={styles.badgeContainer}>
@@ -68,7 +69,7 @@ function ImageRow({
                     />
                 )}
             </View>
-        </TouchableOpacity>
+        </View>
     )
 }
 
@@ -91,7 +92,7 @@ export default function ImagesScreen() {
         },
         onError: (error) => {
             Sentry.captureException(error)
-            Alert.alert('Error', error.message)
+            Alert.alert('Error pulling image', error.message)
         },
     })
 
@@ -104,58 +105,50 @@ export default function ImagesScreen() {
         })
     }, [imagesQuery.data, searchString])
 
-    const handleImagePress = useCallback(
-        (image: Image) => {
-            const imageTitle = image.tags?.[0] || image.id.substring(7, 19)
-
-            const options: ActionSheetOption[] = [
-                {
-                    label: 'Copy ID',
-                    onPress: async () => {
-                        Clipboard.setString(image.id)
-                    },
-                },
-                {
-                    label: 'Delete',
-                    destructive: true,
-                    onPress: async () => {
-                        try {
-                            await deleteImage(image.id)
-                            queryClient.invalidateQueries({ queryKey: ['images'] })
-                        } catch (error) {
-                            Alert.alert(
-                                'Error',
-                                error instanceof Error ? error.message : 'Failed to delete image'
-                            )
-                        }
-                    },
-                },
-                {
-                    label: 'Force Delete',
-                    destructive: true,
-                    onPress: async () => {
-                        try {
-                            await deleteImage(image.id, { force: true })
-                            queryClient.invalidateQueries({ queryKey: ['images'] })
-                        } catch (error) {
-                            Alert.alert(
-                                'Error',
-                                error instanceof Error
-                                    ? error.message
-                                    : 'Failed to force delete image'
-                            )
-                        }
-                    },
-                },
-                {
-                    label: 'Cancel',
-                    cancel: true,
-                    destructive: false,
-                    onPress: () => {},
-                },
-            ]
-
-            showActionSheet(imageTitle, options)
+    const handleImageAction = useCallback(
+        async (image: Image, actionName: string) => {
+            if (actionName === 'Copy ID') {
+                Clipboard.setString(image.id)
+            } else if (actionName === 'Delete') {
+                try {
+                    await deleteImage(image.id)
+                    queryClient.invalidateQueries({ queryKey: ['images'] })
+                } catch (error) {
+                    Sentry.captureException(error)
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+                    Alert.alert(
+                        'Error',
+                        error instanceof Error ? error.message : 'Failed to delete image'
+                    )
+                }
+            } else if (actionName === 'Force Delete') {
+                try {
+                    await deleteImage(image.id, { force: true })
+                    queryClient.invalidateQueries({ queryKey: ['images'] })
+                } catch (error) {
+                    Sentry.captureException(error)
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+                    Alert.alert(
+                        'Error',
+                        error instanceof Error ? error.message : 'Failed to force delete image'
+                    )
+                }
+            } else {
+                Alert.alert(
+                    'Coming soon :)',
+                    'Give us a quick rating to push this feature even faster?',
+                    [
+                        {
+                            text: 'Sure!',
+                            style: 'default',
+                            onPress: () => {
+                                StoreReview.requestReview()
+                            },
+                        },
+                        { text: 'I like waiting', style: 'destructive' },
+                    ]
+                )
+            }
         },
         [queryClient]
     )
@@ -177,15 +170,14 @@ export default function ImagesScreen() {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: pullImageMutation.isPending
-                ? () => <ActivityIndicator size="small" />
+                ? () => (
+                      <HeaderItem>
+                          <ActivityIndicator size="small" />
+                      </HeaderItem>
+                  )
                 : () => (
                       <HeaderTouchableOpacity
-                          style={{
-                              height: 32,
-                              width: 32,
-                          }}
                           onPress={() => {
-                              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
                               Alert.prompt(
                                   'Pull Image',
                                   'Enter the image name',
@@ -196,7 +188,7 @@ export default function ImagesScreen() {
                                       },
                                       {
                                           text: 'Pull image',
-                                          onPress: (imageName) => {
+                                          onPress: (imageName?: string) => {
                                               if (!imageName) return
                                               pullImageMutation.mutate(imageName)
                                           },
@@ -207,7 +199,11 @@ export default function ImagesScreen() {
                               )
                           }}
                       >
-                          <Ionicons name="add-circle-sharp" size={32} color={COLORS.primaryLight} />
+                          <Ionicons
+                              name={isLiquidGlassAvailable() ? 'add-sharp' : 'add-circle'}
+                              size={36}
+                              color={COLORS.primaryLight}
+                          />
                       </HeaderTouchableOpacity>
                   ),
             headerSearchBarOptions: {
@@ -215,13 +211,11 @@ export default function ImagesScreen() {
                 hideWhenScrolling: true,
                 barTintColor: COLORS.bgSecondary,
                 textColor: COLORS.text,
-                tintColor: COLORS.primary,
                 onChangeText: (event: any) => setSearchString(event.nativeEvent.text),
-
-                //! do not seem to work
-                hintTextColor: 'red',
-                placeholderTextColor: 'red',
                 autoCapitalize: 'none',
+                tintColor: COLORS.primary,
+                hintTextColor: COLORS.textMuted,
+                headerIconColor: COLORS.primary,
             },
         })
     }, [navigation, pullImageMutation.isPending, pullImageMutation.mutate])
@@ -234,7 +228,35 @@ export default function ImagesScreen() {
         <FlatList
             data={filteredImages}
             renderItem={({ item: image }) => (
-                <ImageRow image={image} onPress={() => handleImagePress(image)} />
+                <ContextMenu
+                    dropdownMenuMode={true}
+                    actions={[
+                        {
+                            title: 'Copy ID',
+                            systemIcon: 'doc.on.doc',
+                        },
+                        {
+                            title: 'Edit',
+                            systemIcon: 'pencil',
+                        },
+                        {
+                            title: 'Delete',
+                            destructive: true,
+                            systemIcon: 'trash',
+                        },
+                        {
+                            title: 'Force Delete',
+                            destructive: true,
+                            systemIcon: 'trash.fill',
+                        },
+                    ]}
+                    onPress={(e) => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                        handleImageAction(image, e.nativeEvent.name)
+                    }}
+                >
+                    <ImageRow image={image} />
+                </ContextMenu>
             )}
             keyExtractor={(image) => image.id}
             contentInsetAdjustmentBehavior="automatic"

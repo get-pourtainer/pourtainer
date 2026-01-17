@@ -14,6 +14,7 @@ import { usePersistedStore } from '@/stores/persisted'
 import { COLORS } from '@/theme'
 import type { Container } from '@/types/container'
 import { Ionicons } from '@expo/vector-icons'
+import * as Sentry from '@sentry/react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocalSearchParams } from 'expo-router'
 import { useRouter } from 'expo-router'
@@ -65,6 +66,10 @@ export default function ContainerDetailScreen() {
             // Invalidate and refetch containers query to get updated state
             queryClient.invalidateQueries({ queryKey: ['containers'] })
         },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error restarting container', error.message)
+        },
     })
 
     const startMutation = useMutation({
@@ -77,6 +82,10 @@ export default function ContainerDetailScreen() {
             // Then trigger background refetch
             queryClient.invalidateQueries({ queryKey: ['containers'] })
         },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error starting container', error.message)
+        },
     })
 
     const stopMutation = useMutation({
@@ -86,6 +95,10 @@ export default function ContainerDetailScreen() {
                 old?.map((c) => (c.Id === id ? { ...c, State: 'exited' } : c))
             )
             queryClient.invalidateQueries({ queryKey: ['containers'] })
+        },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error stopping container', error.message)
         },
     })
 
@@ -97,6 +110,10 @@ export default function ContainerDetailScreen() {
             )
             queryClient.invalidateQueries({ queryKey: ['containers'] })
         },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error pausing container', error.message)
+        },
     })
 
     const unpauseMutation = useMutation({
@@ -107,6 +124,10 @@ export default function ContainerDetailScreen() {
             )
             queryClient.invalidateQueries({ queryKey: ['containers'] })
         },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error unpausing container', error.message)
+        },
     })
 
     const killMutation = useMutation({
@@ -116,6 +137,10 @@ export default function ContainerDetailScreen() {
                 old?.map((c) => (c.Id === id ? { ...c, State: 'exited' } : c))
             )
             queryClient.invalidateQueries({ queryKey: ['containers'] })
+        },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error killing container', error.message)
         },
     })
 
@@ -189,16 +214,23 @@ export default function ContainerDetailScreen() {
                                     justifyContent: 'center',
                                     gap: 8,
                                 }}
-                                onPress={() => router.push(`/container/${id}/terminal`)}
+                                onPress={() => {
+                                    if (container.State !== 'running') {
+                                        Alert.alert(
+                                            'Container is not running',
+                                            'Please start the container to use the CLI'
+                                        )
+                                        return
+                                    }
+                                    router.push(`/container/${id}/terminal`)
+                                }}
                             >
                                 <Ionicons
                                     name="terminal-outline"
                                     size={20}
                                     color={COLORS.purpleLight}
                                 />
-                                <Text style={{ color: COLORS.purpleLight, fontSize: 17 }}>
-                                    Terminal
-                                </Text>
+                                <Text style={{ color: COLORS.purpleLight, fontSize: 17 }}>CLI</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity

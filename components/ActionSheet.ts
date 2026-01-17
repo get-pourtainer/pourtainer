@@ -1,13 +1,14 @@
 import { ActionSheetIOS, Alert, Platform } from 'react-native'
 
-export type ActionSheetOption = {
-    label: string
-    onPress: () => Promise<void> | void
-    destructive?: boolean
-    cancel?: boolean
-}
-
-export function showActionSheet(title: string, options: ActionSheetOption[]) {
+export function showActionSheet(
+    title: string,
+    options: {
+        label: string
+        onPress: () => Promise<void> | void
+        destructive?: boolean
+        cancel?: boolean
+    }[]
+) {
     if (Platform.OS === 'ios') {
         const iosOptions = options.map((opt) => opt.label)
         const cancelButtonIndex = options.findIndex((opt) => opt.cancel)

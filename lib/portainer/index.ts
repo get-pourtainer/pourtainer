@@ -62,7 +62,18 @@ export default function client({ connectionId }: { connectionId?: string } = {})
 
             const skipPayload = IGNORE_BODY_URLS.some((url) => input.url.includes(url))
 
-            const returnBody = req.respInfo.status === 200 && !skipPayload ? req.data : null
+            const isSuccessful = req.respInfo.status >= 200 && req.respInfo.status < 300
+
+            console.log('Portainer client - URL:', input.url)
+            console.log('Portainer client - Method:', input.method)
+            console.log('Portainer client - Status:', req.respInfo.status)
+            console.log('Portainer client - isSuccessful:', isSuccessful)
+            console.log('Portainer client - skipPayload:', skipPayload)
+            console.log('Portainer client - Raw data type:', typeof req.data)
+            console.log('Portainer client - Raw data length:', req.data?.length)
+            console.log('Portainer client - Raw data (full):', req.data)
+
+            const returnBody = isSuccessful && !skipPayload ? req.data : null
 
             const res = new Response(returnBody, {
                 status: req.respInfo.status,

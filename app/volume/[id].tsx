@@ -1,32 +1,78 @@
 import { deleteFile, renameFile, uploadFile } from '@/api/mutations'
 import { fetchVolumeContent } from '@/api/queries'
-import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
 import ActivityIndicator from '@/components/base/ActivityIndicator'
+import HeaderItem from '@/components/base/HeaderItem'
+import { HeaderTouchableOpacity } from '@/components/base/HeaderTouchableOpacity'
 import type { paths } from '@/lib/portainer/schema'
 import { formatBytes } from '@/lib/utils'
 import { downloadFile } from '@/lib/utils'
 import { usePersistedStore } from '@/stores/persisted'
 import { COLORS } from '@/theme'
 import type { VolumeEntity } from '@/types/volume'
+import Alert from '@blazejkustra/react-native-alert'
 import { Ionicons } from '@expo/vector-icons'
+import { HeaderButton } from '@react-navigation/elements'
 import * as Sentry from '@sentry/react-native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMutation } from '@tanstack/react-query'
 import { formatDistance } from 'date-fns'
 import * as DocumentPicker from 'expo-document-picker'
 import type { DocumentPickerAsset } from 'expo-document-picker'
+import { isLiquidGlassAvailable } from 'expo-glass-effect'
+import * as Haptics from 'expo-haptics'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
-import {
-    Alert,
-    FlatList,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from 'react-native'
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActionSheetIOS, Platform } from 'react-native'
+
+//! need to think of replacement
+export function showActionSheet(
+    title: string,
+    options: {
+        label: string
+        onPress: () => Promise<void> | void
+        destructive?: boolean
+        cancel?: boolean
+    }[]
+) {
+    if (Platform.OS === 'ios') {
+        const iosOptions = options.map((opt) => opt.label)
+        const cancelButtonIndex = options.findIndex((opt) => opt.cancel)
+        const destructiveButtonIndices: number[] = options.reduce((acc, opt, index) => {
+            if (opt.destructive) {
+                acc.push(index)
+            }
+            return acc
+        }, [] as number[])
+
+        ActionSheetIOS.showActionSheetWithOptions(
+            {
+                options: iosOptions,
+                cancelButtonIndex,
+                destructiveButtonIndex: destructiveButtonIndices,
+                title,
+                userInterfaceStyle: 'dark',
+            },
+            async (buttonIndex) => {
+                if (buttonIndex !== cancelButtonIndex) {
+                    const selectedOption = options[buttonIndex]
+                    await selectedOption.onPress()
+                }
+            }
+        )
+    } else {
+        Alert.alert(
+            title,
+            undefined,
+            options.map((opt) => ({
+                text: opt.label,
+                style: opt.cancel ? 'cancel' : opt.destructive ? 'destructive' : 'default',
+                onPress: opt.onPress,
+            })),
+            { cancelable: true }
+        )
+    }
+}
 
 export default function VolumeDetailScreen() {
     const currentConnection = usePersistedStore((state) => state.currentConnection)
@@ -58,12 +104,14 @@ export default function VolumeDetailScreen() {
             await uploadFile(id, path, fileToUpload, file.uri)
         },
         onSuccess: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
             // Invalidate and refetch the volume content
             queryClient.invalidateQueries({ queryKey: ['volume-content', id, path] })
         },
         onError: (error) => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+            Alert.alert('Error uploading file', error.message)
             Sentry.captureException(error)
-            Alert.alert('Error', 'Failed to upload file')
         },
     })
 
@@ -72,11 +120,13 @@ export default function VolumeDetailScreen() {
             await deleteFile(id, itemPath)
         },
         onSuccess: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
             queryClient.invalidateQueries({ queryKey: ['volume-content', id, path] })
         },
         onError: (error) => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+            Alert.alert('Error deleting item', error.message)
             Sentry.captureException(error)
-            Alert.alert('Error', 'Failed to delete item')
         },
     })
 
@@ -85,11 +135,13 @@ export default function VolumeDetailScreen() {
             await renameFile(id, oldPath, newName)
         },
         onSuccess: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
             queryClient.invalidateQueries({ queryKey: ['volume-content', id, path] })
         },
         onError: (error) => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+            Alert.alert('Error renaming item', error.message)
             Sentry.captureException(error)
-            Alert.alert('Error', 'Failed to rename item')
         },
     })
 
@@ -98,8 +150,9 @@ export default function VolumeDetailScreen() {
             await downloadFile(props)
         },
         onError: (error) => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+            Alert.alert('Error downloading file', error.message)
             Sentry.captureException(error)
-            Alert.alert('Error', 'Failed to download file')
         },
     })
     const navigateToPath = useCallback(
@@ -113,6 +166,8 @@ export default function VolumeDetailScreen() {
     )
 
     const handleUpload = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
         try {
             const result = await DocumentPicker.getDocumentAsync({
                 copyToCacheDirectory: true,
@@ -122,11 +177,17 @@ export default function VolumeDetailScreen() {
                 await uploadMutation.mutateAsync(result.assets[0])
             }
         } catch (error) {
-            console.error('Error picking document:', error)
+            Sentry.captureException(error)
+            Alert.alert(
+                'Error picking document',
+                error instanceof Error ? error.message : 'Unknown error'
+            )
         }
     }, [uploadMutation])
 
     const handleBack = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
         if (path === '/') {
             router.back()
             return
@@ -142,7 +203,7 @@ export default function VolumeDetailScreen() {
         (item: VolumeEntity) => {
             const itemPath = `${path}/${item.Name}`.replace('//', '/')
 
-            const actions: ActionSheetOption[] = []
+            const actions = []
 
             if (!item.Dir) {
                 actions.push({
@@ -167,14 +228,10 @@ export default function VolumeDetailScreen() {
                         `Enter new name for ${item.Dir ? 'folder' : 'file'}:`,
                         async (newName) => {
                             if (!newName || newName === item.Name) return
-                            try {
-                                await renameMutation.mutateAsync({
-                                    oldPath: itemPath,
-                                    newName,
-                                })
-                            } catch (error) {
-                                Alert.alert('Error', 'Failed to rename item')
-                            }
+                            await renameMutation.mutateAsync({
+                                oldPath: itemPath,
+                                newName,
+                            })
                         },
                         'plain-text',
                         item.Name
@@ -197,11 +254,7 @@ export default function VolumeDetailScreen() {
                                 text: 'Delete',
                                 style: 'destructive',
                                 onPress: async () => {
-                                    try {
-                                        await deleteMutation.mutateAsync(itemPath)
-                                    } catch (error) {
-                                        Alert.alert('Error', 'Failed to delete item')
-                                    }
+                                    await deleteMutation.mutateAsync(itemPath)
                                 },
                             },
                         ]
@@ -259,22 +312,24 @@ export default function VolumeDetailScreen() {
 
         navigation.setOptions({
             headerLeft: () => (
-                <Pressable onPress={handleBack}>
-                    <Ionicons name="chevron-back" size={24} color={COLORS.text} />
-                </Pressable>
+                <HeaderButton onPress={handleBack}>
+                    <Ionicons
+                        name="chevron-back"
+                        size={isLiquidGlassAvailable() ? 32 : 24}
+                        color={COLORS.text}
+                    />
+                </HeaderButton>
             ),
             headerRight: isHeaderRightLoading
-                ? () => <ActivityIndicator size="small" />
+                ? () => (
+                      <HeaderItem>
+                          <ActivityIndicator size="small" />
+                      </HeaderItem>
+                  )
                 : () => (
-                      <Pressable
-                          onPress={() => setIsSearchVisible((v) => !v)}
-                          style={({ pressed }) => [
-                              styles.headerButton,
-                              pressed && styles.headerButtonPressed,
-                          ]}
-                      >
-                          <Ionicons name="search" size={24} color={COLORS.text} />
-                      </Pressable>
+                      <HeaderTouchableOpacity onPress={() => setIsSearchVisible((v) => !v)}>
+                          <Ionicons name="search" size={36} color={COLORS.text} />
+                      </HeaderTouchableOpacity>
                   ),
             headerBackVisible: false,
             title: currentFolderName,
@@ -336,7 +391,10 @@ export default function VolumeDetailScreen() {
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         autoCapitalize="none"
+                        autoComplete="off"
+                        autoCorrect={false}
                         autoFocus={true}
+                        keyboardAppearance="dark"
                     />
                     <Pressable
                         onPress={() => {

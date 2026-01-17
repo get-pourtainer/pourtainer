@@ -2,10 +2,11 @@ import { startTerminalSession } from '@/api/mutations'
 import ActivityIndicator from '@/components/base/ActivityIndicator'
 import { usePersistedStore } from '@/stores/persisted'
 import { COLORS, SHADOWS } from '@/theme'
+import * as Sentry from '@sentry/react-native'
 import { useMutation } from '@tanstack/react-query'
 import { useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { StyleSheet } from 'react-native'
+import { Alert, StyleSheet } from 'react-native'
 import {
     KeyboardAvoidingView,
     Platform,
@@ -16,6 +17,7 @@ import {
     View,
 } from 'react-native'
 import WebSocketWithSelfSignedCert from 'react-native-websocket-self-signed'
+import stripAnsi from 'strip-ansi'
 
 export default function ContainerTerminalScreen() {
     const currentConnection = usePersistedStore((state) => state.currentConnection)
@@ -36,8 +38,13 @@ export default function ContainerTerminalScreen() {
             return result
         },
         onSuccess: (data) => {
+            console.log('Success starting terminal session', data)
             setIsConfigured(true)
             connectWebSocket(data.Id)
+        },
+        onError: (error) => {
+            Sentry.captureException(error)
+            Alert.alert('Error starting terminal session', error.message)
         },
     })
 
@@ -54,10 +61,14 @@ export default function ContainerTerminalScreen() {
             setOutput((prev) => [...prev, '🟢 Connected to terminal'])
         })
 
-        ws.onMessage((message: string) => {
+        ws.onMessage((m: string | { message: string }) => {
+            if (!m) return
+
+            const message = typeof m === 'string' ? m : m?.message
+
             if (message === '# ') return
 
-            let parsedMessage = message.trim()
+            let parsedMessage = stripAnsi(message).trim()
 
             if (parsedMessage.endsWith('#')) {
                 parsedMessage = parsedMessage.slice(0, -1)
@@ -74,6 +85,8 @@ export default function ContainerTerminalScreen() {
             if (parsedMessage.endsWith('\n#')) {
                 parsedMessage = parsedMessage.slice(0, -2)
             }
+
+            if (!parsedMessage) return
 
             setOutput((prev) => [...prev, parsedMessage])
         })
@@ -174,10 +187,10 @@ export default function ContainerTerminalScreen() {
                             autoCapitalize="none"
                             autoCorrect={false}
                             autoComplete="off"
-                            spellCheck={false}
+                            keyboardAppearance="dark"
                             multiline={false}
                             onSubmitEditing={sendCommand}
-                            blurOnSubmit={false}
+                            submitBehavior="blurAndSubmit"
                             returnKeyType="send"
                             returnKeyLabel="Send"
                             enablesReturnKeyAutomatically={true}
@@ -268,6 +281,10 @@ export default function ContainerTerminalScreen() {
                         onChangeText={setUser}
                         placeholder="Enter username"
                         placeholderTextColor={COLORS.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="off"
+                        keyboardAppearance="dark"
                     />
                 </View>
 

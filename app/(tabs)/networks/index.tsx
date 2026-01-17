@@ -1,5 +1,4 @@
 import { fetchNetworks } from '@/api/queries'
-import { type ActionSheetOption, showActionSheet } from '@/components/ActionSheet'
 import { Badge } from '@/components/Badge'
 import buildPlaceholder from '@/components/base/Placeholder'
 import RefreshControl from '@/components/base/RefreshControl'
@@ -7,20 +6,16 @@ import type { components } from '@/lib/docker/schema'
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { useQuery } from '@tanstack/react-query'
+import * as Haptics from 'expo-haptics'
 import { useNavigation } from 'expo-router'
+import * as StoreReview from 'expo-store-review'
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
-import { FlatList, Text, TouchableOpacity, View } from 'react-native'
-import { StyleSheet } from 'react-native'
+import { Alert, FlatList, StyleSheet, Text, View } from 'react-native'
+import ContextMenu from 'react-native-context-menu-view'
 
-function NetworkRow({
-    network,
-    onPress,
-}: {
-    network: components['schemas']['Network']
-    onPress: () => void
-}) {
+function NetworkRow({ network }: { network: components['schemas']['Network'] }) {
     return (
-        <TouchableOpacity onPress={onPress} style={styles.networkRow}>
+        <View style={styles.networkRow}>
             <Text style={styles.networkName}>{network.Name}</Text>
 
             <View style={styles.badgeContainer}>
@@ -89,7 +84,7 @@ function NetworkRow({
                     </>
                 )}
             </View>
-        </TouchableOpacity>
+        </View>
     )
 }
 
@@ -114,23 +109,29 @@ export default function NetworksScreen() {
         })
     }, [networksQuery.data, searchQuery])
 
-    const handleNetworkPress = useCallback((network: components['schemas']['Network']) => {
-        const options: ActionSheetOption[] = [
-            {
-                label: 'Copy ID',
-                onPress: () => {
-                    Clipboard.setString(network.Id)
-                },
-            },
-            {
-                label: 'Cancel',
-                cancel: true,
-                onPress: () => {},
-            },
-        ]
-
-        showActionSheet(network?.Name || 'Network', options)
-    }, [])
+    const handleNetworkAction = useCallback(
+        (network: components['schemas']['Network'], actionName: string) => {
+            if (actionName === 'Copy ID') {
+                Clipboard.setString(network.Id)
+            } else if (actionName === 'Edit') {
+                Alert.alert(
+                    'Coming soon :)',
+                    'Give us a quick rating to push this feature even faster?',
+                    [
+                        {
+                            text: 'Sure!',
+                            style: 'default',
+                            onPress: () => {
+                                StoreReview.requestReview()
+                            },
+                        },
+                        { text: 'I like waiting', style: 'destructive' },
+                    ]
+                )
+            }
+        },
+        []
+    )
 
     const Placeholder = useMemo(() => {
         const isSearch = searchQuery.trim() !== ''
@@ -153,13 +154,11 @@ export default function NetworksScreen() {
                 hideWhenScrolling: true,
                 barTintColor: COLORS.bgSecondary,
                 textColor: COLORS.text,
-                tintColor: COLORS.primary,
                 onChangeText: (event: any) => setSearchQuery(event.nativeEvent.text),
-
-                //! do not seem to work
-                hintTextColor: 'red',
-                placeholderTextColor: 'red',
                 autoCapitalize: 'none',
+                tintColor: COLORS.primary,
+                hintTextColor: COLORS.textMuted,
+                headerIconColor: COLORS.primary,
             },
         })
     }, [navigation])
@@ -172,7 +171,25 @@ export default function NetworksScreen() {
         <FlatList
             data={filteredNetworks}
             renderItem={({ item: network }) => (
-                <NetworkRow network={network} onPress={() => handleNetworkPress(network)} />
+                <ContextMenu
+                    dropdownMenuMode={true}
+                    actions={[
+                        {
+                            title: 'Copy ID',
+                            systemIcon: 'doc.on.doc',
+                        },
+                        {
+                            title: 'Edit',
+                            systemIcon: 'pencil',
+                        },
+                    ]}
+                    onPress={(e) => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                        handleNetworkAction(network, e.nativeEvent.name)
+                    }}
+                >
+                    <NetworkRow network={network} />
+                </ContextMenu>
             )}
             keyExtractor={(network) => network.Id}
             contentInsetAdjustmentBehavior="automatic"
