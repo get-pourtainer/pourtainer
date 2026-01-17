@@ -63,6 +63,13 @@ const commonContentStyle: Pick<NativeStackNavigationOptions, 'contentStyle'> = {
     },
 }
 
+export const unstable_settings = {
+    initialRouteName: 'index',
+    // 'stacks/[stackId]/(tabs)': {
+    //     initialRouteName: 'index',
+    // },
+}
+
 function RootLayout() {
     useQuickActionRouting()
     const ref = useNavigationContainerRef()
