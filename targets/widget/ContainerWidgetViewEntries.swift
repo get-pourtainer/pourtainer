@@ -9,6 +9,14 @@ import SwiftUI
 struct EntryView: View {
     var title: String
     var description: String
+    
+    private var backgroundColor: Color {
+        if #available(iOS 26.0, *) {
+          return Color.clear
+        } else {
+          return Color("$background")
+        }
+    }
   
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -26,7 +34,7 @@ struct EntryView: View {
             maxHeight: .infinity, 
             alignment: .topLeading
         )
-        .background(Color("$background"))
+        .background(backgroundColor)
     }
 }
 
@@ -97,6 +105,14 @@ struct WidgetEntryView: View {
             return Array(logLines.suffix(4))
         }
     }
+    
+    private var backgroundColor: Color {
+        if #available(iOS 26.0, *) {
+          return Color.clear
+        } else {
+          return Color("$background")
+        }
+    }
 
     var body: some View {
 		VStack(alignment: .leading, spacing: 4) {
@@ -129,7 +145,7 @@ struct WidgetEntryView: View {
             maxHeight: .infinity, 
             alignment: .topLeading
         )
-        .background(Color("$background"))
+        .background(backgroundColor)
         // Deep link to open the container details in the Pourtainer app
         .widgetURL(URL(string: "pourtainer://container//\(selectedContainer.Id)?connectionId=\(connectionId ?? "")&endpointId=\(endpointId ?? 0)"))
     }

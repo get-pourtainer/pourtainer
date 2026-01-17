@@ -5,8 +5,10 @@ import Container
 import LogLine
 import WidgetIntentState
 import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -69,7 +71,7 @@ fun WidgetContent() {
     val isAuthorized = connections.isNotEmpty()
 	val isSubscribed = state[ContainerWidgetReceiver.isSubscribedValueKey] ?: false
 	
-	val customUri = isSubscribed ? "pourtainer://" : "pourtainer://?showPaywall=1"
+	val customUri = if (isSubscribed) "pourtainer://" else "pourtainer://?showPaywall=1"
 	val intent = Intent(Intent.ACTION_VIEW, customUri.toUri())
 	
 

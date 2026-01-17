@@ -5,6 +5,7 @@ import LogLine
 import WidgetIntentState
 import android.content.Context
 import android.content.Intent
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
@@ -63,7 +64,7 @@ class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
                         prefs.toMutablePreferences().apply {
                             this[connectionsKey] = sharedPrefs.getString(savedConnectionsKey, "null").toString()
                             this[widgetStateKey] = sharedPrefs.getInt(savedWidgetStateKey, WidgetIntentState.LOADING.value).toString()
-                            this[isSubscribedKey] = sharedPrefs.getBoolean(isSubscribedKey, false)
+                            this[isSubscribedValueKey] = sharedPrefs.getBoolean(isSubscribedKey, false)
                         }
                     }
 

@@ -234,35 +234,43 @@ struct StackWidgetEntryView: View {
     var entry: StackWidgetEntry
     @Environment(\.widgetFamily) var family
     
+    private var backgroundColor: Color {
+        if #available(iOS 26.0, *) {
+          return Color.clear
+        } else {
+          return Color("$background")
+        }
+    }
+    
     var body: some View {
         if !entry.hasConnections {
             placeholderView(
                 title: "Unauthorized",
                 description: "Sign in with Pourtainer app."
             )
-            .containerBackground(Color("$background"), for: .widget)
+            .containerBackground(backgroundColor, for: .widget)
         } else if entry.selectedStack == nil {
             placeholderView(
                 title: "Stack not selected",
                 description: "Please select a Stack."
             )
-            .containerBackground(Color("$background"), for: .widget)
+            .containerBackground(backgroundColor, for: .widget)
         } else if !entry.hasContainers || entry.containers.isEmpty {
             placeholderView(
                 title: "No containers",
                 description: "Stack '\(entry.selectedStack ?? "")' has no containers."
             )
-            .containerBackground(Color("$background"), for: .widget)
+            .containerBackground(backgroundColor, for: .widget)
         } else if !entry.isSubscribed {
             placeholderView(
                 title: "Subscription missing",
                 description: "Tap here to enable"
             )
-            .containerBackground(Color("$background"), for: .widget)
+            .containerBackground(backgroundColor, for: .widget)
 			.widgetURL(URL(string: "pourtainer://?showPaywall=1"))
         } else {
             mainContent
-                .containerBackground(Color("$background"), for: .widget)
+                .containerBackground(backgroundColor, for: .widget)
         }
     }
     

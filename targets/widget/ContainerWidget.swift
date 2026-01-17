@@ -242,6 +242,14 @@ struct ContainerWidget: Widget {
       
       return WidgetIntentState(rawValue: sharedDefaults.integer(forKey: widgetStateKey))
     }
+    
+    private var backgroundColor: Color {
+        if #available(iOS 26.0, *) {
+          return Color.clear
+        } else {
+          return Color("$background")
+        }
+    }
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { widget in
@@ -253,7 +261,7 @@ struct ContainerWidget: Widget {
                     title: "Unauthorized", 
                     description: "Sign in with Pourtainer app"
                 )
-                .containerBackground(Color("$background"), for: .widget)
+                .containerBackground(backgroundColor, for: .widget)
                 
             // Case: No containers available
             case (true, false, _, _, _), (true, true, .noContainers, nil, _):
@@ -261,7 +269,7 @@ struct ContainerWidget: Widget {
                     title: "No containers", 
                     description: "Add your first Container to show it here."
                 )
-                .containerBackground(Color("$background"), for: .widget)
+                .containerBackground(backgroundColor, for: .widget)
                 
             // Case: Containers available but not selected in widget config
             case (true, true, .hasContainers, nil, _):
@@ -269,7 +277,7 @@ struct ContainerWidget: Widget {
                     title: "Container not found", 
                     description: "Please select another Container."
                 )
-                .containerBackground(Color("$background"), for: .widget)
+                .containerBackground(backgroundColor, for: .widget)
                 
             // Case: API error
             case (true, true, .apiFailed, nil, _):
@@ -277,7 +285,7 @@ struct ContainerWidget: Widget {
                     title: "Api error", 
                     description: "We couldn't fetch data from the API."
                 )
-                .containerBackground(Color("$background"), for: .widget)
+                .containerBackground(backgroundColor, for: .widget)
                 
             // Case: Loading or unknown state
             case (true, true, .loading, nil, _), (true, true, .none, nil, _):
@@ -285,7 +293,7 @@ struct ContainerWidget: Widget {
                     title: "Loading...", 
                     description: "We're getting your Container details."
                 )
-                .containerBackground(Color("$background"), for: .widget)
+                .containerBackground(backgroundColor, for: .widget)
                 
 				
 			// Case: Not subscribed
@@ -294,7 +302,7 @@ struct ContainerWidget: Widget {
                     title: "Subscription missing", 
                     description: "Tap here to enable"
                 )
-                .containerBackground(Color("$background"), for: .widget)
+                .containerBackground(backgroundColor, for: .widget)
 				.widgetURL(URL(string: "pourtainer://?showPaywall=1"))
 			
             // Case: Container successfully loaded - show container info
@@ -305,7 +313,7 @@ struct ContainerWidget: Widget {
                     connectionId: widget.connectionId,
                     endpointId: widget.endpointId
                 )
-                .containerBackground(Color("$background"), for: .widget)
+//                .containerBackground(Color("$background"), for: .widget)
             }
         }
         .configurationDisplayName("Container")
