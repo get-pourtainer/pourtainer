@@ -1,4 +1,3 @@
-import WidgetKitModule from '@/modules/widgetkit'
 import { usePersistedStore } from '@/stores/persisted'
 import * as Sentry from '@sentry/react-native'
 import { Redirect, useLocalSearchParams } from 'expo-router'
@@ -33,7 +32,6 @@ export default function App() {
         registerPlacement({
             placement: 'TapWidget',
             feature: () => {
-                WidgetKitModule.setIsSubscribed(true)
                 Alert.alert(
                     'Congrats!',
                     'You can now go to your homescreen and search for "Pourtainer" widgets'
@@ -50,7 +48,6 @@ export default function App() {
         registerPlacement({
             placement: 'LifetimeOffer_1_Show',
             feature: () => {
-                WidgetKitModule.setIsSubscribed(true)
                 Alert.alert('Congrats!', 'You unlocked lifetime access to Pourtainer.')
             },
         }).catch((error) => {

@@ -2,6 +2,7 @@ import { NativeModule, requireNativeModule } from 'expo'
 import type { Connection } from './WidgetKit.types'
 
 declare class WidgetKitModule extends NativeModule {
+	setConnections(connections: Connection[]): void
     getConnections(): Connection[]
     addConnection(connection: Connection): void
     removeConnection(id: string): void

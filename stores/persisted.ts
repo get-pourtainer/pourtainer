@@ -1,6 +1,5 @@
 import { queryClient } from '@/lib/query'
 import { mmkvStorage } from '@/lib/storage'
-import WidgetKitModule from '@/modules/widgetkit'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
@@ -80,8 +79,6 @@ export const usePersistedStore = create<PersistedState>()(
                 queryClient.resetQueries()
             },
             removeConnection: (connectionId: string) => {
-                WidgetKitModule.removeConnection(connectionId)
-
                 const state = get()
 
                 const newConnections = state.connections.filter((c) => c.id !== connectionId)
@@ -96,12 +93,6 @@ export const usePersistedStore = create<PersistedState>()(
                 }
             },
             addConnection: (connection: Connection) => {
-                WidgetKitModule.addConnection({
-                    id: connection.id,
-                    url: connection.baseUrl,
-                    accessToken: connection.apiToken,
-                })
-
                 set((state) => ({
                     connections: [...state.connections, connection],
                 }))

@@ -19,7 +19,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocalSearchParams } from 'expo-router'
 import { useRouter } from 'expo-router'
 import { Stack } from 'expo-router'
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -30,7 +30,6 @@ export default function ContainerDetailScreen() {
         endpointId?: string
     }>()
     const currentConnection = usePersistedStore((state) => state.currentConnection)
-    const switchConnection = usePersistedStore((state) => state.switchConnection)
 
     console.log('id', id)
 
@@ -38,14 +37,6 @@ export default function ContainerDetailScreen() {
 
     const router = useRouter()
     const queryClient = useQueryClient()
-
-    useEffect(() => {
-        // when navigating from widget and the container is on a different connection/endpoint
-        if (!connectionId || !endpointId) return
-        if (endpointId !== currentConnection?.currentEndpointId) {
-            switchConnection({ connectionId, endpointId })
-        }
-    }, [connectionId, endpointId, currentConnection, switchConnection])
 
     const containersQuery = useQuery({
         queryKey: ['containers'],

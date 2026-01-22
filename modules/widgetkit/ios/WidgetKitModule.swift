@@ -76,6 +76,14 @@ public class WidgetKitModule: Module {
                 self.reloadWidgets()
             }
         }
+		
+		Function("setConnections") { (connections: [Connection]) -> Void in
+			guard let sharedDefaults = UserDefaults(suiteName: _groupName) else { return }
+			
+			let encodedConnections = try JSONEncoder().encode(connections)
+			
+			sharedDefaults.set(encodedConnections, forKey: _connectionsKey)
+		}
 
         Function("clearAllConnections") {
             guard let sharedDefaults = UserDefaults(suiteName: _groupName) else {

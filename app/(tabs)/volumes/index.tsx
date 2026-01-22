@@ -4,7 +4,6 @@ import { Badge } from '@/components/Badge'
 import buildPlaceholder from '@/components/base/Placeholder'
 import RefreshControl from '@/components/base/RefreshControl'
 import type { components } from '@/lib/docker/schema'
-import WidgetKitModule from '@/modules/widgetkit'
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import Clipboard from '@react-native-clipboard/clipboard'
 import * as Sentry from '@sentry/react-native'
@@ -31,7 +30,6 @@ function VolumeRow({
     const handleAction = (actionName: string) => {
         if (actionName === 'Browse') {
             const featureFn = () => {
-                WidgetKitModule.setIsSubscribed(true)
                 if (!isBrowsingSupported) {
                     Alert.alert(
                         'Browsing requires having Portainer Agent installed',

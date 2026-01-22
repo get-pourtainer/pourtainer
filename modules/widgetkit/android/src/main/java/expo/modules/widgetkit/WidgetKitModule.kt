@@ -78,6 +78,17 @@ class WidgetKitModule : Module() {
             }
         }
 		
+		Function("setConnections") { connections: List<Connection> ->
+			appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
+                prefs.edit() {
+                    putString(connectionsKey, Gson().toJson(connections))
+                    apply()
+                }
+
+                notifyAllWidgets()
+			}
+        }
+		
 		Function("removeConnection") { id: String ->
             appContext.reactContext?.getSharedPreferences(groupName, Context.MODE_PRIVATE)?.let { prefs ->
                 val connections = this@WidgetKitModule.getConnections().toMutableList().filter { it.id != id}

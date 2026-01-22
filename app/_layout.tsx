@@ -1,3 +1,4 @@
+import { WidgetSyncer } from '@/components/base/WidgetSyncer'
 import { queryClient } from '@/lib/query'
 import { mmkvStorage } from '@/lib/storage'
 import { COLORS } from '@/theme'
@@ -94,109 +95,124 @@ function RootLayout() {
                             android: process.env.EXPO_PUBLIC_ANDROID_SUPERWALL_API_KEY,
                         }}
                     >
-                        <PersistQueryClientProvider
-                            client={queryClient}
-                            persistOptions={{
-                                persister: mmkvPersister,
-                                dehydrateOptions: {
-                                    shouldDehydrateQuery: (query) => query.state.data !== undefined,
-                                },
-                            }}
-                        >
-                            <Stack>
-                                <Stack.Screen
-                                    name="index"
-                                    options={{
-                                        title: '',
-                                        headerShown: false,
-                                        gestureEnabled: false,
-                                        contentStyle: {
-                                            backgroundColor: COLORS.bgApp,
-                                        },
-                                    }}
-                                />
+                        <WidgetSyncer>
+                            <PersistQueryClientProvider
+                                client={queryClient}
+                                persistOptions={{
+                                    persister: mmkvPersister,
+                                    dehydrateOptions: {
+                                        shouldDehydrateQuery: (query) =>
+                                            query.state.status !== 'pending' &&
+                                            query.state.status !== 'error' &&
+                                            query.state.data !== undefined,
+                                    },
+                                }}
+                            >
+                                <Stack>
+                                    <Stack.Screen
+                                        name="index"
+                                        options={{
+                                            title: '',
+                                            headerShown: false,
+                                            gestureEnabled: false,
+                                            contentStyle: {
+                                                backgroundColor: COLORS.bgApp,
+                                            },
+                                        }}
+                                    />
 
-                                <Stack.Screen
-                                    name="onboard/index"
-                                    options={{
-                                        headerShown: false,
-                                        gestureEnabled: false,
-                                        animation: 'none',
-                                    }}
-                                />
+                                    <Stack.Screen
+                                        name="onboard/index"
+                                        options={{
+                                            headerShown: false,
+                                            gestureEnabled: false,
+                                            animation: 'none',
+                                        }}
+                                    />
 
-                                <Stack.Screen
-                                    name="login/index"
-                                    options={{
-                                        title: 'Login',
-                                        headerShown: false,
-                                        presentation: 'modal',
-                                        ...commonContentStyle,
-                                        autoHideHomeIndicator: true,
-                                    }}
-                                />
-                                <Stack.Screen
-                                    name="(tabs)"
-                                    options={{
-                                        headerShown: false,
-                                    }}
-                                />
+                                    <Stack.Screen
+                                        name="login/index"
+                                        options={{
+                                            title: 'Login',
+                                            headerShown: false,
+                                            presentation: 'modal',
+                                            ...commonContentStyle,
+                                            autoHideHomeIndicator: true,
+                                        }}
+                                    />
+                                    <Stack.Screen
+                                        name="(tabs)"
+                                        options={{
+                                            headerShown: false,
+                                        }}
+                                    />
 
-                                <Stack.Screen
-                                    name="stacks/[stackId]/(tabs)"
-                                    options={{
-                                        title: 'Stack',
-                                        headerShown: false,
-                                        animation: 'fade',
-                                        animationDuration: 120,
-                                        animationMatchesGesture: true,
-                                        ...commonContentStyle,
-                                    }}
-                                />
+                                    <Stack.Screen
+                                        name="stacks/[stackId]/(tabs)"
+                                        options={{
+                                            title: 'Stack',
+                                            headerShown: false,
+                                            animation: 'fade',
+                                            animationDuration: 120,
+                                            animationMatchesGesture: true,
+                                            ...commonContentStyle,
+                                        }}
+                                    />
 
-                                <Stack.Screen
-                                    name="container/[id]/index"
-                                    options={{
-                                        title: 'Container',
-                                        ...commonHeaderStyle,
-                                        ...commonContentStyle,
-                                    }}
-                                />
-                                <Stack.Screen
-                                    name="container/[id]/logs"
-                                    options={{
-                                        title: 'Logs',
-                                        ...commonHeaderStyle,
-                                        ...commonContentStyle,
-                                        headerLargeTitle: !isLiquidGlassAvailable(), // ios 26 bug
-                                    }}
-                                />
-                                <Stack.Screen
-                                    name="container/[id]/terminal"
-                                    options={{
-                                        title: 'Terminal',
-                                        ...commonHeaderStyle,
-                                        ...commonContentStyle,
-                                    }}
-                                />
-                                <Stack.Screen
-                                    name="container/[id]/edit"
-                                    options={{
-                                        title: 'Edit',
-                                        ...commonHeaderStyle,
-                                        ...commonContentStyle,
-                                    }}
-                                />
-                                <Stack.Screen
-                                    name="volume/[id]"
-                                    options={{
-                                        ...commonHeaderStyle,
-                                        ...commonContentStyle,
-                                        animation: 'none',
-                                    }}
-                                />
-                            </Stack>
-                        </PersistQueryClientProvider>
+                                    <Stack.Screen
+                                        name="container/[id]/index"
+                                        options={{
+                                            title: 'Container',
+                                            ...commonHeaderStyle,
+                                            ...commonContentStyle,
+                                        }}
+                                    />
+                                    <Stack.Screen
+                                        name="container/[id]/logs"
+                                        options={{
+                                            title: 'Logs',
+                                            ...commonHeaderStyle,
+                                            ...commonContentStyle,
+                                            headerLargeTitle: !isLiquidGlassAvailable(), // ios 26 bug
+                                        }}
+                                    />
+                                    <Stack.Screen
+                                        name="container/[id]/terminal"
+                                        options={{
+                                            title: 'Terminal',
+                                            ...commonHeaderStyle,
+                                            ...commonContentStyle,
+                                        }}
+                                    />
+                                    <Stack.Screen
+                                        name="container/[id]/edit"
+                                        options={{
+                                            title: 'Edit',
+                                            ...commonHeaderStyle,
+                                            ...commonContentStyle,
+                                        }}
+                                    />
+                                    <Stack.Screen
+                                        name="volume/[id]"
+                                        options={{
+                                            ...commonHeaderStyle,
+                                            ...commonContentStyle,
+                                            animation: 'none',
+                                        }}
+                                    />
+
+                                    <Stack.Screen
+                                        name="icons/index"
+                                        options={{
+                                            title: 'App Icon',
+                                            ...commonHeaderStyle,
+                                            ...commonContentStyle,
+                                            autoHideHomeIndicator: true,
+                                        }}
+                                    />
+                                </Stack>
+                            </PersistQueryClientProvider>
+                        </WidgetSyncer>
                     </SuperwallProvider>
                 </KeyboardProvider>
             </GestureHandlerRootView>

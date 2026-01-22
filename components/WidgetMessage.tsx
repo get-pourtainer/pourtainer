@@ -1,4 +1,3 @@
-import WidgetKitModule from '@/modules/widgetkit'
 import { COLORS } from '@/theme'
 import * as Sentry from '@sentry/react-native'
 import { usePlacement, useUser } from 'expo-superwall'
@@ -24,7 +23,6 @@ export default function ContainerWidgetMessage() {
                 registerPlacement({
                     placement: 'TapWidget',
                     feature: () => {
-                        WidgetKitModule.setIsSubscribed(true)
                         Alert.alert(
                             'Congrats!',
                             'You can now go to your homescreen and search for "Pourtainer" widgets'

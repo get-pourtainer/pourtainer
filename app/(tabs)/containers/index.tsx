@@ -11,7 +11,6 @@ import ActivityIndicator from '@/components/base/ActivityIndicator'
 import buildPlaceholder from '@/components/base/Placeholder'
 import RefreshControl from '@/components/base/RefreshControl'
 import type { components } from '@/lib/docker/schema'
-import WidgetKitModule from '@/modules/widgetkit'
 import { usePersistedStore } from '@/stores/persisted'
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import { Ionicons } from '@expo/vector-icons'
@@ -289,7 +288,6 @@ export default function ContainersScreen() {
                     registerPlacement({
                         placement: 'LifetimeOffer_1',
                         feature: () => {
-                            WidgetKitModule.setIsSubscribed(true)
                             Alert.alert('Congrats!', 'You unlocked lifetime access to Pourtainer.')
                         },
                     }).catch((error) => {

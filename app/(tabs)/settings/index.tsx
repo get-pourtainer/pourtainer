@@ -4,7 +4,6 @@ import ActivityIndicator from '@/components/base/ActivityIndicator'
 import { HeaderTouchableOpacity } from '@/components/base/HeaderTouchableOpacity'
 import { usePersistedStore } from '@/stores/persisted'
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
-import WidgetKitModule from '@/widgetkit'
 import Alert from '@blazejkustra/react-native-alert'
 import { Ionicons } from '@expo/vector-icons'
 import * as Sentry from '@sentry/react-native'
@@ -27,7 +26,6 @@ export default function SettingsScreen() {
     const connections = usePersistedStore((state) => state.connections)
     const switchConnection = usePersistedStore((state) => state.switchConnection)
     const currentConnection = usePersistedStore((state) => state.currentConnection)
-    const removeConnection = usePersistedStore((state) => state.removeConnection)
 
     const endpointListQueries = useQueries({
         queries: connections.map((connection) => ({
@@ -290,7 +288,6 @@ export default function SettingsScreen() {
                                                 onPress: () => {
                                                     const isLastConnection =
                                                         connections.length === 1
-                                                    removeConnection(connectionId)
                                                     if (isLastConnection) {
                                                         router.replace('/login/')
                                                     }
@@ -358,7 +355,6 @@ export default function SettingsScreen() {
                 onPress={() => {
                     const featureFn = () => {
                         router.push('/login/')
-                        WidgetKitModule.setIsSubscribed(true)
                     }
 
                     // if (__DEV__) {
