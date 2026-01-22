@@ -43,6 +43,7 @@ export default function LoginScreen() {
 
     const baseUrlRef = useRef<string>('')
     const apiTokenRef = useRef<string>('')
+
     const keyboard = useAnimatedKeyboard()
 
     const showCloseButton = useMemo(() => {
