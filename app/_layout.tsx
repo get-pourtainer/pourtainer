@@ -26,7 +26,6 @@ Sentry.init({
     dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
     tracesSampleRate: 1.0,
     profilesSampleRate: 1.0,
-    // biome-ignore lint/correctness/noUndeclaredVariables: <>
     environment: __DEV__ ? 'development' : 'production',
     integrations: [navigationIntegration],
     enableNativeFramesTracking: !isRunningInExpoGo(),

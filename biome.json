@@ -52,9 +52,9 @@
         "formatter": {
             "quoteStyle": "single",
             "quoteProperties": "preserve",
-            "trailingComma": "es5",
+            "trailingCommas": "es5",
             "semicolons": "asNeeded"
         },
-        "globals": ["it", "describe", "expect", "test"]
+        "globals": ["it", "describe", "expect", "test", "__DEV__"]
     }
 }
