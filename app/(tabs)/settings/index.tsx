@@ -1,22 +1,28 @@
 import { backupConfig } from '@/api/mutations'
 import { fetchEndpoints } from '@/api/queries'
 import ActivityIndicator from '@/components/base/ActivityIndicator'
+import { HeaderTouchableOpacity } from '@/components/base/HeaderTouchableOpacity'
 import { usePersistedStore } from '@/stores/persisted'
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import WidgetKitModule from '@/widgetkit'
 import Alert from '@blazejkustra/react-native-alert'
+import { Ionicons } from '@expo/vector-icons'
 import * as Sentry from '@sentry/react-native'
 import { useMutation, useQueries } from '@tanstack/react-query'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Haptics from 'expo-haptics'
-import { router } from 'expo-router'
+import { router, useNavigation } from 'expo-router'
 import * as Sharing from 'expo-sharing'
+import * as StoreReview from 'expo-store-review'
 import { usePlacement } from 'expo-superwall'
-import { useCallback, useMemo } from 'react'
+import * as WebBrowser from 'expo-web-browser'
+import { useCallback, useLayoutEffect, useMemo } from 'react'
 import { Platform, StyleSheet, TouchableOpacity } from 'react-native'
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
+import ContextMenu from 'react-native-context-menu-view'
 
 export default function SettingsScreen() {
+    const navigation = useNavigation()
     const { registerPlacement } = usePlacement()
     const connections = usePersistedStore((state) => state.connections)
     const switchConnection = usePersistedStore((state) => state.switchConnection)
@@ -98,6 +104,99 @@ export default function SettingsScreen() {
             query.refetch()
         }
     }, [endpointListQueries])
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <ContextMenu
+                    dropdownMenuMode={true}
+                    actions={[
+                        {
+                            title: 'Icons',
+                            systemIcon: 'app.gift',
+                        },
+                        {
+                            title: 'Feedback',
+                            systemIcon: 'message',
+                        },
+                        {
+                            title: 'Rate',
+                            systemIcon: 'star.fill',
+                        },
+                    ]}
+                    onPress={async (e) => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid)
+
+                        if (e.nativeEvent.name === 'Icons') {
+                            if (__DEV__) {
+                                router.push('/icons/')
+                                return
+                            }
+
+                            registerPlacement({
+                                placement: 'AppIcons',
+                                feature: () => {
+                                    router.push('/icons/')
+                                },
+                            })
+                            return
+                        }
+                        if (e.nativeEvent.name === 'Feedback') {
+                            await WebBrowser.openBrowserAsync(process.env.EXPO_PUBLIC_FEEDBACK_URL!)
+                            return
+                        }
+                        if (e.nativeEvent.name === 'Rate') {
+                            Alert.alert(
+                                'Do you like Pourtainer?',
+                                'Let us know about your experience.',
+                                [
+                                    {
+                                        text: 'No',
+                                        onPress: () => {
+                                            Alert.alert(
+                                                'Thank you!',
+                                                'Your review has been sent successfully.'
+                                            )
+                                        },
+                                    },
+                                    {
+                                        text: 'Yes',
+                                        onPress: () => {
+                                            if (
+                                                usePersistedStore.getState().installationTs <
+                                                Date.now() - ms('1d')
+                                            ) {
+                                                StoreReview.requestReview()
+                                                return
+                                            }
+
+                                            registerPlacement({
+                                                placement: 'LifetimeOffer_1_Show',
+                                                feature: async () => {
+                                                    await StoreReview.requestReview()
+                                                },
+                                            }).catch((error) => {
+                                                Sentry.captureException(error)
+                                                console.error(
+                                                    'Error registering LifetimeOffer_1_Show for Rate',
+                                                    error
+                                                )
+                                            })
+                                        },
+                                    },
+                                ]
+                            )
+                            return
+                        }
+                    }}
+                >
+                    <HeaderTouchableOpacity>
+                        <Ionicons name="ellipsis-horizontal-sharp" size={32} color={COLORS.text} />
+                    </HeaderTouchableOpacity>
+                </ContextMenu>
+            ),
+        })
+    }, [navigation, registerPlacement])
 
     return (
         <ScrollView

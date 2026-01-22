@@ -98,6 +98,41 @@ module.exports = ({ config }) => {
                     },
                 },
             ],
+            'expo-font',
+            'expo-web-browser',
+            [
+                'expo-alternate-app-icons',
+                [
+                    {
+                        name: 'BlackDark',
+                        ios: './assets/icon-black-dark.png',
+                        android: {
+                            foregroundImage: './assets/icon-black-dark.png',
+                        },
+                    },
+                    {
+                        name: 'BlackLight',
+                        ios: './assets/icon-black-light.png',
+                        android: {
+                            foregroundImage: './assets/icon-black-light.png',
+                        },
+                    },
+                    {
+                        name: 'BlueDark',
+                        ios: './assets/icon-blue-dark.png',
+                        android: {
+                            foregroundImage: './assets/icon-blue-dark.png',
+                        },
+                    },
+                    {
+                        name: 'BlueLight',
+                        ios: './assets/icon-blue-light.png',
+                        android: {
+                            foregroundImage: './assets/icon-blue-light.png',
+                        },
+                    },
+                ],
+            ],
         ],
         experiments: {
             typedRoutes: true,
