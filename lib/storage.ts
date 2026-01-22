@@ -5,6 +5,9 @@ const storage = createMMKV({
 })
 
 export const mmkvStorage = {
+    clearAll: () => {
+        storage.clearAll()
+    },
     getItem: (key: string) => {
         const value = storage.getString(key)
         return value ?? null

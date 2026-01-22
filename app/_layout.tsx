@@ -33,7 +33,7 @@ Sentry.init({
 })
 
 // const clearStorage = () => {
-//     storage.clearAll()
+//     mmkvStorage.clearAll()
 //     queryClient.clear()
 // }
 
