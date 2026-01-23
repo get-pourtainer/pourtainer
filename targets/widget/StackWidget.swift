@@ -198,17 +198,7 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
             )
         }
         
-        // Determine refresh policy based on container states
-        let refreshPolicy: TimelineReloadPolicy
-        let hasRunningContainers = containers.contains(where: { $0.status == "running" })
-        
-        if hasRunningContainers {
-            // If there are running containers, refresh more frequently
-            refreshPolicy = .after(currentDate.addingTimeInterval(5 * 60)) // 5 minutes
-        } else {
-            // Otherwise, refresh less frequently
-            refreshPolicy = .after(currentDate.addingTimeInterval(30 * 60)) // 30 minutes
-        }
+        let refreshPolicy: TimelineReloadPolicy = .after(currentDate.addingTimeInterval(15 * 60)) // 15 minutes
         
         let entry = StackWidgetEntry(
             date: currentDate,

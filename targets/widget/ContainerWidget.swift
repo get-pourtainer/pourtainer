@@ -55,29 +55,19 @@ struct Provider: AppIntentTimelineProvider {
         guard let containerId = configuration.container?.id,
               let connection = configuration.container?.connection,
               let endpoint = configuration.container?.endpoint else {
-            // No container selected, use the original timeline approach
-            let refreshPolicy: TimelineReloadPolicy = .atEnd
+            // No container selected, don't refresh
+            let entry = WidgetEntry(
+                date: currentDate, 
+                hasConnections: !connections.isEmpty, 
+                hasContainers: hasContainers, 
+                selectedContainer: nil,
+                logLines: [],
+                isSubscribed: isSubscribed,
+                connectionId: nil,
+                endpointId: nil
+            )
             
-            // Create timeline entries every 15 minutes for the next 5 hours
-            // This determines how often widget content will appear to update
-            for minuteOffset in stride(from: 0, to: 60 * 5, by: 15) {
-                let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate)!
-
-				let entry = WidgetEntry(
-					date: entryDate, 
-					hasConnections: !connections.isEmpty, 
-					hasContainers: hasContainers, 
-					selectedContainer: nil,
-					logLines: [],
-					isSubscribed: isSubscribed,
-					connectionId: nil,
-					endpointId: nil
-				)
-
-                entries.append(entry)
-            }
-            
-            return Timeline(entries: entries, policy: refreshPolicy)
+            return Timeline(entries: [entry], policy: .never)
         }
         
         // Try to fetch the selected container
@@ -114,24 +104,7 @@ struct Provider: AppIntentTimelineProvider {
             container = nil
         }
 
-        // Determine an appropriate refresh policy based on container state
-        let refreshPolicy: TimelineReloadPolicy
-        if let container = container {
-            switch container.State.Status {
-            case "running":
-                // Active containers should update more frequently
-                refreshPolicy = .after(Date().addingTimeInterval(5 * 60)) // 5 minutes
-            case "exited":
-                // Inactive containers can update less frequently
-                refreshPolicy = .after(Date().addingTimeInterval(30 * 60)) // 30 minutes
-            default:
-                // Unknown status - use a moderate refresh rate
-                refreshPolicy = .after(Date().addingTimeInterval(15 * 60)) // 15 minutes
-            }
-        } else {
-            // Container fetch failed, use a moderate refresh rate
-            refreshPolicy = .after(Date().addingTimeInterval(15 * 60)) // 15 minutes
-        }
+        let refreshPolicy: TimelineReloadPolicy = .after(Date().addingTimeInterval(15 * 60)) // 15 minutes
         
         // Fetch logs if we have a valid container
         var logLines: [LogLine] = []
