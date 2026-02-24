@@ -36,15 +36,17 @@ yarn-error.*
 *.tsbuildinfo
 
 .work
-android/
 ios/
-!modules/widgetkit/ios/
-!modules/widgetkit/android/
-modules/widgetkit/android/build
+android/
+
+.env.example
+
 *.apk
-*.env
-!env.example
-v1.44.yaml
-.idea
-.hot-updater/output
-keys/
+*.aab
+!keys/private-key.pem
+!keys/public-key.pem
+
+# widgets
+!modules/widgetkit/ios
+!modules/widgetkit/android
+modules/widgetkit/android/build

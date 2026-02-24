@@ -2,6 +2,7 @@ import { WidgetSyncer } from '@/components/base/WidgetSyncer'
 import { queryClient } from '@/lib/query'
 import { mmkvStorage } from '@/lib/storage'
 import { COLORS } from '@/theme'
+import { HotUpdater } from '@hot-updater/react-native'
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack'
 import * as Sentry from '@sentry/react-native'
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
@@ -28,7 +29,11 @@ Sentry.init({
     tracesSampleRate: 1.0,
     profilesSampleRate: 1.0,
     environment: __DEV__ ? 'development' : 'production',
-    integrations: [navigationIntegration],
+    replaysSessionSampleRate: 0.0,
+    replaysOnErrorSampleRate: 1.0,
+    attachViewHierarchy: true,
+    attachScreenshot: true,
+    integrations: [navigationIntegration, Sentry.mobileReplayIntegration()],
     enableNativeFramesTracking: !isRunningInExpoGo(),
 })
 
@@ -93,6 +98,12 @@ function RootLayout() {
                         apiKeys={{
                             ios: process.env.EXPO_PUBLIC_IOS_SUPERWALL_API_KEY,
                             android: process.env.EXPO_PUBLIC_ANDROID_SUPERWALL_API_KEY,
+                        }}
+                        options={{
+                            paywalls: {
+                                shouldPreload: true,
+                                isHapticFeedbackEnabled: true,
+                            },
                         }}
                     >
                         <WidgetSyncer>
@@ -220,4 +231,8 @@ function RootLayout() {
     )
 }
 
-export default Sentry.wrap(RootLayout)
+export default HotUpdater.wrap({
+    baseURL: `${process.env.EXPO_PUBLIC_HOT_UPDATER_CLOUDFLARE_URL}/api/check-update`,
+    updateStrategy: 'appVersion',
+    updateMode: 'auto',
+})(RootLayout)

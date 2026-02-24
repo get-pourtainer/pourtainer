@@ -15,6 +15,7 @@ import * as Sharing from 'expo-sharing'
 import * as StoreReview from 'expo-store-review'
 import { usePlacement } from 'expo-superwall'
 import * as WebBrowser from 'expo-web-browser'
+import ms from 'ms'
 import { useCallback, useLayoutEffect, useMemo } from 'react'
 import { Platform, StyleSheet, TouchableOpacity } from 'react-native'
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
@@ -127,14 +128,14 @@ export default function SettingsScreen() {
 
                         if (e.nativeEvent.name === 'Icons') {
                             if (__DEV__) {
-                                router.push('/icons/')
+                                router.push('/icons')
                                 return
                             }
 
                             registerPlacement({
                                 placement: 'AppIcons',
                                 feature: () => {
-                                    router.push('/icons/')
+                                    router.push('/icons')
                                 },
                             })
                             return
@@ -289,7 +290,7 @@ export default function SettingsScreen() {
                                                     const isLastConnection =
                                                         connections.length === 1
                                                     if (isLastConnection) {
-                                                        router.replace('/login/')
+                                                        router.replace('/login')
                                                     }
                                                 },
                                             },
@@ -354,13 +355,13 @@ export default function SettingsScreen() {
                 style={styles.addConnectionButton}
                 onPress={() => {
                     const featureFn = () => {
-                        router.push('/login/')
+                        router.push('/login')
                     }
 
-                    // if (__DEV__) {
-                    //     featureFn()
-                    //     return
-                    // }
+                    if (__DEV__) {
+                        featureFn()
+                        return
+                    }
 
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 

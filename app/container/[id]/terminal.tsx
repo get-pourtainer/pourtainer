@@ -28,7 +28,7 @@ export default function ContainerTerminalScreen() {
     const [user, setUser] = useState('')
     const [isConfigured, setIsConfigured] = useState(false)
     const [output, setOutput] = useState<string[]>([])
-    const wsRef = useRef<any | null>(null)
+    const wsRef = useRef<WebSocketWithSelfSignedCert | null>(null)
     const scrollViewRef = useRef<ScrollView>(null)
     const [isConnected, setIsConnected] = useState(false)
 
@@ -53,7 +53,8 @@ export default function ContainerTerminalScreen() {
             wsRef.current.close()
         }
 
-        const ws = new WebSocketWithSelfSignedCert()
+        const fullUrl = `wss://${currentConnection!.baseUrl.replace('https://', '').replace('http://', '')}/api/websocket/exec?endpointId=${currentConnection!.currentEndpointId}&id=${sessionId}`
+        const ws = WebSocketWithSelfSignedCert.getInstance(fullUrl)
 
         ws.onOpen(() => {
             console.log('WebSocket connection opened')
@@ -101,9 +102,7 @@ export default function ContainerTerminalScreen() {
             setOutput((prev) => [...prev, `🔴 Error: ${err}`])
         })
 
-        const fullUrl = `wss://${currentConnection!.baseUrl.replace('https://', '').replace('http://', '')}/api/websocket/exec?endpointId=${currentConnection!.currentEndpointId}&id=${sessionId}`
-
-        ws.connect(fullUrl, {
+        ws.connect({
             'x-api-key': currentConnection!.apiToken,
         })
             .then((data) => {

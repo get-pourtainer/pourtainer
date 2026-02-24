@@ -16,11 +16,11 @@ export default function App() {
     const currentConnection = usePersistedStore((state) => state.currentConnection)
 
     if (!hasSeenOnboarding) {
-        return <Redirect href="/onboard/" />
+        return <Redirect href="/onboard" />
     }
 
     if (connections.length === 0) {
-        return <Redirect href="/login/" />
+        return <Redirect href="/login" />
     }
 
     if (!currentConnection) {

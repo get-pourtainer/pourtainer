@@ -20,7 +20,6 @@ import { isLiquidGlassAvailable } from 'expo-glass-effect'
 import * as Haptics from 'expo-haptics'
 import * as QuickActions from 'expo-quick-actions'
 import { router, useNavigation } from 'expo-router'
-import { SquircleButton } from 'expo-squircle-view'
 import * as StoreReview from 'expo-store-review'
 import { usePlacement, useSuperwall, useUser } from 'expo-superwall'
 import ms from 'ms'
@@ -28,6 +27,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'reac
 import { Alert, Platform, Pressable, StyleSheet, TouchableOpacity } from 'react-native'
 import { ScrollView, Text, View } from 'react-native'
 import ContextMenu from 'react-native-context-menu-view'
+import { SquircleView } from 'react-native-figma-squircle'
 
 type GroupedContainers = {
     [key: string]: components['schemas']['ContainerSummary'][]
@@ -84,29 +84,35 @@ function ContainerBox({
     ])
 
     return (
-        <SquircleButton
-            onPress={handlePress}
-            style={[styles.containerBox, isSelected && styles.containerBoxSelected]}
+        <SquircleView
+            squircleParams={{
+                cornerRadius: BORDER_RADIUS.lg,
+                cornerSmoothing: 0.6,
+                fillColor: isSelected ? COLORS.primary : COLORS.bgSecondary,
+            }}
+            style={styles.containerBox}
         >
-            <View style={styles.containerBoxInner}>
-                <View>
-                    <Text
-                        style={[styles.containerName, isSelected && { color: COLORS.text }]}
-                        numberOfLines={2}
-                    >
-                        {container.Names?.[0]?.replace(/^\//, '') || 'Unnamed container'}
-                    </Text>
-                </View>
+            <TouchableOpacity onPress={handlePress} activeOpacity={0.7} style={{ flex: 1 }}>
+                <View style={styles.containerBoxInner}>
+                    <View>
+                        <Text
+                            style={[styles.containerName, isSelected && { color: COLORS.text }]}
+                            numberOfLines={2}
+                        >
+                            {container.Names?.[0]?.replace(/^\//, '') || 'Unnamed container'}
+                        </Text>
+                    </View>
 
-                <View style={styles.statusContainer}>
-                    <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-                    <Text style={[styles.statusText, isSelected && { color: COLORS.text }]}>
-                        {container.State?.charAt(0).toUpperCase() +
-                            (container.State?.slice(1) || '')}
-                    </Text>
+                    <View style={styles.statusContainer}>
+                        <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                        <Text style={[styles.statusText, isSelected && { color: COLORS.text }]}>
+                            {container.State?.charAt(0).toUpperCase() +
+                                (container.State?.slice(1) || '')}
+                        </Text>
+                    </View>
                 </View>
-            </View>
-        </SquircleButton>
+            </TouchableOpacity>
+        </SquircleView>
     )
 }
 
@@ -135,6 +141,19 @@ export default function ContainersScreen() {
         return new Map(stacksQuery.data.map((stack) => [stack.Name || '', stack.Id || 0]))
     }, [stacksQuery.data])
 
+    const containerNameById = useMemo(() => {
+        if (!containersQuery.data) return new Map<string, string>()
+
+        return new Map(
+            containersQuery.data
+                .filter((container) => !!container.Id)
+                .map((container) => [
+                    container.Id!,
+                    container.Names?.[0]?.replace(/^\//, '') || container.Id!,
+                ])
+        )
+    }, [containersQuery.data])
+
     const bulkActionMutation = useMutation({
         mutationFn: async ({
             action,
@@ -153,13 +172,36 @@ export default function ContainersScreen() {
             }
 
             const actionFn = actionMap[action]
-            const promises = containerIds.map((id) => actionFn(id))
-            await Promise.all(promises)
+            const settledResults = await Promise.allSettled(containerIds.map((id) => actionFn(id)))
+
+            const succeeded: string[] = []
+            const failed: Array<{ containerId: string; message: string }> = []
+
+            for (const [index, result] of settledResults.entries()) {
+                const containerId = containerIds[index]
+                if (!containerId) continue
+
+                if (result.status === 'fulfilled') {
+                    succeeded.push(containerId)
+                } else {
+                    failed.push({
+                        containerId,
+                        message:
+                            result.reason instanceof Error
+                                ? result.reason.message
+                                : 'Unknown error',
+                    })
+                }
+            }
+
+            return {
+                action,
+                succeeded,
+                failed,
+            }
         },
-        onSuccess: () => {
+        onSettled: () => {
             containersQuery.refetch()
-            setIsSelectionMode(false)
-            setSelectedContainers(new Set())
         },
     })
 
@@ -178,25 +220,53 @@ export default function ContainersScreen() {
     const handleBulkAction = useCallback(
         (action: 'start' | 'stop' | 'restart' | 'pause' | 'unpause' | 'kill') => {
             const containerIds = Array.from(selectedContainers)
+
+            if (containerIds.length === 0) {
+                Alert.alert('No containers selected', 'Select at least one container first.')
+                return
+            }
+
             const actionLabel = action.charAt(0).toUpperCase() + action.slice(1)
+            const formatContainerLabel = (containerId: string) => {
+                const containerName = containerNameById.get(containerId)
+                if (!containerName) return containerId
+                return `${containerName} (${containerId.slice(0, 12)})`
+            }
 
             bulkActionMutation.mutate(
                 { action, containerIds },
                 {
-                    onSuccess: () => {
-                        Alert.alert(
-                            'Success',
-                            `${actionLabel} completed for ${containerIds.length} container${containerIds.length !== 1 ? 's' : ''}`
-                        )
+                    onSuccess: ({ succeeded, failed }) => {
+                        if (failed.length === 0) {
+                            setIsSelectionMode(false)
+                            setSelectedContainers(new Set())
+                            Alert.alert(
+                                'Success',
+                                `${actionLabel} completed for ${succeeded.length} container${succeeded.length !== 1 ? 's' : ''}`
+                            )
+                            return
+                        }
+
+                        setIsSelectionMode(true)
+                        setSelectedContainers(new Set(failed.map((item) => item.containerId)))
+
+                        const successRows =
+                            succeeded.length > 0
+                                ? `Succeeded (${succeeded.length})\n${succeeded.map((id) => `• ${formatContainerLabel(id)}`).join('\n')}\n\n`
+                                : ''
+
+                        const failedRows = `Failed (${failed.length})\n${failed.map(({ containerId, message }) => `• ${formatContainerLabel(containerId)}: ${message}`).join('\n')}`
+
+                        Alert.alert(`${actionLabel} completed with issues`, `${successRows}${failedRows}`)
                     },
                     onError: (error) => {
-                        Alert.alert('Error', `Failed to ${action} some containers`)
+                        Alert.alert('Error', `Failed to ${action} selected containers`)
                         console.error(error)
                     },
                 }
             )
         },
-        [selectedContainers, bulkActionMutation]
+        [selectedContainers, bulkActionMutation, containerNameById]
     )
 
     const filteredGroupedContainers = useMemo(() => {
@@ -304,7 +374,7 @@ export default function ContainersScreen() {
                         id: '0',
                         title:
                             Platform.OS === 'android'
-                                ? "Don't delete me ): Tap here!"
+                                ? 'Tap here for 50% off!'
                                 : "Don't delete me ):",
                         subtitle: "Here's 50% off for life!",
                         icon: 'love',
@@ -522,7 +592,7 @@ export default function ContainersScreen() {
                             onPress={() => {
                                 if (!hasStack) return
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                                router.push(`/stacks/${stackId}/home/`)
+                                router.push(`/stacks/${stackId}/home`)
                             }}
                         >
                             <Text style={styles.stackName}>{stackName}</Text>
@@ -559,9 +629,8 @@ const styles = StyleSheet.create({
             width: 160,
             height: 150,
             padding: SPACING.md,
-            borderRadius: BORDER_RADIUS.lg,
-            backgroundColor: COLORS.bgSecondary,
             margin: SPACING.sm,
+            overflow: 'hidden',
         },
         SHADOWS.small,
     ]),
@@ -631,9 +700,6 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         marginHorizontal: -SPACING.sm,
         justifyContent: 'flex-start',
-    },
-    containerBoxSelected: {
-        backgroundColor: COLORS.primary,
     },
     headerButton: {
         paddingHorizontal: SPACING.md,
