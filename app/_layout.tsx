@@ -3,6 +3,7 @@ import { queryClient } from '@/lib/query'
 import { mmkvStorage } from '@/lib/storage'
 import { COLORS } from '@/theme'
 import { HotUpdater } from '@hot-updater/react-native'
+import { DarkTheme, ThemeProvider } from '@react-navigation/native'
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack'
 import * as Sentry from '@sentry/react-native'
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
@@ -119,6 +120,7 @@ function RootLayout() {
                                     },
                                 }}
                             >
+                                <ThemeProvider value={DarkTheme}>
                                 <Stack>
                                     <Stack.Screen
                                         name="index"
@@ -222,6 +224,7 @@ function RootLayout() {
                                         }}
                                     />
                                 </Stack>
+                                </ThemeProvider>
                             </PersistQueryClientProvider>
                         </WidgetSyncer>
                     </SuperwallProvider>
