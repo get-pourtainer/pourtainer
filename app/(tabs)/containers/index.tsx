@@ -116,6 +116,8 @@ function ContainerBox({
     )
 }
 
+const LEADING_SLASH = /^\//
+
 export default function ContainersScreen() {
     const { registerPlacement } = usePlacement()
     const { subscriptionStatus } = useUser()
@@ -219,6 +221,9 @@ export default function ContainersScreen() {
 
     const handleBulkAction = useCallback(
         (action: 'start' | 'stop' | 'restart' | 'pause' | 'unpause' | 'kill') => {
+            // A second bulk action while one runs would rewrite the selection twice
+            if (bulkActionMutation.isPending) return
+
             const containerIds = Array.from(selectedContainers)
 
             if (containerIds.length === 0) {
@@ -257,7 +262,10 @@ export default function ContainersScreen() {
 
                         const failedRows = `Failed (${failed.length})\n${failed.map(({ containerId, message }) => `• ${formatContainerLabel(containerId)}: ${message}`).join('\n')}`
 
-                        Alert.alert(`${actionLabel} completed with issues`, `${successRows}${failedRows}`)
+                        Alert.alert(
+                            `${actionLabel} completed with issues`,
+                            `${successRows}${failedRows}`
+                        )
                     },
                     onError: (error) => {
                         Alert.alert('Error', `Failed to ${action} selected containers`)
@@ -276,7 +284,9 @@ export default function ContainersScreen() {
         // If no search query, return all containers grouped
         const containers = query
             ? containersQuery.data.filter((container) => {
-                  const containerName = container.Names?.[0]?.toLowerCase() ?? 'Unnamed container'
+                  const containerName = (
+                      container.Names?.[0]?.replace(LEADING_SLASH, '') ?? 'unnamed container'
+                  ).toLowerCase()
                   const stackName = (
                       container.Labels?.['com.docker.compose.project'] || 'Stackless'
                   ).toLowerCase()
@@ -292,16 +302,11 @@ export default function ContainersScreen() {
             return groups
         }, {})
 
-        // If there's an Stackless category, move it to a separate object
+        // Stacks alphabetically, Stackless always last
         const { Stackless, ...stackGroups } = groups
+        const sortedGroups = Object.entries(stackGroups).sort(([a], [b]) => a.localeCompare(b))
 
-        // Return sorted groups with Stackless at the end if it exists
-        const mapResult = {
-            ...stackGroups,
-            ...(Stackless ? { Stackless } : {}),
-        }
-
-        return Object.entries(mapResult)
+        return Stackless ? [...sortedGroups, ['Stackless', Stackless] as const] : sortedGroups
     }, [containersQuery.data, searchQuery])
 
     const Placeholder = useMemo(() => {
@@ -345,27 +350,38 @@ export default function ContainersScreen() {
             return
         }
 
+        // The offer is shown after a short delay; cancel it if the screen goes away first
+        let offerTimer: ReturnType<typeof setTimeout> | undefined
+
         try {
-            getPresentationResult('LifetimeOffer_1').then((presentationResult) => {
-                if (
-                    ['placementnotfound', 'noaudiencematch'].includes(
-                        presentationResult.type.toLowerCase()
-                    )
-                ) {
-                    return
-                }
-                setTimeout(() => {
-                    registerPlacement({
-                        placement: 'LifetimeOffer_1',
-                        feature: () => {
-                            Alert.alert('Congrats!', 'You unlocked lifetime access to Pourtainer.')
-                        },
-                    }).catch((error) => {
-                        Sentry.captureException(error)
-                        console.error('Error registering LifetimeOffer_1', error)
-                    })
-                }, 1000)
-            })
+            getPresentationResult('LifetimeOffer_1')
+                .then((presentationResult) => {
+                    // expo-superwall types this as its compat PresentationResult class, but the
+                    // native bridge resolves plain JSON such as { type: 'PlacementNotFound' }.
+                    const resultType = (presentationResult as { type?: string }).type ?? ''
+                    if (
+                        ['placementnotfound', 'noaudiencematch'].includes(resultType.toLowerCase())
+                    ) {
+                        return
+                    }
+                    offerTimer = setTimeout(() => {
+                        registerPlacement({
+                            placement: 'LifetimeOffer_1',
+                            feature: () => {
+                                Alert.alert(
+                                    'Congrats!',
+                                    'You unlocked lifetime access to Pourtainer.'
+                                )
+                            },
+                        }).catch((error) => {
+                            Sentry.captureException(error)
+                            console.error('Error registering LifetimeOffer_1', error)
+                        })
+                    }, 1000)
+                })
+                .catch((error) => {
+                    Sentry.captureException(error)
+                })
 
             QuickActions.isSupported().then((supported) => {
                 if (!supported) return
@@ -384,6 +400,10 @@ export default function ContainersScreen() {
             })
         } catch (error) {
             Sentry.captureException(error)
+        }
+
+        return () => {
+            if (offerTimer) clearTimeout(offerTimer)
         }
     }, [registerPlacement, subscriptionStatus.status, getPresentationResult])
 

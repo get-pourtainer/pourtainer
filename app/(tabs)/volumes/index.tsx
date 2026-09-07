@@ -1,9 +1,10 @@
 import { deleteVolume } from '@/api/mutations'
-import { fetchVolumeContent, fetchVolumes } from '@/api/queries'
+import { fetchEndpoints, fetchVolumes } from '@/api/queries'
 import { Badge } from '@/components/Badge'
 import buildPlaceholder from '@/components/base/Placeholder'
 import RefreshControl from '@/components/base/RefreshControl'
 import type { components } from '@/lib/docker/schema'
+import { usePersistedStore } from '@/stores/persisted'
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import Clipboard from '@react-native-clipboard/clipboard'
 import * as Sentry from '@sentry/react-native'
@@ -12,7 +13,7 @@ import * as Haptics from 'expo-haptics'
 import { useNavigation, useRouter } from 'expo-router'
 import * as StoreReview from 'expo-store-review'
 import { usePlacement } from 'expo-superwall'
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useState } from 'react'
 import { Alert, FlatList, Linking, StyleSheet, Text, View } from 'react-native'
 import ContextMenu from 'react-native-context-menu-view'
 
@@ -76,18 +77,29 @@ function VolumeRow({
         } else if (actionName === 'Copy ID') {
             Clipboard.setString(volume.Name)
         } else if (actionName === 'Delete') {
-            deleteVolume(volume.Name)
-                .then(() => {
-                    queryClient.invalidateQueries({ queryKey: ['volumes'] })
-                })
-                .catch((error) => {
-                    Sentry.captureException(error)
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-                    Alert.alert(
-                        'Error',
-                        error instanceof Error ? error.message : 'Failed to delete volume'
-                    )
-                })
+            Alert.alert('Delete Volume', `Delete "${volume.Name}"? This cannot be undone.`, [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: () => {
+                        deleteVolume(volume.Name)
+                            .then(() => {
+                                queryClient.invalidateQueries({ queryKey: ['volumes'] })
+                            })
+                            .catch((error) => {
+                                Sentry.captureException(error)
+                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+                                Alert.alert(
+                                    'Error',
+                                    error instanceof Error
+                                        ? error.message
+                                        : 'Failed to delete volume'
+                                )
+                            })
+                    },
+                },
+            ])
         } else {
             Alert.alert(
                 'Coming soon :)',
@@ -166,7 +178,18 @@ function VolumeRow({
 
 export default function VolumesScreen() {
     const [searchQuery, setSearchQuery] = useState('')
-    const [isBrowsingSupported, setIsBrowsingSupported] = useState(false)
+    // Browsing needs the Portainer Agent (endpoint type 2) or Edge Agent (type 4)
+    const currentEndpointId = usePersistedStore(
+        (state) => state.currentConnection?.currentEndpointId
+    )
+    const endpointsQuery = useQuery({
+        queryKey: ['endpoints'],
+        queryFn: async () => await fetchEndpoints(),
+    })
+    const isBrowsingSupported = useMemo(() => {
+        const endpoint = endpointsQuery.data?.find((item) => String(item.Id) === currentEndpointId)
+        return endpoint?.Type === 2 || endpoint?.Type === 4
+    }, [endpointsQuery.data, currentEndpointId])
     const navigation = useNavigation()
 
     const volumesQuery = useQuery({
@@ -183,16 +206,6 @@ export default function VolumesScreen() {
             return volumeName.includes(query) || stackName.includes(query)
         })
     }, [volumesQuery.data, searchQuery])
-
-    // Check browsing support once when volumes are loaded
-    useEffect(() => {
-        if (!volumesQuery.isSuccess || !volumesQuery.data || volumesQuery.data.length === 0) return
-
-        // Only check once when we first get volumes
-        fetchVolumeContent(volumesQuery.data[0].Name, '/')
-            .then(() => setIsBrowsingSupported(true))
-            .catch(() => setIsBrowsingSupported(false))
-    }, [volumesQuery.data, volumesQuery.isSuccess])
 
     const Placeholder = useMemo(() => {
         const isSearch = searchQuery.trim() !== ''

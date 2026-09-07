@@ -3,7 +3,7 @@ import { fetchVolumeContent } from '@/api/queries'
 import ActivityIndicator from '@/components/base/ActivityIndicator'
 import HeaderItem from '@/components/base/HeaderItem'
 import { HeaderTouchableOpacity } from '@/components/base/HeaderTouchableOpacity'
-import type { paths } from '@/lib/portainer/schema'
+import type { paths } from '@/lib/portainer/paths'
 import { formatBytes } from '@/lib/utils'
 import { downloadFile } from '@/lib/utils'
 import { usePersistedStore } from '@/stores/persisted'
@@ -11,7 +11,6 @@ import { COLORS } from '@/theme'
 import type { VolumeEntity } from '@/types/volume'
 import Alert from '@blazejkustra/react-native-alert'
 import { Ionicons } from '@expo/vector-icons'
-import { HeaderButton } from '@react-navigation/elements'
 import * as Sentry from '@sentry/react-native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMutation } from '@tanstack/react-query'
@@ -21,6 +20,7 @@ import type { DocumentPickerAsset } from 'expo-document-picker'
 import { isLiquidGlassAvailable } from 'expo-glass-effect'
 import * as Haptics from 'expo-haptics'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import { HeaderButton } from 'expo-router/react-navigation'
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { ActionSheetIOS, Platform } from 'react-native'
@@ -174,7 +174,8 @@ export default function VolumeDetailScreen() {
             })
 
             if (!result.canceled) {
-                await uploadMutation.mutateAsync(result.assets[0])
+                // mutate() reports failures through onError; mutateAsync would alert twice
+                uploadMutation.mutate(result.assets[0])
             }
         } catch (error) {
             Sentry.captureException(error)
@@ -188,12 +189,18 @@ export default function VolumeDetailScreen() {
     const handleBack = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 
-        if (path === '/') {
+        // Folders are pushed from their parent, so going up is a pop; only a
+        // deep link into a subfolder has no parent screen to return to
+        if (router.canGoBack()) {
             router.back()
             return
         }
+        if (path === '/') {
+            router.replace('/(tabs)/volumes')
+            return
+        }
         const parentPath = path.split('/').slice(0, -1).join('/') || '/'
-        router.push({
+        router.replace({
             pathname: '/volume/[id]',
             params: { id, path: parentPath },
         })
@@ -209,12 +216,19 @@ export default function VolumeDetailScreen() {
                 actions.push({
                     label: 'Download',
                     onPress: () => {
-                        console.log('Downloading file:', `${path}/${item.Name}`.replace('//', '/'))
+                        const endpointId = currentConnection?.currentEndpointId
+                        if (!endpointId) {
+                            Alert.alert(
+                                'No endpoint selected',
+                                'Select an endpoint in Settings and try again.'
+                            )
+                            return
+                        }
                         downloadFileMutation.mutate({
                             volumeName: id,
                             filePath: `${path}/${item.Name}`.replace('//', '/'),
                             fileName: item.Name,
-                            endpointId: currentConnection?.currentEndpointId!,
+                            endpointId,
                         })
                     },
                 })

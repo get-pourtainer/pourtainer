@@ -37,23 +37,12 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
     func timeline(for configuration: StackConfigurationIntent, in context: Context) async -> Timeline<StackWidgetEntry> {
         // Check for task cancellation at entry point
         try? Task.checkCancellation()
-		
-		var isSubscribed: Bool = false
-		
-		if let sharedDefaults = UserDefaults(suiteName: appGroupName) {
-			let isSubscribedValue = sharedDefaults.bool(forKey: isSubscribedKey)
-			
-			isSubscribed = isSubscribedValue
-		}
-        
+
+        let isSubscribed = isSubscribed()
         let currentDate = Date()
-        
-        // Load connections from shared UserDefaults
-        guard let sharedDefaults = UserDefaults(suiteName: appGroupName),
-              let rawExistingConnections = sharedDefaults.data(forKey: connectionsKey),
-              let connections = try? JSONDecoder().decode([Connection].self, from: rawExistingConnections),
-              !connections.isEmpty
-        else {
+        let connections = loadConnections()
+
+        guard !connections.isEmpty else {
             return Timeline(
                 entries: [StackWidgetEntry(
                     date: currentDate,
@@ -67,10 +56,10 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
             )
         }
         
-        // Get the selected stack or default to nil
+        // Use the live token for the picked connection, not the one captured
+        // when the widget was configured
         guard let stackEntity = configuration.stack,
-              let connection = configuration.stack?.connection,
-              let endpoint = configuration.stack?.endpoint else {
+              let connection = connections.first(where: { $0.id == stackEntity.connection.id }) else {
             return Timeline(
                 entries: [StackWidgetEntry(
                     date: currentDate,
@@ -84,8 +73,9 @@ struct StackWidgetProvider: AppIntentTimelineProvider {
             )
         }
         
+        let endpoint = stackEntity.endpoint
         var containers: [ContainerWithLogs] = []
-        
+
         do {
             // Create a high-priority task for fetching containers
             let containerTask = Task(priority: .userInitiated) {
@@ -245,19 +235,19 @@ struct StackWidgetEntryView: View {
                 description: "Please select a Stack."
             )
             .containerBackground(backgroundColor, for: .widget)
-        } else if !entry.hasContainers || entry.containers.isEmpty {
-            placeholderView(
-                title: "No containers",
-                description: "Stack '\(entry.selectedStack ?? "")' has no containers."
-            )
-            .containerBackground(backgroundColor, for: .widget)
         } else if !entry.isSubscribed {
             placeholderView(
                 title: "Subscription missing",
                 description: "Tap here to enable"
             )
             .containerBackground(backgroundColor, for: .widget)
-			.widgetURL(URL(string: "pourtainer://?showPaywall=1"))
+            .widgetURL(URL(string: "pourtainer://?showPaywall=1"))
+        } else if !entry.hasContainers || entry.containers.isEmpty {
+            placeholderView(
+                title: "No containers",
+                description: "Stack '\(entry.selectedStack ?? "")' has no containers."
+            )
+            .containerBackground(backgroundColor, for: .widget)
         } else {
             mainContent
                 .containerBackground(backgroundColor, for: .widget)

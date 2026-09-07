@@ -8,6 +8,8 @@ export interface Connection {
     apiToken: string
     baseUrl: string
     currentEndpointId: string | null
+    // Reported by /api/system/status; refreshed on app start and connection switch.
+    serverVersion?: string
 }
 
 interface PersistedState {
@@ -25,6 +27,9 @@ interface PersistedState {
     ) => void
     removeConnection: (connectionId: string) => void
     addConnection: (connection: Connection) => void
+    setServerVersion: (connectionId: string, serverVersion: string) => void
+    // Full reset to first-install defaults (last connection removed)
+    resetAll: () => void
 
     countToReviewPrompt: number
     setCountToReviewPrompt: (count: number) => void
@@ -82,13 +87,17 @@ export const usePersistedStore = create<PersistedState>()(
                 const state = get()
 
                 const newConnections = state.connections.filter((c) => c.id !== connectionId)
+                const removedCurrent = state.currentConnection?.id === connectionId
 
+                // Only removing the active connection changes what is shown
                 set({
                     connections: newConnections,
-                    currentConnection: newConnections[0] || null,
+                    currentConnection: removedCurrent
+                        ? newConnections[0] || null
+                        : state.currentConnection,
                 })
 
-                if (state.currentConnection?.id === connectionId) {
+                if (removedCurrent) {
                     queryClient.resetQueries()
                 }
             },
@@ -96,6 +105,29 @@ export const usePersistedStore = create<PersistedState>()(
                 set((state) => ({
                     connections: [...state.connections, connection],
                 }))
+            },
+            setServerVersion: (connectionId: string, serverVersion: string) => {
+                set((state) => {
+                    // Unchanged: keep the same state so nothing re-renders or re-persists
+                    const known = state.connections.find((c) => c.id === connectionId)
+                    const current = state.currentConnection
+                    if (
+                        known?.serverVersion === serverVersion &&
+                        (current?.id !== connectionId || current.serverVersion === serverVersion)
+                    ) {
+                        return state
+                    }
+
+                    const connections = state.connections.map((c) =>
+                        c.id === connectionId ? { ...c, serverVersion } : c
+                    )
+                    const currentConnection =
+                        state.currentConnection?.id === connectionId
+                            ? { ...state.currentConnection, serverVersion }
+                            : state.currentConnection
+
+                    return { connections, currentConnection }
+                })
             },
 
             countToReviewPrompt: 12,
@@ -122,11 +154,32 @@ export const usePersistedStore = create<PersistedState>()(
             },
 
             installationTs: Date.now(),
+
+            resetAll: () => {
+                set({
+                    connections: [],
+                    currentConnection: null,
+                    countToReviewPrompt: 12,
+                    lastShownReviewPrompt: null,
+                    hasSeenOnboarding: false,
+                    acknowledgments: { swipeLeftStack: false },
+                    installationTs: Date.now(),
+                })
+            },
         }),
         {
             name: 'auth-storage',
             storage: createJSONStorage(() => mmkvStorage),
             version: 1,
+            // Repair a persisted state that has connections but no active one,
+            // instead of doing it during render in app/index.tsx
+            merge: (persisted, current) => {
+                const merged = { ...current, ...(persisted as Partial<PersistedState>) }
+                if (merged.connections.length > 0 && !merged.currentConnection) {
+                    merged.currentConnection = merged.connections[0]
+                }
+                return merged
+            },
         }
     )
 )

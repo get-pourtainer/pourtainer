@@ -2,6 +2,8 @@ import { backupConfig } from '@/api/mutations'
 import { fetchEndpoints } from '@/api/queries'
 import ActivityIndicator from '@/components/base/ActivityIndicator'
 import { HeaderTouchableOpacity } from '@/components/base/HeaderTouchableOpacity'
+import { queryClient } from '@/lib/query'
+import { mmkvStorage } from '@/lib/storage'
 import { usePersistedStore } from '@/stores/persisted'
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/theme'
 import Alert from '@blazejkustra/react-native-alert'
@@ -25,6 +27,8 @@ export default function SettingsScreen() {
     const navigation = useNavigation()
     const { registerPlacement } = usePlacement()
     const connections = usePersistedStore((state) => state.connections)
+    const removeConnection = usePersistedStore((state) => state.removeConnection)
+    const resetAll = usePersistedStore((state) => state.resetAll)
     const switchConnection = usePersistedStore((state) => state.switchConnection)
     const currentConnection = usePersistedStore((state) => state.currentConnection)
 
@@ -37,11 +41,6 @@ export default function SettingsScreen() {
             },
         })),
     })
-    const endpointsWithConnectionId = useMemo(
-        () => endpointListQueries.map((query) => query.data),
-        [endpointListQueries]
-    )
-
     const backupConfigMutation = useMutation({
         mutationFn: async (password?: string) => {
             const base64Data = await backupConfig(password)
@@ -50,10 +49,7 @@ export default function SettingsScreen() {
                 throw new Error('No data returned')
             }
 
-            return base64Data
-        },
-        onSuccess: async (base64Data: string) => {
-            // Check if sharing is available (should be available on both iOS and Android)
+            // Writing and sharing stay inside the mutation so their failures reach onError
             const isSharingAvailable = await Sharing.isAvailableAsync()
             if (!isSharingAvailable) {
                 throw new Error('Sharing is not available on this platform')
@@ -223,20 +219,28 @@ export default function SettingsScreen() {
                     </View>
                 )}
 
-                {endpointsWithConnectionId.map((endpointWithConnectionId) => {
-                    if (!endpointWithConnectionId) return null
-
-                    if (
-                        !('endpoints' in endpointWithConnectionId) ||
-                        !('connectionId' in endpointWithConnectionId)
-                    ) {
-                        return null
-                    }
-
-                    const { endpoints, connectionId } = endpointWithConnectionId
+                {connections.map((connection, connectionIndex) => {
+                    // Every connection gets a card, even when its endpoints failed to
+                    // load, so a dead server can still be removed
+                    const connectionId = connection.id
+                    const endpointQuery = endpointListQueries[connectionIndex]
+                    const endpoints = endpointQuery?.data?.endpoints
 
                     return (
                         <View style={styles.card} key={connectionId}>
+                            <View style={styles.endpointItem}>
+                                <View style={styles.endpointContent}>
+                                    <Text style={styles.endpointName}>{connection?.baseUrl}</Text>
+                                    <Text style={styles.endpointUrl}>
+                                        Portainer {connection?.serverVersion ?? 'version unknown'}
+                                    </Text>
+                                    {endpointQuery?.isError && (
+                                        <Text style={styles.errorText}>
+                                            Could not load endpoints: {endpointQuery.error.message}
+                                        </Text>
+                                    )}
+                                </View>
+                            </View>
                             {endpoints?.map((endpoint, endpointIndex) => (
                                 <Pressable
                                     key={endpoint.Id}
@@ -259,12 +263,13 @@ export default function SettingsScreen() {
                                         <Text style={styles.endpointUrl}>{endpoint.URL}</Text>
                                     </View>
 
-                                    {currentConnection?.currentEndpointId ===
-                                        endpoint.Id.toString() && (
-                                        <View style={styles.activeIndicator}>
-                                            <Text style={styles.checkmark}>✓</Text>
-                                        </View>
-                                    )}
+                                    {currentConnection?.id === connectionId &&
+                                        currentConnection.currentEndpointId ===
+                                            endpoint.Id.toString() && (
+                                            <View style={styles.activeIndicator}>
+                                                <Text style={styles.checkmark}>✓</Text>
+                                            </View>
+                                        )}
                                 </Pressable>
                             ))}
                             <View
@@ -287,11 +292,19 @@ export default function SettingsScreen() {
                                                 text: 'Remove connection',
                                                 style: 'destructive',
                                                 onPress: () => {
-                                                    const isLastConnection =
-                                                        connections.length === 1
-                                                    if (isLastConnection) {
+                                                    if (connections.length === 1) {
+                                                        // Full reset: navigate first, then wipe the
+                                                        // cache and storage and put the store back to
+                                                        // its defaults so nothing stale is re-persisted
+                                                        router.dismissAll()
                                                         router.replace('/login')
+                                                        queryClient.clear()
+                                                        mmkvStorage.clearAll()
+                                                        resetAll()
+                                                        return
                                                     }
+
+                                                    removeConnection(connectionId)
                                                 },
                                             },
                                         ])

@@ -1,3 +1,4 @@
+import { ACCESS_DENIED_VOLUME, assertBlobOk } from '@/lib/portainer/errors'
 import { usePersistedStore } from '@/stores/persisted'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
@@ -47,6 +48,9 @@ export async function downloadFile({
         }).fetch('GET', fullUrl, {
             'x-api-key': currentConnection.apiToken,
         })
+
+        // A failure body is JSON text and must not be saved as the file
+        assertBlobOk(response, 'Failed to download file', { accessDenied: ACCESS_DENIED_VOLUME })
 
         // Generate temporary file path
         const localFilePath = `${tempDir}${fileName}`

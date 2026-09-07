@@ -42,9 +42,8 @@ ios/
 !modules/widgetkit/android/
 modules/widgetkit/android/build
 *.apk
-*.env
-!env.example
+*.env*
 v1.44.yaml
 .idea
-.hot-updater/output
+.hot-updater
 keys/

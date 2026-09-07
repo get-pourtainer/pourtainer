@@ -1,6 +1,9 @@
 import dockerClient from '@/lib/docker'
+import { decodeDockerLogs } from '@/lib/docker/logs'
 import portainerClient from '@/lib/portainer'
+import { ACCESS_DENIED_VOLUME, assertBlobOk } from '@/lib/portainer/errors'
 import { usePersistedStore } from '@/stores/persisted'
+import type { Image } from '@/types/image'
 import ReactNativeBlobUtil from 'react-native-blob-util'
 import stripAnsi from 'strip-ansi'
 
@@ -13,10 +16,6 @@ export async function fetchNetworks() {
             connectionId: currentConnection?.id,
             endpointId: currentConnection?.currentEndpointId!,
         }).GET('/networks')
-
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
 
         if (!response.data) {
             throw new Error('No data returned from API')
@@ -64,14 +63,6 @@ export async function fetchVolumes() {
 
         const [danglingRes, activeRes] = await Promise.all([dangling, active])
 
-        if (danglingRes.error) {
-            throw new Error(danglingRes.error.message)
-        }
-
-        if (activeRes.error) {
-            throw new Error(activeRes.error.message)
-        }
-
         const danglingData = danglingRes.data
         const activeData = activeRes.data
 
@@ -94,7 +85,9 @@ export async function fetchVolumeContent(name: string, path: string) {
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await portainerClient().GET('/endpoints/{id}/docker/v2/browse/ls', {
+        const response = await portainerClient({
+            accessDenied: ACCESS_DENIED_VOLUME,
+        }).GET('/endpoints/{id}/docker/v2/browse/ls', {
             params: {
                 path: {
                     id: Number(currentConnection?.currentEndpointId!),
@@ -140,7 +133,21 @@ export async function fetchImages() {
             throw new Error('No data returned from API')
         }
 
-        return response.data
+        // Fields are optional in the Portainer API document; keep the UI type strict.
+        return response.data.flatMap((image): Image[] =>
+            image.id
+                ? [
+                      {
+                          id: image.id,
+                          created: image.created ?? 0,
+                          nodeName: image.nodeName ?? '',
+                          size: image.size ?? 0,
+                          tags: image.tags ?? [],
+                          used: image.used ?? true,
+                      },
+                  ]
+                : []
+        )
     } catch (error) {
         console.error('Error fetching images:', error)
         console.log(JSON.stringify(error, null, 2))
@@ -163,10 +170,6 @@ export async function fetchContainers() {
                 },
             },
         })
-
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
 
         if (!response.data) {
             throw new Error('No data returned from API')
@@ -203,10 +206,6 @@ export async function fetchContainer(id: string) {
             },
         })
 
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
-
         if (!response.data) {
             throw new Error('No data returned from API')
         }
@@ -224,74 +223,49 @@ export async function fetchLogs(
     options: {
         timestamps: boolean
         tail: number
-        since: number
+        // Rolling window in seconds; 0 means everything. Docker's own `since`
+        // is an absolute UNIX timestamp, computed here on every call.
+        sinceSeconds: number
     }
 ): Promise<string> {
-    console.log('Fetching logs for container:', id, options)
     const currentConnection = usePersistedStore.getState().currentConnection
-
-    try {
-        const params = new URLSearchParams({
-            since: options.since.toString(),
-            stderr: '1',
-            stdout: '1',
-            tail: options.tail.toString(),
-            timestamps: options.timestamps ? '1' : '0',
-        })
-
-        const response = await ReactNativeBlobUtil.config({
-            trusty: true,
-        }).fetch(
-            'GET',
-            `${currentConnection?.baseUrl}/api/endpoints/${currentConnection?.currentEndpointId}/docker/containers/${id}/logs?${params.toString()}`,
-            {
-                'x-api-key': currentConnection?.apiToken!,
-                'Accept': 'application/json, text/plain, */*',
-            }
-        )
-
-        if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
-            throw new Error(`Network response was not ok: ${response.respInfo.status}`)
-        }
-
-        // Get the raw data as base64
-        const base64Data = await response.base64()
-
-        // Convert base64 to Uint8Array
-        const binaryString = atob(base64Data)
-        const uint8Array = new Uint8Array(binaryString.length)
-        for (let i = 0; i < binaryString.length; i++) {
-            uint8Array[i] = binaryString.charCodeAt(i)
-        }
-
-        let result = ''
-        let position = 0
-
-        // Process the multiplexed stream format
-        while (position < uint8Array.length) {
-            // Skip the header (1 byte for stream type + 3 null bytes)
-            position += 4
-
-            // Read the message length (4 bytes, big-endian)
-            const length =
-                (uint8Array[position] << 24) +
-                (uint8Array[position + 1] << 16) +
-                (uint8Array[position + 2] << 8) +
-                uint8Array[position + 3]
-            position += 4
-
-            // Convert the message bytes to string
-            const message = new TextDecoder().decode(uint8Array.slice(position, position + length))
-            result += message
-
-            position += length
-        }
-
-        return stripAnsi(result)
-    } catch (error) {
-        console.error('Error fetching logs:', error)
-        throw error
+    if (!currentConnection) {
+        throw new Error('No connection found')
     }
+
+    const since =
+        options.sinceSeconds > 0 ? Math.floor(Date.now() / 1000) - options.sinceSeconds : 0
+
+    const params = new URLSearchParams({
+        since: since.toString(),
+        stderr: '1',
+        stdout: '1',
+        tail: options.tail.toString(),
+        timestamps: options.timestamps ? '1' : '0',
+    })
+
+    const response = await ReactNativeBlobUtil.config({ trusty: true }).fetch(
+        'GET',
+        `${currentConnection.baseUrl}/api/endpoints/${currentConnection.currentEndpointId}/docker/containers/${id}/logs?${params.toString()}`,
+        {
+            'x-api-key': currentConnection.apiToken,
+            Accept: '*/*',
+        }
+    )
+
+    // A failure body is JSON text even though logs themselves are binary
+    assertBlobOk(response, 'Failed to fetch logs')
+
+    const binaryString = atob(await response.base64())
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+    }
+
+    const headers = response.respInfo.headers as Record<string, string | undefined>
+    const contentType = headers['Content-Type'] ?? headers['content-type']
+
+    return stripAnsi(decodeDockerLogs(bytes, contentType))
 }
 
 export async function fetchMe() {
@@ -312,22 +286,14 @@ export async function fetchMe() {
     }
 }
 
-export async function fetchStatus() {
-    console.log('Fetching system status from API...')
+export async function fetchSystemStatus({ connectionId }: { connectionId?: string } = {}) {
+    const response = await portainerClient({ connectionId }).GET('/system/status')
 
-    try {
-        const response = await portainerClient().GET('/system/status')
-
-        if (!response.data) {
-            throw new Error('No data returned from API')
-        }
-
-        return response.data
-    } catch (error) {
-        console.error('Error fetching system status:', error)
-        console.log(JSON.stringify(error, null, 2))
-        throw error
+    if (!response.data) {
+        throw new Error('No data returned from API')
     }
+
+    return response.data
 }
 
 export async function fetchEndpoints({ connectionId }: { connectionId?: string } = {}) {
@@ -364,10 +330,6 @@ export async function fetchStacks() {
         // First try without filters to see if the endpoint works
         const response = await portainerClient().GET('/stacks')
 
-        if (response.error) {
-            throw new Error('Failed to fetch stacks')
-        }
-
         // Handle 204 (no content) or empty array responses
         const allStacks = response.data || []
 
@@ -397,10 +359,6 @@ export async function fetchStack(stackId: number) {
                 },
             },
         })
-
-        if (response.error) {
-            throw new Error('Failed to fetch stack')
-        }
 
         if (!response.data) {
             throw new Error('No data returned from API')

@@ -147,6 +147,6 @@ struct WidgetEntryView: View {
         )
         .background(backgroundColor)
         // Deep link to open the container details in the Pourtainer app
-        .widgetURL(URL(string: "pourtainer://container//\(selectedContainer.Id)?connectionId=\(connectionId ?? "")&endpointId=\(endpointId ?? 0)"))
+        .widgetURL(URL(string: "pourtainer://container/\(selectedContainer.Id)?connectionId=\(connectionId ?? "")&endpointId=\(endpointId ?? 0)"))
     }
 }

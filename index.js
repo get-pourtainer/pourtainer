@@ -1,5 +1,4 @@
 import 'expo-router/entry'
-import './lib/prebundle'
 import * as SplashScreen from 'expo-splash-screen'
 
 SplashScreen.preventAutoHideAsync()

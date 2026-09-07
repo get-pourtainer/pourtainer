@@ -3,19 +3,19 @@ import SwiftUI
 import WidgetKit
 
 /**
- * Represents a stack entity for selection in widget configuration
- * Includes stack name and connection/endpoint information
+ * Represents a stack entity for selection in widget configuration.
+ * The id is a composite of connection, endpoint and stack name.
  */
-struct StackEntity: AppEntity, Decodable {
+struct StackEntity: AppEntity {
     var id: String
     var name: String
     var containerCount: Int
     var connection: Connection
     var endpoint: Endpoint
-    
+
     static var typeDisplayRepresentation: TypeDisplayRepresentation = "Stack"
     static var defaultQuery = StackQuery()
-    
+
     var displayRepresentation: DisplayRepresentation {
         DisplayRepresentation(
             title: "\(name)",
@@ -25,121 +25,123 @@ struct StackEntity: AppEntity, Decodable {
 }
 
 /**
- * Query to provide stack entities for selection
- * Presents available stacks from all endpoints and connections
+ * Query to provide stack entities for selection, from every reachable endpoint
+ * of every connection. Stacks with a single container and "Stackless" are skipped.
  */
 struct StackQuery: EntityQuery {
-    /**
-     * Fetches available stacks from all connections and endpoints
-     * Updates the widget state based on the result
-     * Filters out stacks with only 1 container and "Stackless" stacks
-     *
-     * @return Array of StackEntity objects to display in the widget configuration
-     */
-    func getSharedOptions() async throws -> Array<StackEntity> {
-        // Set widget state to loading while fetching data
-        setWidgetState(state: .loading)
-
-        // Retrieve stored connections from UserDefaults
-        guard let sharedDefaults = UserDefaults(suiteName: appGroupName),
-              let rawConnections = sharedDefaults.data(forKey: connectionsKey) else {
-            setWidgetState(state: .apiFailed)
-            return []
-        }
-
-        // Decode the connections from JSON data
-        let connections = (try? JSONDecoder().decode([Connection].self, from: rawConnections)) ?? []
-        
-        // No connections available
+    func getSharedOptions() async -> [StackEntity] {
+        let connections = loadConnections()
         if connections.isEmpty {
-            setWidgetState(state: .apiFailed)
             return []
         }
 
-        // Use the first connection for now
-        let connection = connections[0]
-        
-        do {
-            // Fetch endpoints using CacheManager
-            let endpoints = try await CacheManager.shared.fetchCachedEndpoints(connection: connection)
-            guard !endpoints.isEmpty else { 
-                setWidgetState(state: .noContainers)
-                return [] 
+        let options = await withTaskGroup(of: [StackEntity].self) { group in
+            for connection in connections {
+                group.addTask {
+                    await stacksForConnection(connection)
+                }
             }
-            
-            // Use first endpoint for now
-            let endpoint = endpoints[0]
-            
-            // Get stacks with container counts
-            let stacks = try await fetchStacksWithContainerCounts(connection: connection, endpoint: endpoint)
-            
-            // Filter out stacks with only 1 container and "Stackless" stacks
-            let filteredStacks = stacks.filter { 
-                $0.containerCount > 1 && $0.name != "Stackless" 
+
+            var all: [StackEntity] = []
+            for await items in group {
+                all.append(contentsOf: items)
             }
-            
-            // Update widget state based on stack availability
-            setWidgetState(state: filteredStacks.isEmpty ? .noContainers : .hasContainers)
-            
-            // Map to entities (only include stacks with more than 1 container and not "Stackless")
-            return filteredStacks.map { stack in
-                StackEntity(
-                    id: stack.id,
-                    name: stack.name,
-                    containerCount: stack.containerCount,
-                    connection: connection,
-                    endpoint: endpoint
-                )
-            }
-        } catch {
-            print("Error fetching stacks: \(error.localizedDescription)")
-            setWidgetState(state: .apiFailed)
-            return []
+            return all
+        }
+
+        // Remembered once per run so entities(for:) can resolve a pick offline
+        WidgetCache.storeEntities(
+            Dictionary(
+                options.map {
+                    ($0.id, EntitySnapshot(name: $0.name, stackName: nil, endpointName: $0.endpoint.Name, containerCount: $0.containerCount))
+                },
+                uniquingKeysWith: { _, new in new }
+            ),
+            kind: .stack
+        )
+
+        return options.sorted {
+            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
         }
     }
-    
+
+    private func stacksForConnection(_ connection: Connection) async -> [StackEntity] {
+        guard let endpoints = try? await CacheManager.shared.fetchCachedEndpoints(connection: connection) else {
+            return []
+        }
+
+        return await withTaskGroup(of: [StackEntity].self) { group in
+            for endpoint in endpoints {
+                group.addTask {
+                    guard let stacks = try? await fetchStacksWithContainerCounts(connection: connection, endpoint: endpoint) else {
+                        return []
+                    }
+
+                    return stacks
+                        .filter { $0.containerCount > 1 && $0.name != "Stackless" }
+                        .map { stack in
+                            StackEntity(
+                                id: EntityIdentifier(
+                                    connectionId: connection.id,
+                                    endpointId: endpoint.Id,
+                                    itemId: stack.name
+                                ).rawValue,
+                                name: stack.name,
+                                containerCount: stack.containerCount,
+                                connection: connection,
+                                endpoint: endpoint
+                            )
+                        }
+                }
+            }
+
+            var all: [StackEntity] = []
+            for await items in group {
+                all.append(contentsOf: items)
+            }
+            return all
+        }
+    }
+
+    /// Rehydrates a placed widget's stack without network access.
     func entities(for identifiers: [String]) async throws -> [StackEntity] {
-        return try await getSharedOptions().filter { identifiers.contains($0.id) }
-    }
-    
-    func suggestedEntities() async throws -> [StackEntity] {
-        return try await getSharedOptions()
-    }
-    
-    /**
-     * Returns the default entity to select in the widget configuration
-     * If possible, provides a default stack to pre-select
-     * 
-     * @return First available StackEntity or nil if none found
-     */
-    func defaultResult() async -> StackEntity? {
-        return try? await suggestedEntities().first
-    }
-    
-    /**
-     * Updates the widget state in UserDefaults
-     * Used to track the widget configuration status
-     *
-     * @param state The new widget state
-     */
-    private func setWidgetState(state: WidgetIntentState) {
-        guard let sharedDefaults = UserDefaults(suiteName: appGroupName) else {
-            return
-        }
+        let connections = loadConnections()
+        let snapshots = WidgetCache.loadEntities(.stack)
 
-        sharedDefaults.set(state.rawValue, forKey: widgetStateKey)
-        sharedDefaults.synchronize()
+        return identifiers.compactMap { rawId in
+            guard let parsed = EntityIdentifier(rawValue: rawId),
+                  let connection = connections.first(where: { $0.id == parsed.connectionId }) else {
+                return nil
+            }
+
+            let snapshot = snapshots[rawId]
+
+            return StackEntity(
+                id: rawId,
+                name: parsed.itemId,
+                containerCount: snapshot?.containerCount ?? 0,
+                connection: connection,
+                endpoint: Endpoint(Id: parsed.endpointId, Name: snapshot?.endpointName ?? "Endpoint \(parsed.endpointId)")
+            )
+        }
+    }
+
+    func suggestedEntities() async throws -> [StackEntity] {
+        await getSharedOptions()
+    }
+
+    func defaultResult() async -> StackEntity? {
+        await getSharedOptions().first
     }
 }
 
 /**
  * Widget configuration intent for selecting a stack
- * Allows users to choose which stack to display in the widget
  */
 struct StackConfigurationIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Select Stack"
     static var description: IntentDescription = IntentDescription("Select a stack to monitor")
-    
+
     @Parameter(title: "Stack")
     var stack: StackEntity?
-} 
+}

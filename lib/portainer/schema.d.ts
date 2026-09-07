@@ -270,13 +270,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
         /**
          * Get counters for the dashboard
          * @description **Access policy**: restricted
          */
-        post: operations["dockerDashboard"];
+        get: operations["dockerDashboard"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -739,7 +739,10 @@ export interface paths {
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description If true, include the number of environments and breakdown by type */
+                    size?: boolean;
+                };
                 header?: never;
                 path: {
                     /** @description Environment(Endpoint) group identifier */
@@ -755,7 +758,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["portainer.EndpointGroup"];
+                        "application/json": components["schemas"]["endpointgroups.EndpointGroupResponse"];
                     };
                 };
                 /** @description Invalid request */
@@ -911,64 +914,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/endpoints/{id}/docker/v1.41/images/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Pull an image
-         * @description Pull an image.
-         *     **Access policy**: administrator
-         */
-        post: {
-            parameters: {
-                query: {
-                    /** @description The image to pull */
-                    fromImage: string;
-                };
-                header?: never;
-                path: {
-                    /** @description Environment(Endpoint) identifier */
-                    id: number;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Success */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Invalid request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Server error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/endpoints/{id}/docker/v2/browse/put": {
         parameters: {
             query?: never;
@@ -1039,199 +984,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/endpoints/{id}/docker/v2/browse/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Delete a file under a specific path on the file system of an environment (endpoint)
-         * @description Use this environment(endpoint) to delete a file.
-         *     **Access policy**: administrator
-         */
-        delete: {
-            parameters: {
-                query: {
-                    /** @description Path to the file */
-                    path: string;
-                    /** @description Volume identifier */
-                    volumeID: string;
-                };
-                header?: never;
-                path: {
-                    /** @description Environment(Endpoint) identifier */
-                    id: number;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Success */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Invalid request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Server error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/endpoints/{id}/docker/v2/browse/ls": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get the contents of a path (endpoint)
-         * @description Use this environment(endpoint) to get contents of a path.
-         */
-        get: {
-            parameters: {
-                query: {
-                    /** @description Path to the file */
-                    path: string;
-                    /** @description Volume identifier */
-                    volumeID: string;
-                };
-                header?: never;
-                path: {
-                    /** @description Environment(Endpoint) identifier */
-                    id: number;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Success */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            Name: string;
-                            Size: number;
-                            Dir: boolean;
-                            ModTime: number;
-                        }[];
-                    };
-                };
-                /** @description Invalid request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Server error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/endpoints/{id}/docker/v2/browse/rename": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Rename a file under a specific path on the file system of an environment (endpoint)
-         * @description Use this environment(endpoint) to rename a file.
-         *     **Access policy**: administrator
-         */
-        put: {
-            parameters: {
-                query?: {
-                    /** @description Optional volume identifier to upload the file */
-                    volumeID?: string;
-                };
-                header?: never;
-                path: {
-                    /** @description Environment(Endpoint) identifier */
-                    id: number;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** @description Current path to the file */
-                        CurrentFilePath: string;
-                        /** @description New path (renamed) */
-                        NewFilePath: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Success */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Invalid request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Server error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/endpoints/{id}/dockerhub/{registryId}": {
         parameters: {
             query?: never;
@@ -1263,15 +1015,15 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Inspect an EdgeJob Log
-         * @description **Access policy**: public
+         * Update the logs collected from an Edge Job
+         * @description **Access policy**: Edge agent only — requires X-PortainerAgent-EdgeID header
          */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description environment(endpoint) Id */
+                    /** @description environment Id */
                     id: number;
                     /** @description Job Id */
                     jobID: number;
@@ -1289,6 +1041,13 @@ export interface paths {
                 };
                 /** @description Bad Request */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1317,15 +1076,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Inspect an Edge Stack for an Environment(Endpoint)
-         * @description **Access policy**: public
+         * Inspect an Edge Stack for an Environment
+         * @description **Access policy**: Edge agent only — requires X-PortainerAgent-EdgeID header
          */
         get: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description environment(endpoint) Id */
+                    /** @description environment Id */
                     id: number;
                     /** @description EdgeStack Id */
                     stackId: number;
@@ -1382,9 +1141,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get environment(endpoint) status
-         * @description environment(endpoint) for edge agent to check status of environment(endpoint)
-         *     **Access policy**: restricted only to Edge environments(endpoints)
+         * Get environment status
+         * @description Endpoint for edge agent to check status of environment
+         *     **Access policy**: Edge agent only — requires X-PortainerAgent-EdgeID header
          */
         get: operations["EndpointEdgeStatusInspect"];
         put?: never;
@@ -1440,7 +1199,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/endpoints/{id}/kubernetes/helm/{name}": {
+    "/endpoints/{id}/kubernetes/helm/{release}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1453,22 +1212,6 @@ export interface paths {
          *     **Access policy**: authenticated
          */
         get: operations["HelmGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/endpoints/{id}/kubernetes/helm/{release}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
         put?: never;
         post?: never;
         /**
@@ -1688,6 +1431,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/endpoints/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get environment summary counts
+         * @description Returns counts of environments by status (up, down) and ungrouped environments (unassigned), plus breakdowns by group, type, and health.
+         *     **Access policy**: restricted
+         */
+        get: operations["EndpointSummaryCounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/gitops/repo/file/preview": {
         parameters: {
             query?: never;
@@ -1703,6 +1467,248 @@ export interface paths {
          *     **Access policy**: authenticated
          */
         post: operations["GitOperationRepoFilePreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gitops/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all GitOps sources
+         * @description Returns a deduplicated list of git repositories used across all GitOps workflows.
+         *     **Access policy**: authenticated
+         */
+        get: operations["GitOpsSourcesList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gitops/sources/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a GitOps source by ID
+         * @description Returns a single GitOps source with its connection settings and access rules.
+         *     **Access policy**: authenticated
+         */
+        get: operations["GitOpsSourceGet"];
+        /**
+         * Update a Git source
+         * @description Updates an existing GitOps source backed by a Git repository.
+         *     **Access policy**: authenticated
+         */
+        put: operations["GitOpsSourcesUpdateGit"];
+        post?: never;
+        /**
+         * Delete a source
+         * @description Deletes an existing GitOps source. Returns 409 if the source is referenced by any workflow or custom template.
+         *     **Access policy**: authenticated
+         */
+        delete: operations["GitOpsSourcesDelete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gitops/sources/{id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update a GitOps source's access control
+         * @description Updates the access control settings for an existing GitOps source.
+         *     **Access policy**: administrator
+         */
+        put: operations["GitOpsSourcesUpdateAccess"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gitops/sources/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test the connection of a stored source
+         * @description Tests connectivity for a GitOps source, applying optional overrides to the stored configuration.
+         *     **Access policy**: authenticated
+         */
+        post: operations["GitOpsSourcesTestById"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gitops/sources/{id}/workflows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the workflows using a GitOps source
+         * @description Returns the workflows (stacks or edge stacks) currently deployed from this source.
+         *     **Access policy**: authenticated
+         */
+        get: operations["GitOpsSourceWorkflowsList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gitops/sources/git": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a Git source
+         * @description Creates a new GitOps source backed by a Git repository.
+         *     **Access policy**: authenticated
+         */
+        post: operations["GitOpsSourcesCreateGit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gitops/sources/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Summarize GitOps source status counts
+         * @description Returns a count of sources per status.
+         *     **Access policy**: authenticated
+         */
+        get: operations["GitOpsSourcesSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gitops/sources/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test a Git source connection
+         * @description Tests connectivity for Git connection details that have not been persisted yet.
+         *     **Access policy**: authenticated
+         */
+        post: operations["GitOpsSourcesTest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gitops/workflows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all GitOps workflows
+         * @description Returns a list of GitOps workflows, each with its aggregated status and the artifacts it contains.
+         *     **Access policy**: authenticated
+         */
+        get: operations["GitOpsWorkflowsList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gitops/workflows/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a GitOps workflow by ID
+         * @description Returns the detail view of a single GitOps workflow, with one entry per backing
+         *     stack or edge stack artifact.
+         *     **Access policy**: authenticated
+         */
+        get: operations["GitOpsWorkflowGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gitops/workflows/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Summarize GitOps workflow status counts
+         * @description Returns a count of workflows per status across all environments.
+         *     **Access policy**: authenticated
+         */
+        get: operations["GitOpsWorkflowsSummary"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1940,6 +1946,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kubernetes/{id}/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Kubernetes deployments
+         * @description Get the list of Kubernetes deployments across all namespaces the user can access.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["getAllKubernetesDeployments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/kubernetes/{id}/describe": {
         parameters: {
             query?: never;
@@ -1974,6 +2001,28 @@ export interface paths {
          *     **Access policy**: Authenticated user.
          */
         get: operations["getAllKubernetesEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/ingressclasses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Kubernetes ingress classes
+         * @description Get the list of Kubernetes ingress classes (cluster-scoped), as read
+         *     models, distinct from the ingress controllers returned by /ingresscontrollers.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["getKubernetesIngressClasses"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2113,6 +2162,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kubernetes/{id}/manifests/dry_run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate Kubernetes manifests without applying them
+         * @description Validate Kubernetes manifests against the cluster with a server-side dry-run apply, without persisting anything.
+         *     Each resource is reported on its own, so a rejected resource does not hide the outcome of the others.
+         *     The dry-run runs with the permissions of the requesting user, so it also surfaces missing permissions.
+         *     A resource living in a namespace created by another manifest of the same request is reported as failed, because the dry-run never persists that namespace.
+         *     **Access policy**: authenticated
+         */
+        post: operations["DryRunKubernetesManifests"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/kubernetes/{id}/max_resource_limits": {
         parameters: {
             query?: never;
@@ -2197,27 +2270,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/kubernetes/{id}/metrics/pods/{namespace}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get a list of pods with their live metrics
-         * @description Get a list of pods with their live metrics for the specified namespace.
-         *     **Access policy**: Authenticated user.
-         */
-        get: operations["GetKubernetesMetricsForAllPods"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/kubernetes/{id}/metrics/pods/{namespace}/{name}": {
         parameters: {
             query?: never;
@@ -2231,6 +2283,27 @@ export interface paths {
          *     **Access policy**: Authenticated user.
          */
         get: operations["GetKubernetesMetricsForPod"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/metrics/pods/namespace/{namespace}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a list of pods with their live metrics
+         * @description Get a list of pods with their live metrics for the specified namespace.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["GetKubernetesMetricsForAllPods"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2265,8 +2338,8 @@ export interface paths {
          */
         post: operations["CreateKubernetesNamespace"];
         /**
-         * Delete a kubernetes namespace
-         * @description Delete a kubernetes namespace within the given environment.
+         * Delete kubernetes namespaces
+         * @description Delete one or more kubernetes namespaces within the given environment.
          *     **Access policy**: Authenticated user.
          */
         delete: operations["DeleteKubernetesNamespace"];
@@ -2301,6 +2374,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kubernetes/{id}/namespaces/{namespace}/configmaps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a ConfigMap
+         * @description Create a ConfigMap in the given namespace. The response carries the
+         *     created ConfigMap's metadata only, not its data.
+         *     **Access policy**: Authenticated user.
+         */
+        post: operations["CreateKubernetesConfigMap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/kubernetes/{id}/namespaces/{namespace}/configmaps/{configmap}": {
         parameters: {
             query?: never;
@@ -2314,7 +2409,136 @@ export interface paths {
          *     **Access policy**: Authenticated user.
          */
         get: operations["GetKubernetesConfigMap"];
+        /**
+         * Update a ConfigMap
+         * @description Update a ConfigMap in the given namespace. A nil field leaves the live
+         *     value untouched, so an empty map clears it, and binary data is preserved.
+         *     The response carries the updated ConfigMap's metadata only.
+         *     **Access policy**: Authenticated user.
+         */
+        put: operations["UpdateKubernetesConfigMap"];
+        post?: never;
+        /**
+         * Delete a ConfigMap
+         * @description Delete a ConfigMap in the given namespace.
+         *     **Access policy**: Authenticated user.
+         */
+        delete: operations["DeleteKubernetesConfigMap"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Kubernetes deployments within a namespace
+         * @description Get the list of Kubernetes deployments in the given namespace.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["getKubernetesDeploymentsForNamespace"];
         put?: never;
+        /**
+         * Create a Kubernetes deployment
+         * @description Create a deployment in the given namespace. The namespace comes from the
+         *     route, and the payload models the fields the deployment forms drive.
+         *     **Access policy**: Authenticated user.
+         */
+        post: operations["CreateKubernetesDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/deployments/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a Kubernetes deployment
+         * @description Get a Kubernetes deployment in the given namespace. The response is
+         *     trimmed of server-managed and heavy fields (managed fields,
+         *     last-applied-config annotation) while preserving the full pod template,
+         *     spec and resourceVersion so an edit form can be reconstructed from the
+         *     live cluster and the workload subsequently updated.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["getKubernetesDeployment"];
+        /**
+         * Update a Kubernetes deployment
+         * @description Update a deployment in the given namespace. The payload is merged onto the
+         *     live deployment: fields it does not model, such as the update strategy or
+         *     the pod affinity rules, are preserved, and a field left out leaves the live
+         *     value untouched. The selector is immutable and is ignored.
+         *     **Access policy**: Authenticated user.
+         */
+        put: operations["UpdateKubernetesDeployment"];
+        post?: never;
+        /**
+         * Delete a Kubernetes deployment
+         * @description Delete a deployment in the given namespace. The replica sets and pods it
+         *     owns are garbage collected by the cluster.
+         *     **Access policy**: Authenticated user.
+         */
+        delete: operations["DeleteKubernetesDeployment"];
+        options?: never;
+        head?: never;
+        /**
+         * Annotate a Kubernetes deployment
+         * @description Add or overwrite annotations on a deployment and on the pods it creates.
+         *     Annotations the payload does not name are kept. Changing a pod annotation
+         *     rolls the workload, which is how a rollout restart is triggered.
+         *     **Access policy**: Authenticated user.
+         */
+        patch: operations["PatchKubernetesDeployment"];
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/deployments/{name}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Roll a Kubernetes deployment back
+         * @description Roll a deployment back to an earlier revision by replaying the pod template
+         *     the corresponding replica set recorded. A revision of 0, or an omitted one,
+         *     selects the revision immediately before the current.
+         *     **Access policy**: Authenticated user.
+         */
+        post: operations["RollbackKubernetesDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/deployments/{name}/scale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Scale a Kubernetes deployment
+         * @description Set the desired replica count of a deployment in the given namespace.
+         *     **Access policy**: Authenticated user.
+         */
+        put: operations["ScaleKubernetesDeployment"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2421,6 +2645,214 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kubernetes/{id}/namespaces/{namespace}/persistent_volume_claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get PersistentVolumeClaims in a namespace
+         * @description Get a list of PersistentVolumeClaims in the specified namespace.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["GetKubernetesPersistentVolumeClaimsInNamespace"];
+        put?: never;
+        /**
+         * Create a PersistentVolumeClaim
+         * @description Create a PersistentVolumeClaim in the given namespace. The access mode
+         *     defaults to ReadWriteOnce and an omitted storage class leaves the choice to
+         *     the cluster default.
+         *     **Access policy**: Authenticated user.
+         */
+        post: operations["CreateKubernetesPersistentVolumeClaim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/persistent_volume_claims/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a specific PersistentVolumeClaim
+         * @description Get a PersistentVolumeClaim by name within a namespace.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["GetKubernetesPersistentVolumeClaim"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/pods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Kubernetes pods within a namespace
+         * @description Get the list of Kubernetes pods in the given namespace.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["getKubernetesPodsForNamespace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/pods/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a kubernetes pod
+         * @description Delete a single Kubernetes pod in the given namespace. The owning
+         *     controller (Deployment, StatefulSet, DaemonSet, ...) is responsible
+         *     for recreating the pod. For naked pods the pod is removed permanently.
+         *     **Access policy**: Authenticated user.
+         */
+        delete: operations["DeleteKubernetesPod"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/pods/{name}/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get logs for a Kubernetes pod
+         * @description Stream the logs for a pod in the given namespace as text/plain. When
+         *     follow is set the response stays open and emits new log lines until the
+         *     client disconnects. When the pod has more than one container, the
+         *     container query parameter is required.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["getKubernetesPodLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/pods/{name}/restart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restart all containers in a Kubernetes pod
+         * @description Restart all containers in a single Kubernetes pod in place using
+         *     the Kubernetes 1.35 alpha pod-restart subresource. The pod itself
+         *     is preserved. Requires the cluster to expose the corresponding
+         *     subresource (and the matching feature gate to be enabled).
+         *     **Access policy**: Authenticated user.
+         */
+        post: operations["RestartKubernetesPod"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/replicasets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Kubernetes replica sets within a namespace
+         * @description Get the list of Kubernetes replica sets in the given namespace, optionally
+         *     restricted to those owned by a given deployment. This backs the deployment
+         *     revisions view. The response uses the Kubernetes list shape ({items: [...]}).
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["getKubernetesReplicaSets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/resource_quotas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Kubernetes resource quotas within a namespace
+         * @description Get the list of Kubernetes resource quotas in the given namespace.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["getKubernetesResourceQuotas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/secrets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a Secret
+         * @description Create a Secret in the given namespace. Data values are sent as plain
+         *     strings and encoded server-side. The response carries the created
+         *     Secret's metadata only, not its data.
+         *     **Access policy**: Authenticated user.
+         */
+        post: operations["CreateKubernetesSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/kubernetes/{id}/namespaces/{namespace}/secrets/{secret}": {
         parameters: {
             query?: never;
@@ -2434,7 +2866,61 @@ export interface paths {
          *     **Access policy**: Authenticated user.
          */
         get: operations["GetKubernetesSecret"];
+        /**
+         * Update a Secret
+         * @description Update a Secret in the given namespace. A nil field leaves the live value
+         *     untouched, so an empty map clears it, and the secret type cannot be
+         *     changed. The response carries the updated Secret's metadata only.
+         *     **Access policy**: Authenticated user.
+         */
+        put: operations["UpdateKubernetesSecret"];
+        post?: never;
+        /**
+         * Delete a Secret
+         * @description Delete a Secret in the given namespace.
+         *     **Access policy**: Authenticated user.
+         */
+        delete: operations["DeleteKubernetesSecret"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/service_accounts/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a kubernetes service account
+         * @description Get a kubernetes service account in the given namespace.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["GetKubernetesServiceAccount"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/namespaces/{namespace}/service_accounts/{name}/image_pull_secrets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update image pull secrets for a service account
+         * @description Replace the imagePullSecrets list on a service account with the provided list.
+         *     **Access policy**: Authenticated user.
+         */
+        put: operations["UpdateKubernetesServiceAccountImagePullSecrets"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2536,6 +3022,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kubernetes/{id}/nodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Kubernetes cluster nodes
+         * @description Returns the list of Kubernetes nodes for the selected environment.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["GetKubernetesNodes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/nodes/{name}/drain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Drain a Kubernetes node
+         * @description Drain a Kubernetes node by safely evicting all pods from the node, preparing it for maintenance or removal
+         *     **Access policy**: authenticated
+         */
+        post: operations["drainNode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/kubernetes/{id}/nodes_limits": {
         parameters: {
             query?: never;
@@ -2549,6 +3077,174 @@ export interface paths {
          *     **Access policy**: Authenticated user.
          */
         get: operations["GetKubernetesNodesLimits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/persistent_volume_claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get all PersistentVolumeClaims
+         * @description Get a list of all PersistentVolumeClaims within the given environment. Scoped by namespace for non-admin users.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["GetAllKubernetesPersistentVolumeClaims"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/persistent_volume_claims/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete PersistentVolumeClaims
+         * @description Delete the provided list of PersistentVolumeClaims.
+         *     **Access policy**: Authenticated user.
+         */
+        post: operations["DeleteKubernetesPersistentVolumeClaims"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/persistent_volume_claims/resize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Resize a PersistentVolumeClaim
+         * @description Resize a PVC to a new size. The StorageClass must support volume expansion.
+         *     **Access policy**: Authenticated user.
+         */
+        put: operations["ResizeKubernetesPersistentVolumeClaim"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/persistent_volumes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get all PersistentVolumes in the cluster
+         * @description Get a list of all PersistentVolumes in the given environment.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["GetAllKubernetesPersistentVolumes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/persistent_volumes/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a specific PersistentVolume
+         * @description Get a PersistentVolume by name in the given environment.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["GetKubernetesPersistentVolume"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/persistent_volumes/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete PersistentVolumes
+         * @description Delete the provided list of PersistentVolumes.
+         *     **Access policy**: Authenticated user.
+         */
+        post: operations["DeleteKubernetesPersistentVolumes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/persistent_volumes/reclaim_policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update reclaim policy of a PersistentVolume
+         * @description Update the reclaim policy of a PersistentVolume.
+         *     **Access policy**: Authenticated user.
+         */
+        put: operations["UpdateKubernetesPersistentVolumeReclaimPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/pods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Kubernetes pods
+         * @description Get the list of Kubernetes pods across all namespaces the user can access.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["getAllKubernetesPods"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2809,6 +3505,113 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kubernetes/{id}/storage_classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get all StorageClasses
+         * @description Get a list of all StorageClasses in the given environment.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["GetAllKubernetesStorageClasses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/storage_classes/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a specific StorageClass
+         * @description Get a StorageClass by name in the given environment.
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["GetKubernetesStorageClass"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/storage_classes/{name}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set a StorageClass as default
+         * @description Set the specified StorageClass as the cluster default, removing default from any other.
+         *     **Access policy**: Authenticated user.
+         */
+        put: operations["SetDefaultKubernetesStorageClass"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/storage_classes/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete StorageClasses
+         * @description Delete the provided list of StorageClasses.
+         *     **Access policy**: Authenticated user.
+         */
+        post: operations["DeleteKubernetesStorageClasses"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kubernetes/{id}/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the Kubernetes cluster version and Portainer-relevant capabilities
+         * @description Get the Kubernetes cluster version (major, minor, gitVersion, ...)
+         *     as reported by the cluster's discovery API, augmented with capability
+         *     flags Portainer uses to gate UI features (e.g. supportsPodRestart).
+         *     **Access policy**: Authenticated user.
+         */
+        get: operations["GetKubernetesVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/kubernetes/{id}/volumes": {
         parameters: {
             query?: never;
@@ -2934,132 +3737,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/open_amt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Enable Portainer's OpenAMT capabilities
-         * @description Enable Portainer's OpenAMT capabilities
-         *     **Access policy**: administrator
-         */
-        post: operations["OpenAMTConfigure"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/open_amt/{id}/activate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Activate OpenAMT device and associate to agent endpoint
-         * @description Activate OpenAMT device and associate to agent endpoint
-         *     **Access policy**: administrator
-         */
-        post: operations["openAMTActivate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/open_amt/{id}/devices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Fetch OpenAMT managed devices information for endpoint
-         * @description Fetch OpenAMT managed devices information for endpoint
-         *     **Access policy**: administrator
-         */
-        get: operations["OpenAMTDevices"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/open_amt/{id}/devices/{deviceId}/action": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Execute out of band action on an AMT managed device
-         * @description Execute out of band action on an AMT managed device
-         *     **Access policy**: administrator
-         */
-        post: operations["DeviceAction"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/open_amt/{id}/devices_features/{deviceId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Enable features on an AMT managed device
-         * @description Enable features on an AMT managed device
-         *     **Access policy**: administrator
-         */
-        post: operations["DeviceFeatures"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/open_amt/{id}/info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Request OpenAMT info from a node
-         * @description Request OpenAMT info from a node
-         *     **Access policy**: administrator
-         */
-        get: operations["OpenAMTHostInfo"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/registries": {
         parameters: {
             query?: never;
@@ -3140,6 +3817,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/registries/ping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test registry connection
+         * @description Test connection to a registry with provided credentials
+         *     **Access policy**: authenticated
+         */
+        post: operations["RegistryPing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/resource_controls": {
         parameters: {
             query?: never;
@@ -3199,7 +3897,7 @@ export interface paths {
         /**
          * Triggers a system restore using provided backup file
          * @description Triggers a system restore using provided backup file
-         *     **Access policy**: public
+         *     **Access policy**: public (requires the X-Setup-Token header on an uninitialized instance unless --no-setup-token is set)
          */
         post: operations["Restore"];
         delete?: never;
@@ -3409,7 +4107,7 @@ export interface paths {
         put?: never;
         /**
          * Update a stack's Git configs
-         * @description Update the Git settings in a stack, e.g., RepositoryReferenceName and AutoUpdate
+         * @description Update the Git settings in a stack, e.g., RepositoryReferenceName and AutoUpdate. When SourceID is set, URL/auth/TLS are taken from the referenced Source.
          *     **Access policy**: authenticated
          */
         post: operations["StackUpdateGit"];
@@ -3492,8 +4190,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Stops a stopped Stack
-         * @description Stops a stopped Stack.
+         * Stop a running Stack
+         * @description Stop a running Stack.
          *     **Access policy**: authenticated
          */
         post: operations["StackStop"];
@@ -3915,15 +4613,15 @@ export interface paths {
         };
         /**
          * List team memberships
-         * @description List team memberships. Access is only available to administrators and team leaders.
-         *     **Access policy**: administrator
+         * @description List team memberships. Access is only available to administrators and team leaders. Team leaders only see memberships of teams they lead.
+         *     **Access policy**: administrator or team leader
          */
         get: operations["TeamMembershipList"];
         put?: never;
         /**
          * Create a new team membership
-         * @description Create a new team memberships. Access is only available to administrators leaders of the associated team.
-         *     **Access policy**: administrator
+         * @description Create a new team memberships. Access is only available to administrators or leaders of the associated team.
+         *     **Access policy**: administrator or leaders of the associated team
          */
         post: operations["TeamMembershipCreate"];
         delete?: never;
@@ -3949,8 +4647,8 @@ export interface paths {
         post?: never;
         /**
          * Remove a team membership
-         * @description Remove a team membership. Access is only available to administrators leaders of the associated team.
-         *     **Access policy**: administrator
+         * @description Remove a team membership. Access is only available to administrators or leaders of the associated team.
+         *     **Access policy**: administrator or leaders of the associated team
          */
         delete: operations["TeamMembershipDelete"];
         options?: never;
@@ -4108,6 +4806,7 @@ export interface paths {
         /**
          * Show Helm Chart Information
          * @description **Access policy**: authenticated
+         *     `repo` may be omitted when `chart` is a self-contained "oci://host/path" reference.
          */
         get: operations["HelmShow"];
         put?: never;
@@ -4196,6 +4895,30 @@ export interface paths {
          *     **Access policy**: administrator
          */
         delete: operations["UserDelete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{id}/effective-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Inspect a user's effective access on every environment
+         * @description Returns the resolved role for each environment the user can access,
+         *     following the policy precedence used by the access viewer
+         *     (user-endpoint, user-group, team-endpoint, team-group).
+         *     Environments where the user has no role are omitted.
+         *     **Access policy**: restricted
+         */
+        get: operations["UserEffectiveAccessInspect"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -4373,7 +5096,7 @@ export interface paths {
         /**
          * Initialize administrator account
          * @description Initialize the 'admin' user account.
-         *     **Access policy**: public
+         *     **Access policy**: public (requires the X-Setup-Token header on an uninitialized instance unless --no-setup-token is set)
          */
         post: operations["UserAdminInit"];
         delete?: never;
@@ -4418,7 +5141,10 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Filters (json-string) */
+                    /**
+                     * @description Filters (json-string)
+                     * @example {"EndpointID":1,"ResourceID":"abc12345-abcd-2345-ab12-58005b4a0260"}
+                     */
                     filters?: string;
                 };
                 header?: never;
@@ -4675,8 +5401,6 @@ export interface paths {
                     endpointId: number;
                     /** @description node name */
                     nodeName?: string;
-                    /** @description JWT token used for authentication against this environment(endpoint) */
-                    token: string;
                 };
                 header?: never;
                 path?: never;
@@ -4749,8 +5473,6 @@ export interface paths {
                     endpointId: number;
                     /** @description node name */
                     nodeName?: string;
-                    /** @description JWT token used for authentication against this environment(endpoint) */
-                    token: string;
                 };
                 header?: never;
                 path?: never;
@@ -4813,8 +5535,6 @@ export interface paths {
                 query: {
                     /** @description environment(endpoint) ID of the environment(endpoint) where the resource is located */
                     endpointId: number;
-                    /** @description JWT token used for authentication against this environment(endpoint) */
-                    token: string;
                 };
                 header?: never;
                 path?: never;
@@ -4838,6 +5558,13 @@ export interface paths {
                 };
                 /** @description Permission denied */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Environment not found */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -4885,8 +5612,6 @@ export interface paths {
                     containerName: string;
                     /** @description command to execute in the container */
                     command: string;
-                    /** @description JWT token used for authentication against this environment(endpoint) */
-                    token: string;
                 };
                 header?: never;
                 path?: never;
@@ -4948,12 +5673,12 @@ export interface components {
              * @description Password
              * @example mypassword
              */
-            password: string;
+            Password: string;
             /**
              * @description Username
              * @example admin
              */
-            username: string;
+            Username: string;
         };
         "auth.authenticateResponse": {
             /**
@@ -4964,33 +5689,33 @@ export interface components {
         };
         "auth.oauthPayload": {
             /** @description OAuth code returned from OAuth Provided */
-            code?: string;
+            Code?: string;
         };
         "backup.backupPayload": {
-            password?: string;
+            Password?: string;
         };
         "backup.restorePayload": {
-            fileContent?: number[];
-            fileName?: string;
-            password?: string;
+            FileContent?: number[];
+            FileName?: string;
+            Password?: string;
         };
         "build.BuildInfo": {
-            buildNumber?: string;
-            gitCommit?: string;
-            goVersion?: string;
-            imageTag?: string;
-            nodejsVersion?: string;
-            webpackVersion?: string;
-            yarnVersion?: string;
+            BuildNumber?: string;
+            GitCommit?: string;
+            GoVersion?: string;
+            ImageTag?: string;
+            NodejsVersion?: string;
+            PnpmVersion?: string;
+            WebpackVersion?: string;
         };
         "build.DependenciesInfo": {
-            composeVersion?: string;
-            dockerVersion?: string;
-            helmVersion?: string;
-            kubectlVersion?: string;
+            ComposeVersion?: string;
+            DockerVersion?: string;
+            HelmVersion?: string;
+            KubectlVersion?: string;
         };
         "build.RuntimeInfo": {
-            env?: string[];
+            Env?: string[];
         };
         "containers.containerGpusResponse": {
             gpus?: string;
@@ -5000,46 +5725,48 @@ export interface components {
              * @description Description of the template
              * @example High performance web server
              */
-            description: string;
+            Description: string;
             /**
              * @description EdgeTemplate indicates if this template purpose for Edge Stack
              * @example false
              */
-            edgeTemplate?: boolean;
+            EdgeTemplate?: boolean;
             /** @description Content of stack file */
-            fileContent: string;
+            FileContent: string;
             /**
              * @description URL of the template's logo
              * @example https://portainer.io/img/logo.svg
              */
-            logo?: string;
+            Logo?: string;
             /**
              * @description A note that will be displayed in the UI. Supports HTML content
              * @example This is my <b>custom</b> template
              */
-            note?: string;
+            Note?: string;
             /**
              * @description Platform associated to the template.
              *     Valid values are: 1 - 'linux', 2 - 'windows'
              *     Required for Docker stacks
              * @example 1
+             * @enum {unknown}
              */
-            platform?: number;
+            Platform?: 1 | 2;
             /**
              * @description Title of the template
              * @example Nginx
              */
-            title: string;
+            Title: string;
             /**
              * @description Type of created stack:
              *     * 1 - swarm
              *     * 2 - compose
              *     * 3 - kubernetes
              * @example 1
+             * @enum {unknown}
              */
-            type: number;
+            Type: 1 | 2 | 3;
             /** @description Definitions of variables in the stack file */
-            variables?: components["schemas"]["portainer.CustomTemplateVariableDefinition"][];
+            Variables?: components["schemas"]["portainer.CustomTemplateVariableDefinition"][];
         };
         "customtemplates.customTemplateFromGitRepositoryPayload": {
             /**
@@ -5047,84 +5774,92 @@ export interface components {
              * @default docker-compose.yml
              * @example docker-compose.yml
              */
-            composeFilePathInRepository: string;
+            ComposeFilePathInRepository: string;
             /**
              * @description Description of the template
              * @example High performance web server
              */
-            description: string;
+            Description: string;
             /**
              * @description EdgeTemplate indicates if this template purpose for Edge Stack
              * @example false
              */
-            edgeTemplate?: boolean;
+            EdgeTemplate?: boolean;
             /**
              * @description IsComposeFormat indicates if the Kubernetes template is created from a Docker Compose file
              * @example false
              */
-            isComposeFormat?: boolean;
+            IsComposeFormat?: boolean;
             /**
              * @description URL of the template's logo
              * @example https://portainer.io/img/logo.svg
              */
-            logo?: string;
+            Logo?: string;
             /**
              * @description A note that will be displayed in the UI. Supports HTML content
              * @example This is my <b>custom</b> template
              */
-            note?: string;
+            Note?: string;
             /**
              * @description Platform associated to the template.
              *     Valid values are: 1 - 'linux', 2 - 'windows'
              *     Required for Docker stacks
              * @example 1
+             * @enum {unknown}
              */
-            platform?: number;
+            Platform?: 1 | 2;
             /**
-             * @description Use basic authentication to clone the Git repository
+             * @description Deprecated: use SourceID instead. Use basic authentication to clone the Git repository.
              * @example true
              */
-            repositoryAuthentication?: boolean;
+            RepositoryAuthentication?: boolean;
             /**
-             * @description Password used in basic authentication. Required when RepositoryAuthentication is true.
+             * @description Deprecated: use SourceID instead. Password used in basic authentication. Required when RepositoryAuthentication is true.
              * @example myGitPassword
              */
-            repositoryPassword?: string;
+            RepositoryPassword?: string;
             /**
              * @description Reference name of a Git repository hosting the Stack file
              * @example refs/heads/master
              */
-            repositoryReferenceName?: string;
+            RepositoryReferenceName?: string;
             /**
-             * @description URL of a Git repository hosting the Stack file
+             * @description Deprecated: use SourceID instead. URL of a Git repository hosting the Stack file.
              * @example https://github.com/openfaas/faas
              */
-            repositoryURL: string;
+            RepositoryURL?: string;
             /**
-             * @description Username used in basic authentication. Required when RepositoryAuthentication is true.
+             * @description Deprecated: use SourceID instead. Username used in basic authentication. Required when RepositoryAuthentication is true.
              * @example myGitUsername
              */
-            repositoryUsername?: string;
+            RepositoryUsername?: string;
+            /**
+             * @description SourceID references an existing Source for git credentials/URL.
+             *     When set, the inline URL and authentication fields are ignored.
+             * @example 1
+             */
+            SourceID: number;
+            /**
+             * @description Deprecated: use SourceID instead. TLSSkipVerify skips SSL verification when cloning the Git repository.
+             * @example false
+             */
+            TLSSkipVerify?: boolean;
             /**
              * @description Title of the template
              * @example Nginx
              */
-            title: string;
-            /**
-             * @description TLSSkipVerify skips SSL verification when cloning the Git repository
-             * @example false
-             */
-            tlsskipVerify?: boolean;
+            Title: string;
             /**
              * @description Type of created stack:
              *     * 1 - swarm
              *     * 2 - compose
              *     * 3 - kubernetes
              * @example 1
+             * @enum {unknown}
              */
-            type: number;
+            Type: 1 | 2;
             /** @description Definitions of variables in the stack file */
-            variables?: components["schemas"]["portainer.CustomTemplateVariableDefinition"][];
+            Variables?: components["schemas"]["portainer.CustomTemplateVariableDefinition"][];
         };
         "customtemplates.customTemplateUpdatePayload": {
             /**
@@ -5132,104 +5867,97 @@ export interface components {
              * @default docker-compose.yml
              * @example docker-compose.yml
              */
-            composeFilePathInRepository: string;
+            ComposeFilePathInRepository: string;
             /**
              * @description Description of the template
              * @example High performance web server
              */
-            description: string;
+            Description: string;
             /**
              * @description EdgeTemplate indicates if this template purpose for Edge Stack
              * @example false
              */
-            edgeTemplate?: boolean;
+            EdgeTemplate?: boolean;
             /** @description Content of stack file */
-            fileContent: string;
+            FileContent: string;
             /**
              * @description IsComposeFormat indicates if the Kubernetes template is created from a Docker Compose file
              * @example false
              */
-            isComposeFormat?: boolean;
+            IsComposeFormat?: boolean;
             /**
              * @description URL of the template's logo
              * @example https://portainer.io/img/logo.svg
              */
-            logo?: string;
+            Logo?: string;
             /**
              * @description A note that will be displayed in the UI. Supports HTML content
              * @example This is my <b>custom</b> template
              */
-            note?: string;
+            Note?: string;
             /**
              * @description Platform associated to the template.
              *     Valid values are: 1 - 'linux', 2 - 'windows'
              *     Required for Docker stacks
              * @example 1
+             * @enum {unknown}
              */
-            platform?: number;
+            Platform?: 1 | 2;
             /**
-             * @description Use basic authentication to clone the Git repository
+             * @description Deprecated: use SourceID instead. Use authentication to clone the Git repository.
              * @example true
              */
-            repositoryAuthentication?: boolean;
+            RepositoryAuthentication?: boolean;
             /**
-             * @description GitCredentialID used to identify the bound git credential. Required when RepositoryAuthentication
-             *     is true and RepositoryUsername/RepositoryPassword are not provided
-             * @example 0
-             */
-            repositoryGitCredentialID?: number;
-            /**
-             * @description Password used in basic authentication. Required when RepositoryAuthentication is true
-             *     and RepositoryGitCredentialID is 0
+             * @description Deprecated: use SourceID instead. Password used in basic authentication or token used in token authentication. Required when RepositoryAuthentication is true.
              * @example myGitPassword
              */
-            repositoryPassword?: string;
+            RepositoryPassword?: string;
             /**
              * @description Reference name of a Git repository hosting the Stack file
              * @example refs/heads/master
              */
-            repositoryReferenceName?: string;
+            RepositoryReferenceName?: string;
             /**
-             * @description URL of a Git repository hosting the Stack file
+             * @description Deprecated: use SourceID instead. URL of a Git repository hosting the Stack file.
              * @example https://github.com/openfaas/faas
              */
-            repositoryURL: string;
+            RepositoryURL?: string;
             /**
-             * @description Username used in basic authentication. Required when RepositoryAuthentication is true
-             *     and RepositoryGitCredentialID is 0
+             * @description Deprecated: use SourceID instead. Username used in basic authentication. Required when RepositoryAuthentication is true.
              * @example myGitUsername
              */
-            repositoryUsername?: string;
+            RepositoryUsername?: string;
+            /**
+             * @description SourceID references an existing Source for git credentials/URL.
+             *     When set, the inline URL and authentication fields are ignored.
+             * @example 1
+             */
+            SourceID?: number;
+            /**
+             * @description Deprecated: use SourceID instead. TLSSkipVerify skips SSL verification when cloning the Git repository.
+             * @example false
+             */
+            TLSSkipVerify?: boolean;
             /**
              * @description Title of the template
              * @example Nginx
              */
-            title: string;
-            /**
-             * @description TLSSkipVerify skips SSL verification when cloning the Git repository
-             * @example false
-             */
-            tlsskipVerify?: boolean;
+            Title: string;
             /**
              * @description Type of created stack (1 - swarm, 2 - compose, 3 - kubernetes)
              * @example 1
+             * @enum {unknown}
              */
-            type: number;
+            Type: 1 | 2 | 3;
             /** @description Definitions of variables in the stack file */
-            variables?: components["schemas"]["portainer.CustomTemplateVariableDefinition"][];
+            Variables?: components["schemas"]["portainer.CustomTemplateVariableDefinition"][];
         };
         "customtemplates.fileResponse": {
-            fileContent?: string;
-        };
-        "docker.ContainerStats": {
-            healthy?: number;
-            running?: number;
-            stopped?: number;
-            total?: number;
-            unhealthy?: number;
+            FileContent?: string;
         };
         "docker.dashboardResponse": {
-            containers?: components["schemas"]["docker.ContainerStats"];
+            containers?: components["schemas"]["stats.ContainerStats"];
             images?: components["schemas"]["docker.imagesCounters"];
             networks?: number;
             services?: number;
@@ -5241,70 +5969,129 @@ export interface components {
             total?: number;
         };
         "edge.DeployerOptionsPayload": {
-            /** @description Prune is a flag indicating if the agent must prune the containers or not when creating/updating an edge stack
+            /**
+             * @description ForceRecreate is a flag indicating if the agent must force the redeployment of the stack.
+             *     This field is only used when the Force Redeployment is triggered.
+             *     Once the stack is redeployed, this field will be reset to false.
+             *     For standard edge agent, this field is used in agent side
+             *     For async edge agent, this field is used in both agent side and server side.
+             *     This flag drives `docker compose up --force-recreate` option
+             */
+            ForceRecreate?: boolean;
+            /**
+             * @description Prune is a flag indicating if the agent must prune the containers or not when creating/updating an edge stack
              *     This flag drives `docker compose up --remove-orphans` and `docker stack up --prune` options
-             *     Used only for EE */
-            prune?: boolean;
-            /** @description RemoveVolumes is a flag indicating if the agent must remove the named volumes declared
+             *     Used only for EE
+             */
+            Prune?: boolean;
+            /**
+             * @description RemoveVolumes is a flag indicating if the agent must remove the named volumes declared
              *     in the compose file and anonymouse volumes attached to containers
              *     This flag drives `docker compose down --volumes` option
-             *     Used only for EE */
-            removeVolumes?: boolean;
+             *     Used only for EE
+             */
+            RemoveVolumes?: boolean;
         };
         "edge.RegistryCredentials": {
-            secret?: string;
-            serverURL?: string;
-            username?: string;
+            Secret?: string;
+            ServerURL?: string;
+            Username?: string;
         };
         "edge.StackPayload": {
-            deployerOptionsPayload?: components["schemas"]["edge.DeployerOptionsPayload"];
+            /**
+             * @description AlwaysCloneGitRepoForRelativePath is a flag indicating if the agent must always clone the git repository for relative path.
+             *     This field is only valid when SupportRelativePath is true.
+             *     Used only for EE
+             */
+            AlwaysCloneGitRepoForRelativePath?: boolean;
+            /**
+             * @description CreatedBy is the username that created this stack
+             *     Used for adding labels to Kubernetes manifests
+             */
+            CreatedBy?: string;
+            /**
+             * @description CreatedByUserId is the user ID that created this stack
+             *     Used for adding labels to Kubernetes manifests
+             */
+            CreatedByUserId?: string;
+            DeployerOptionsPayload?: components["schemas"]["edge.DeployerOptionsPayload"];
             /** @description Content of stack folder */
-            dirEntries?: components["schemas"]["filesystem.DirEntry"][];
-            /** @description EdgeUpdateID is the ID of the edge update related to this stack.
-             *     Used only for EE */
-            edgeUpdateID?: number;
+            DirEntries?: components["schemas"]["filesystem.DirEntry"][];
+            /**
+             * @description EdgeUpdateID is the ID of the edge update related to this stack.
+             *     Used only for EE
+             */
+            EdgeUpdateID?: number;
             /** @description Name of the stack entry file */
-            entryFileName?: string;
-            /** @description Used only for EE
-             *     EnvVars is a list of environment variables to inject into the stack */
-            envVars?: components["schemas"]["portainer.Pair"][];
+            EntryFileName?: string;
+            /**
+             * @description Used only for EE
+             *     EnvVars is a list of environment variables to inject into the stack
+             */
+            EnvVars?: components["schemas"]["portainer.Pair"][];
             /** @description Mount point for relative path */
-            filesystemPath?: string;
+            FilesystemPath?: string;
+            /**
+             * @description ForceUpdate is a flag indicating if the agent must force the update of the stack.
+             *     Used only for EE
+             */
+            ForceUpdate?: boolean;
+            /** @description HelmConfig represents the Helm configuration for an edge stack */
+            HelmConfig?: components["schemas"]["portainer.HelmConfig"];
             /** @description ID of the stack */
-            id?: number;
+            ID?: number;
             /** @description Name of the stack */
-            name?: string;
+            Name?: string;
             /** @description Namespace to use for kubernetes stack. Keep empty to use the manifest namespace. */
-            namespace?: string;
-            /** @description PrePullImage is a flag indicating if the agent must pull the image before deploying the stack.
-             *     Used only for EE */
-            prePullImage?: boolean;
-            /** @description RePullImage is a flag indicating if the agent must pull the image if it is already present on the node.
-             *     Used only for EE */
-            rePullImage?: boolean;
-            /** @description Used only for EE async edge agent
-             *     ReadyRePullImage is a flag to indicate whether the auto update is trigger to re-pull image */
-            readyRePullImage?: boolean;
-            /** @description RegistryCredentials holds the credentials for a Docker registry.
-             *     Used only for EE */
-            registryCredentials?: components["schemas"]["edge.RegistryCredentials"][];
-            /** @description RetryDeploy is a flag indicating if the agent must retry to deploy the stack if it fails.
-             *     Used only for EE */
-            retryDeploy?: boolean;
-            /** @description RetryPeriod specifies the duration, in seconds, for which the agent should continue attempting to deploy the stack after a failure
-             *     Used only for EE */
-            retryPeriod?: number;
+            Namespace?: string;
+            /**
+             * @description PrePullImage is a flag indicating if the agent must pull the image before deploying the stack.
+             *     Used only for EE
+             */
+            PrePullImage?: boolean;
+            /**
+             * @description RePullImage is a flag indicating if the agent must pull the image if it is already present on the node.
+             *     Used only for EE
+             */
+            RePullImage?: boolean;
+            /**
+             * @description Used only for EE async edge agent
+             *     ReadyRePullImage is a flag to indicate whether the auto update is trigger to re-pull image
+             *     Deprecated(2.36): use DeployerOptionsPayload.ForceRecreate instead
+             */
+            ReadyRePullImage?: boolean;
+            /**
+             * @description RegistryCredentials holds the credentials for a Docker registry.
+             *     Used only for EE
+             */
+            RegistryCredentials?: components["schemas"]["edge.RegistryCredentials"][];
+            /**
+             * @description RetryDeploy is a flag indicating if the agent must retry to deploy the stack if it fails.
+             *     Used only for EE
+             */
+            RetryDeploy?: boolean;
+            /**
+             * @description RetryPeriod specifies the duration, in seconds, for which the agent should continue attempting to deploy the stack after a failure
+             *     Used only for EE
+             */
+            RetryPeriod?: number;
             /** @description RollbackTo specifies the stack file version to rollback to (only support to rollback to the last version currently) */
-            rollbackTo?: number;
+            RollbackTo?: number;
             /** @description Content of the stack file (for compatibility to agent version less than 2.19.0) */
-            stackFileContent?: string;
+            StackFileContent?: string;
+            /** @description Whether the edge stack supports per device configs */
+            SupportPerDeviceConfigs?: boolean;
             /** @description Is relative path supported */
-            supportRelativePath?: boolean;
+            SupportRelativePath?: boolean;
             /** @description Version of the stack file */
-            version?: number;
+            Version?: number;
         };
         "edgegroups.decoratedEdgeGroup": {
             Dynamic?: boolean;
+            /** @description Shadow to avoid exposing in the API */
+            EndpointIds?: number;
+            EndpointTypes?: components["schemas"]["portainer.EndpointType"][];
+            /** @description Deprecated: only used for API responses */
             Endpoints?: number[];
             HasEdgeJob?: boolean;
             HasEdgeStack?: boolean;
@@ -5317,48 +6104,48 @@ export interface components {
             PartialMatch?: boolean;
             TagIds?: number[];
             TrustedEndpoints?: number[];
-            endpointTypes?: number[];
         };
         "edgegroups.edgeGroupCreatePayload": {
-            dynamic?: boolean;
-            endpoints?: number[];
-            name?: string;
-            partialMatch?: boolean;
-            tagIDs?: number[];
+            Dynamic?: boolean;
+            Endpoints?: number[];
+            Name?: string;
+            PartialMatch?: boolean;
+            TagIDs?: number[];
         };
         "edgegroups.edgeGroupUpdatePayload": {
-            dynamic?: boolean;
-            endpoints?: number[];
-            name?: string;
-            partialMatch?: boolean;
-            tagIDs?: number[];
+            Dynamic?: boolean;
+            Endpoints?: number[];
+            Name?: string;
+            PartialMatch?: boolean;
+            TagIDs?: number[];
         };
         "edgejobs.edgeJobCreateFromFileContentPayload": {
-            cronExpression?: string;
-            edgeGroups?: number[];
-            endpoints?: number[];
-            fileContent?: string;
-            name?: string;
-            recurring?: boolean;
+            CronExpression?: string;
+            EdgeGroups?: number[];
+            Endpoints?: number[];
+            FileContent?: string;
+            Name?: string;
+            Recurring?: boolean;
         };
         "edgejobs.edgeJobFileResponse": {
             FileContent?: string;
         };
         "edgejobs.edgeJobUpdatePayload": {
-            cronExpression?: string;
-            edgeGroups?: number[];
-            endpoints?: number[];
-            fileContent?: string;
-            name?: string;
-            recurring?: boolean;
+            CronExpression?: string;
+            EdgeGroups?: number[];
+            Endpoints?: number[];
+            FileContent?: string;
+            Name?: string;
+            Recurring?: boolean;
         };
         "edgejobs.fileResponse": {
             FileContent?: string;
         };
         "edgejobs.taskContainer": {
             EndpointId?: number;
+            EndpointName?: string;
             Id?: string;
-            LogsStatus?: number;
+            LogsStatus?: components["schemas"]["portainer.EdgeJobLogsStatus"];
         };
         "edgestacks.edgeStackFromGitRepositoryPayload": {
             /**
@@ -5367,21 +6154,22 @@ export interface components {
              *     compose is enabled only for docker environments
              *     kubernetes is enabled only for kubernetes environments
              * @example 0
+             * @enum {unknown}
              */
-            deploymentType?: number;
+            DeploymentType?: 0 | 1 | 2;
             /**
              * @description List of identifiers of EdgeGroups
              * @example [
              *       1
              *     ]
              */
-            edgeGroups: number[];
+            EdgeGroups: number[];
             /**
              * @description Path to the Stack file inside the Git repository
              * @default docker-compose.yml
              * @example docker-compose.yml
              */
-            filePathInRepository: string;
+            FilePathInRepository: string;
             /**
              * @description Name of the stack
              *     Max length: 255
@@ -5390,41 +6178,47 @@ export interface components {
              *     Example: stack-name or stack_123 or stackName
              * @example stack-name
              */
-            name: string;
+            Name: string;
             /** @description List of Registries to use for this stack */
-            registries?: number[];
+            Registries?: number[];
             /**
-             * @description Use basic authentication to clone the Git repository
+             * @description Deprecated: Use SourceID instead. Use basic authentication to clone the Git repository.
              * @example true
              */
-            repositoryAuthentication?: boolean;
+            RepositoryAuthentication?: boolean;
             /**
-             * @description Password used in basic authentication. Required when RepositoryAuthentication is true.
+             * @description Deprecated: Use SourceID instead. Password used in basic authentication.
              * @example myGitPassword
              */
-            repositoryPassword?: string;
+            RepositoryPassword?: string;
             /**
              * @description Reference name of a Git repository hosting the Stack file
              * @example refs/heads/master
              */
-            repositoryReferenceName?: string;
+            RepositoryReferenceName?: string;
             /**
-             * @description URL of a Git repository hosting the Stack file
+             * @description Deprecated: Use SourceID instead. URL of a Git repository hosting the Stack file.
              * @example https://github.com/openfaas/faas
              */
-            repositoryURL: string;
+            RepositoryURL?: string;
             /**
-             * @description Username used in basic authentication. Required when RepositoryAuthentication is true.
+             * @description Deprecated: Use SourceID instead. Username used in basic authentication.
              * @example myGitUsername
              */
-            repositoryUsername?: string;
+            RepositoryUsername?: string;
             /**
-             * @description TLSSkipVerify skips SSL verification when cloning the Git repository
+             * @description SourceID references an existing Source for git credentials/URL.
+             *     When set, the inline URL and authentication fields are ignored.
+             * @example 1
+             */
+            SourceID?: number;
+            /**
+             * @description Deprecated: Use SourceID instead. TLSSkipVerify skips SSL verification when cloning the Git repository.
              * @example false
              */
-            tlsskipVerify?: boolean;
+            TLSSkipVerify?: boolean;
             /** @description Uses the manifest's namespaces instead of the default one */
-            useManifestNamespaces?: boolean;
+            UseManifestNamespaces?: boolean;
         };
         "edgestacks.edgeStackFromStringPayload": {
             /**
@@ -5433,15 +6227,16 @@ export interface components {
              *     compose is enabled only for docker environments
              *     kubernetes is enabled only for kubernetes environments
              * @example 0
+             * @enum {unknown}
              */
-            deploymentType?: number;
+            DeploymentType?: 0 | 1 | 2;
             /**
              * @description List of identifiers of EdgeGroups
              * @example [
              *       1
              *     ]
              */
-            edgeGroups?: number[];
+            EdgeGroups?: number[];
             /**
              * @description Name of the stack
              *     Max length: 255
@@ -5450,9 +6245,9 @@ export interface components {
              *     Example: stack-name or stack_123 or stackName
              * @example stack-name
              */
-            name: string;
+            Name: string;
             /** @description List of Registries to use for this stack */
-            registries?: number[];
+            Registries?: number[];
             /**
              * @description Content of the Stack file
              * @example version: 3
@@ -5460,35 +6255,28 @@ export interface components {
              *      web:
              *      image:nginx
              */
-            stackFileContent: string;
+            StackFileContent: string;
             /** @description Uses the manifest's namespaces instead of the default one */
-            useManifestNamespaces?: boolean;
+            UseManifestNamespaces?: boolean;
         };
         "edgestacks.stackFileResponse": {
             StackFileContent?: string;
         };
         "edgestacks.updateEdgeStackPayload": {
-            /**
-             * @description Deployment type to deploy this stack
-             *     Valid values are: 0 - 'compose', 1 - 'kubernetes'
-             *     compose is enabled only for docker environments
-             *     kubernetes is enabled only for kubernetes environments
-             * @example 0
-             */
-            deploymentType?: number;
-            edgeGroups?: number[];
-            stackFileContent?: string;
-            updateVersion?: boolean;
+            DeploymentType?: components["schemas"]["portainer.EdgeStackDeploymentType"];
+            EdgeGroups?: number[];
+            StackFileContent?: string;
+            UpdateVersion?: boolean;
             /** @description Uses the manifest's namespaces instead of the default one */
-            useManifestNamespaces?: boolean;
+            UseManifestNamespaces?: boolean;
         };
         "edgestacks.updateStatusPayload": {
-            endpointID?: number;
-            error?: string;
-            /** @description Deprecated */
-            status?: number;
-            time?: number;
-            version?: number;
+            EndpointID?: number;
+            Error?: string;
+            Status?: components["schemas"]["portainer.EdgeStackStatusType"];
+            /** Format: int64 */
+            Time?: number;
+            Version?: number;
         };
         "endpointedge.edgeJobResponse": {
             /**
@@ -5544,12 +6332,41 @@ export interface components {
              * @description EdgeStack Identifier
              * @example 1
              */
-            id?: number;
+            ID?: number;
             /**
              * @description Version of this stack
              * @example 3
              */
-            version?: number;
+            Version?: number;
+        };
+        "endpointgroups.EndpointGroupResponse": {
+            /**
+             * @description Description associated to the environment(endpoint) group
+             * @example Environment(Endpoint) group description
+             */
+            Description: string;
+            /**
+             * @description Environment(Endpoint) group Identifier
+             * @example 1
+             */
+            Id: number;
+            /**
+             * @description Environment(Endpoint) group name
+             * @example my-environment-group
+             */
+            Name: string;
+            /** @description List of tags associated to this environment(endpoint) group */
+            TagIds?: number[];
+            TeamAccessPolicies?: components["schemas"]["portainer.TeamAccessPolicies"];
+            Total?: number;
+            TypeInfo?: components["schemas"]["endpointgroups.EndpointGroupTypeInfo"];
+            UserAccessPolicies?: components["schemas"]["portainer.UserAccessPolicies"];
+        };
+        "endpointgroups.EndpointGroupTypeInfo": {
+            Docker: number;
+            Kubernetes: number;
+            Mixed: boolean;
+            Podman: number;
         };
         "endpointgroups.endpointGroupCreatePayload": {
             /**
@@ -5559,17 +6376,17 @@ export interface components {
              *       3
              *     ]
              */
-            associatedEndpoints?: number[];
+            AssociatedEndpoints?: number[];
             /**
              * @description Environment(Endpoint) group description
              * @example description
              */
-            description?: string;
+            Description?: string;
             /**
              * @description Environment(Endpoint) group name
              * @example my-environment-group
              */
-            name: string;
+            Name: string;
             /**
              * @description List of tag identifiers to which this environment(endpoint) group is associated
              * @example [
@@ -5577,19 +6394,27 @@ export interface components {
              *       2
              *     ]
              */
-            tagIDs?: number[];
+            TagIDs?: number[];
         };
         "endpointgroups.endpointGroupUpdatePayload": {
+            /**
+             * @description List of environment(endpoint) identifiers that will be part of this group
+             * @example [
+             *       1,
+             *       3
+             *     ]
+             */
+            AssociatedEndpoints?: number[];
             /**
              * @description Environment(Endpoint) group description
              * @example description
              */
-            description?: string;
+            Description?: string;
             /**
              * @description Environment(Endpoint) group name
              * @example my-environment-group
              */
-            name?: string;
+            Name?: string;
             /**
              * @description List of tag identifiers associated to the environment(endpoint) group
              * @example [
@@ -5597,9 +6422,19 @@ export interface components {
              *       4
              *     ]
              */
-            tagIDs?: number[];
-            teamAccessPolicies?: components["schemas"]["portainer.TeamAccessPolicies"];
-            userAccessPolicies?: components["schemas"]["portainer.UserAccessPolicies"];
+            TagIDs?: number[];
+            TeamAccessPolicies?: components["schemas"]["portainer.TeamAccessPolicies"];
+            UserAccessPolicies?: components["schemas"]["portainer.UserAccessPolicies"];
+        };
+        "endpoints.EnvironmentSummaryCountsResponse": {
+            byGroup?: components["schemas"]["endpoints.groupCount"][];
+            byHealth?: components["schemas"]["endpoints.healthCounts"];
+            byPlatformType?: components["schemas"]["endpoints.platformCounts"];
+            down?: number;
+            outdated?: number;
+            total?: number;
+            unassigned?: number;
+            up?: number;
         };
         "endpoints.dockerhubStatusResponse": {
             /** @description Daily limit */
@@ -5608,7 +6443,6 @@ export interface components {
             remaining?: number;
         };
         "endpoints.endpointCreateGlobalKeyResponse": {
-            /** @description Environment(Endpoint) Identifier */
             endpointID?: number;
         };
         "endpoints.endpointDeleteBatchPartialResponse": {
@@ -5649,6 +6483,11 @@ export interface components {
              */
             allowPrivilegedModeForRegularUsers?: boolean;
             /**
+             * @description Whether non-administrator should be able to use security-opt settings
+             * @example true
+             */
+            allowSecurityOptForRegularUsers?: boolean;
+            /**
              * @description Whether non-administrator should be able to manage stacks
              * @example true
              */
@@ -5677,46 +6516,62 @@ export interface components {
              * @description Azure application ID
              * @example eag7cdo9-o09l-9i83-9dO9-f0b23oe78db4
              */
-            azureApplicationID?: string;
+            AzureApplicationID?: string;
             /**
              * @description Azure authentication key
              * @example cOrXoK/1D35w8YQ8nH1/8ZGwzz45JIYD5jxHKXEQknk=
              */
-            azureAuthenticationKey?: string;
+            AzureAuthenticationKey?: string;
             /**
              * @description Azure tenant ID
              * @example 34ddc78d-4fel-2358-8cc1-df84c8o839f5
              */
-            azureTenantID?: string;
+            AzureTenantID?: string;
             /**
              * @description The check in interval for edge agent (in seconds)
              * @example 5
              */
-            edgeCheckinInterval?: number;
+            EdgeCheckinInterval?: number;
             /** @description GPUs information */
-            gpus?: components["schemas"]["portainer.Pair"][];
+            Gpus?: components["schemas"]["portainer.Pair"][];
             /**
              * @description Group identifier
              * @example 1
              */
-            groupID?: number;
-            kubernetes?: components["schemas"]["portainer.KubernetesData"];
+            GroupID?: number;
+            /** @description Associated Kubernetes data */
+            Kubernetes?: components["schemas"]["portainer.KubernetesData"];
             /**
              * @description Name that will be used to identify this environment(endpoint)
              * @example my-environment
              */
-            name?: string;
+            Name?: string;
             /**
              * @description URL or IP address where exposed containers will be reachable.\
              *     Defaults to URL if not specified
              * @example docker.mydomain.tld:2375
              */
-            publicURL?: string;
+            PublicURL?: string;
             /**
              * @description The status of the environment(endpoint) (1 - up, 2 - down)
              * @example 1
              */
-            status?: number;
+            Status?: number;
+            /**
+             * @description Require TLS to connect against this environment(endpoint)
+             * @example true
+             */
+            TLS?: boolean;
+            /**
+             * @description Skip client verification when using TLS
+             * @example false
+             */
+            TLSSkipClientVerify?: boolean;
+            /**
+             * @description Skip server verification when using TLS
+             * @example false
+             */
+            TLSSkipVerify?: boolean;
             /**
              * @description List of tag identifiers to which this environment(endpoint) is associated
              * @example [
@@ -5724,121 +6579,161 @@ export interface components {
              *       2
              *     ]
              */
-            tagIDs?: number[];
-            teamAccessPolicies?: components["schemas"]["portainer.TeamAccessPolicies"];
-            /**
-             * @description Require TLS to connect against this environment(endpoint)
-             * @example true
-             */
-            tls?: boolean;
-            /**
-             * @description Skip client verification when using TLS
-             * @example false
-             */
-            tlsskipClientVerify?: boolean;
-            /**
-             * @description Skip server verification when using TLS
-             * @example false
-             */
-            tlsskipVerify?: boolean;
+            TagIDs?: number[];
+            TeamAccessPolicies?: components["schemas"]["portainer.TeamAccessPolicies"];
             /**
              * @description URL or IP address of a Docker host
              * @example docker.mydomain.tld:2375
              */
-            url?: string;
-            userAccessPolicies?: components["schemas"]["portainer.UserAccessPolicies"];
+            URL?: string;
+            UserAccessPolicies?: components["schemas"]["portainer.UserAccessPolicies"];
         };
         "endpoints.endpointUpdateRelationsPayload": {
-            relations?: {
+            Relations?: {
                 [key: string]: {
-                    edgeGroups?: number[];
-                    /**
-                     * @description Environment(Endpoint) group identifier
-                     * @example 1
-                     */
-                    group?: number;
-                    tags?: number[];
+                    EdgeGroups?: number[];
+                    Group?: number;
+                    Tags?: number[];
                 };
             };
         };
         "endpoints.forceUpdateServicePayload": {
             /** @description PullImage if true will pull the image */
-            pullImage?: boolean;
+            PullImage?: boolean;
             /** @description ServiceId to update */
-            serviceID?: string;
+            ServiceID?: string;
+        };
+        "endpoints.groupCount": {
+            count?: number;
+            groupID?: number;
+            groupName?: string;
+        };
+        "endpoints.healthCounts": {
+            down?: number;
+            heartbeat?: number;
+            outdated?: number;
+            up?: number;
+        };
+        "endpoints.platformCounts": {
+            azure?: number;
+            docker?: number;
+            kubernetes?: number;
+            podman?: number;
         };
         "endpoints.registryAccessPayload": {
-            namespaces?: string[];
-            teamAccessPolicies?: components["schemas"]["portainer.TeamAccessPolicies"];
-            userAccessPolicies?: components["schemas"]["portainer.UserAccessPolicies"];
+            Namespaces?: string[];
+            TeamAccessPolicies?: components["schemas"]["portainer.TeamAccessPolicies"];
+            UserAccessPolicies?: components["schemas"]["portainer.UserAccessPolicies"];
         };
         "filesystem.DirEntry": {
-            content?: string;
-            isFile?: boolean;
+            Content?: string;
+            IsFile?: boolean;
+            Name?: string;
+            Permissions?: number;
+        };
+        "github_com_portainer_portainer_pkg_libhelm_release.Hook": {
+            /** @description DeletePolicies are the policies that indicate when to delete the hook */
+            delete_policies?: string[];
+            /** @description Events are the events that this hook fires on. */
+            events?: string[];
+            /** @description Kind is the Kubernetes kind. */
+            kind?: string;
+            /** @description LastRun indicates the date/time this was last run. */
+            last_run?: components["schemas"]["release.HookExecution"];
+            /** @description Manifest is the manifest contents. */
+            manifest?: string;
             name?: string;
-            permissions?: number;
+            /** @description Path is the chart-relative path to the template. */
+            path?: string;
+            /** @description Weight indicates the sort order for execution among similar Hook type */
+            weight?: number;
         };
         "gitops.fileResponse": {
-            fileContent?: string;
+            FileContent?: string;
         };
         "gitops.repositoryFilePreviewPayload": {
-            /** @example myGitPassword */
+            /**
+             * @description Password for git authentication.
+             *     Deprecated: use SourceID instead
+             * @example myGitPassword
+             */
             password?: string;
             /** @example refs/heads/master */
             reference?: string;
-            /** @example https://github.com/openfaas/faas */
-            repository: string;
+            /**
+             * @description URL of a Git repository to preview.
+             *     Deprecated: use SourceID instead
+             * @example https://github.com/openfaas/faas
+             */
+            repository?: string;
+            /**
+             * @description SourceID resolves URL and auth from the stored Source record.
+             *     When set, the inline Repository/Username/Password/TLSSkipVerify fields are ignored.
+             * @example 1
+             */
+            sourceID?: number;
             /**
              * @description Path to file whose content will be read
              * @example docker-compose.yml
              */
             targetFile?: string;
             /**
-             * @description TLSSkipVerify skips SSL verification when cloning the Git repository
+             * @description TLSSkipVerify skips SSL verification when cloning the Git repository.
+             *     Deprecated: use SourceID instead
              * @example false
              */
-            tlsskipVerify?: boolean;
-            /** @example myGitUsername */
+            tlsSkipVerify?: boolean;
+            /**
+             * @description Username for git authentication.
+             *     Deprecated: use SourceID instead
+             * @example myGitUsername
+             */
             username?: string;
         };
         "gittypes.GitAuthentication": {
-            /**
-             * @description Git credentials identifier when the value is not 0
-             *     When the value is 0, Username and Password are set without using saved credential
-             *     This is introduced since 2.15.0
-             * @example 0
-             */
-            gitCredentialID?: number;
-            password?: string;
-            username?: string;
+            AuthorizationType?: number;
+            /** @example 0 */
+            GitCredentialID?: number;
+            Password?: string;
+            Provider?: number;
+            Username?: string;
+        };
+        "gittypes.GitSource": {
+            Authentication?: components["schemas"]["gittypes.GitAuthentication"];
+            /** @example false */
+            TLSSkipVerify?: boolean;
+            /** @example https://github.com/portainer/portainer.git */
+            URL?: string;
         };
         "gittypes.RepoConfig": {
-            authentication?: components["schemas"]["gittypes.GitAuthentication"];
+            /** @description Git credentials */
+            Authentication?: components["schemas"]["gittypes.GitAuthentication"];
             /**
-             * @description Path to where the config file is in this url/refName
+             * @description ConfigFilePath is the path to the config file within the repository.
+             *     NOTE: For stacks, this mirrors Stack.EntryPoint and the two are kept in sync by stackUpdateGit.
              * @example docker-compose.yml
              */
-            configFilePath?: string;
+            ConfigFilePath?: string;
             /**
              * @description Repository hash
              * @example bc4c183d756879ea4d173315338110b31004b8e0
              */
-            configHash?: string;
+            ConfigHash?: string;
             /**
              * @description The reference name
              * @example refs/heads/branch_name
              */
-            referenceName?: string;
+            ReferenceName?: string;
             /**
              * @description TLSSkipVerify skips SSL verification when cloning the Git repository
              * @example false
              */
-            tlsskipVerify?: boolean;
+            TLSSkipVerify?: boolean;
             /**
              * @description The repo url
              * @example https://github.com/portainer/portainer.git
              */
-            url?: string;
+            URL?: string;
         };
         "helm.installChartPayload": {
             atomic?: boolean;
@@ -5850,19 +6745,142 @@ export interface components {
             version?: string;
         };
         "images.ImageResponse": {
-            created: number;
-            id: string;
-            nodeName: string;
-            size: number;
-            tags: string[];
-            /** @description Used is true if the image is used by at least one container
-             *     supplied only when withUsage is true */
-            used: boolean;
+            created?: number;
+            id?: string;
+            nodeName?: string;
+            size?: number;
+            tags?: string[];
+            /**
+             * @description Used is true if the image is used by at least one container
+             *     supplied only when withUsage is true
+             */
+            used?: boolean;
         };
         "intstr.IntOrString": {
-            intVal?: number;
-            strVal?: string;
-            type?: number;
+            IntVal?: number;
+            StrVal?: string;
+            Type?: components["schemas"]["intstr.Type"];
+        };
+        /**
+         * Format: int64
+         * @enum {integer}
+         */
+        "intstr.Type": 0 | 1;
+        /** @enum {string} */
+        "k8s_io_api_core_v1.ConditionStatus": "True" | "False" | "Unknown";
+        "k8s_io_api_core_v1.HTTPHeader": {
+            /**
+             * @description The header field name.
+             *     This will be canonicalized upon output, so case-variant names will be understood as the same header.
+             */
+            name?: string;
+            /** @description The header field value */
+            value?: string;
+        };
+        "k8s_io_api_core_v1.LocalObjectReference": {
+            /**
+             * @description Name of the referent.
+             *     This field is effectively required, but due to backwards compatibility is
+             *     allowed to be empty. Instances of this type with an empty value here are
+             *     almost certainly wrong.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             *     +optional
+             *     +default=""
+             *     +kubebuilder:default=""
+             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+             */
+            name?: string;
+        };
+        "k8s_io_api_core_v1.ObjectReference": {
+            /**
+             * @description API version of the referent.
+             *     +optional
+             */
+            apiVersion?: string;
+            /**
+             * @description If referring to a piece of an object instead of an entire object, this string
+             *     should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+             *     For example, if the object reference is to a container within a pod, this would take on a value like:
+             *     "spec.containers{name}" (where "name" refers to the name of the container that triggered
+             *     the event) or if no container name is specified "spec.containers[2]" (container with
+             *     index 2 in this pod). This syntax is chosen only to have some well-defined way of
+             *     referencing a part of an object.
+             *     TODO: this design is not final and this field is subject to change in the future.
+             *     +optional
+             */
+            fieldPath?: string;
+            /**
+             * @description Kind of the referent.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            kind?: string;
+            /**
+             * @description Name of the referent.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             *     +optional
+             */
+            name?: string;
+            /**
+             * @description Namespace of the referent.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+             *     +optional
+             */
+            namespace?: string;
+            /**
+             * @description Specific resourceVersion to which this reference is made, if any.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+             *     +optional
+             */
+            resourceVersion?: string;
+            /**
+             * @description UID of the referent.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+             *     +optional
+             */
+            uid?: string;
+        };
+        "k8s_io_api_core_v1.ResourceClaim": {
+            /**
+             * @description Name must match the name of one entry in pod.spec.resourceClaims of
+             *     the Pod where this field is used. It makes that resource available
+             *     inside a container.
+             */
+            name?: string;
+            /**
+             * @description Request is the name chosen for a request in the referenced claim.
+             *     If empty, everything from the claim is made available, otherwise
+             *     only the result of this request.
+             *
+             *     +optional
+             */
+            request?: string;
+        };
+        "k8s_io_api_rbac_v1.Subject": {
+            /**
+             * @description APIGroup holds the API group of the referenced subject.
+             *     Defaults to "" for ServiceAccount subjects.
+             *     Defaults to "rbac.authorization.k8s.io" for User and Group subjects.
+             *     +optional
+             */
+            apiGroup?: string;
+            /**
+             * @description Kind of object being referenced. Values defined by this API group are "User", "Group", and "ServiceAccount".
+             *     If the Authorizer does not recognized the kind value, the Authorizer should report an error.
+             */
+            kind?: string;
+            /**
+             * @description Name of the object being referenced.
+             *     +required
+             *     +k8s:required
+             */
+            name?: string;
+            /**
+             * @description Namespace of the referenced object.  If the object kind is non-namespace, such as "User" or "Group", and this value is not empty
+             *     the Authorizer should report an error.
+             *     +optional
+             */
+            namespace?: string;
         };
         "kubernetes.Configuration": {
             ConfigurationOwner?: string;
@@ -5874,7 +6892,9 @@ export interface components {
         "kubernetes.CustomResourceMetadata": {
             apiVersion?: string;
             kind?: string;
+            name?: string;
             plural?: string;
+            scope?: string;
         };
         "kubernetes.IngressRule": {
             Host?: string;
@@ -5883,14 +6903,16 @@ export interface components {
             TLS?: components["schemas"]["kubernetes.TLSInfo"][];
         };
         "kubernetes.K8sApplication": {
+            Annotations?: {
+                [key: string]: string;
+            };
             ApplicationOwner?: string;
             ApplicationType?: string;
             Configurations?: components["schemas"]["kubernetes.Configuration"][];
-            Containers?: Record<string, never>[];
+            Containers?: unknown[];
             CreationDate?: string;
             CustomResourceMetadata?: components["schemas"]["kubernetes.CustomResourceMetadata"];
             DeploymentType?: string;
-            HorizontalPodAutoscaler?: components["schemas"]["v2.HorizontalPodAutoscaler"];
             Id?: string;
             Image?: string;
             Kind?: string;
@@ -5912,8 +6934,8 @@ export interface components {
             ServiceId?: string;
             ServiceName?: string;
             ServiceType?: string;
-            Services?: components["schemas"]["v1.Service"][];
             StackId?: string;
+            StackKind?: string;
             StackName?: string;
             Status?: string;
             TotalPodsCount?: number;
@@ -5929,8 +6951,6 @@ export interface components {
             creationDate?: string;
             isSystem?: boolean;
             name?: string;
-            /** @description UID of the referent.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids */
             uid?: string;
         };
         "kubernetes.K8sClusterRoleBinding": {
@@ -5939,9 +6959,7 @@ export interface components {
             name?: string;
             namespace?: string;
             roleRef?: components["schemas"]["v1.RoleRef"];
-            subjects?: components["schemas"]["v1.Subject"][];
-            /** @description UID of the referent.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids */
+            subjects?: components["schemas"]["k8s_io_api_rbac_v1.Subject"][];
             uid?: string;
         };
         "kubernetes.K8sConfigMap": {
@@ -5963,10 +6981,44 @@ export interface components {
             Namespace?: string;
             UID?: string;
         };
+        "kubernetes.K8sConfigMapWriteRequest": {
+            Annotations?: {
+                [key: string]: string;
+            };
+            Data?: {
+                [key: string]: string;
+            };
+            Labels?: {
+                [key: string]: string;
+            };
+            Name?: string;
+        };
         "kubernetes.K8sConfigurationOwnerResource": {
             Id?: string;
             Name?: string;
             ResourceKind?: string;
+        };
+        "kubernetes.K8sContainer": {
+            args?: string[];
+            command?: string[];
+            env?: components["schemas"]["kubernetes.K8sEnvVar"][];
+            /**
+             * @description EnvFromSecrets names secrets whose keys are all exposed as environment
+             *     variables.
+             */
+            envFromSecrets?: string[];
+            image?: string;
+            imagePullPolicy?: string;
+            name?: string;
+            ports?: components["schemas"]["kubernetes.K8sContainerPort"][];
+            resources?: components["schemas"]["kubernetes.K8sResourceRequirements"];
+            volumeMounts?: components["schemas"]["kubernetes.K8sVolumeMount"][];
+            workingDir?: string;
+        };
+        "kubernetes.K8sContainerPort": {
+            containerPort?: number;
+            name?: string;
+            protocol?: string;
         };
         "kubernetes.K8sCronJob": {
             Command?: string;
@@ -5991,6 +7043,43 @@ export interface components {
             servicesCount?: number;
             volumesCount?: number;
         };
+        "kubernetes.K8sDeploymentPatchRequest": {
+            annotations?: {
+                [key: string]: string;
+            };
+            podAnnotations?: {
+                [key: string]: string;
+            };
+        };
+        "kubernetes.K8sDeploymentRollbackRequest": {
+            revision?: number;
+        };
+        "kubernetes.K8sDeploymentScaleRequest": {
+            replicas?: number;
+        };
+        "kubernetes.K8sDeploymentWriteRequest": {
+            annotations?: {
+                [key: string]: string;
+            };
+            labels?: {
+                [key: string]: string;
+            };
+            name?: string;
+            pod?: components["schemas"]["kubernetes.K8sPodTemplate"];
+            replicas?: number;
+            /**
+             * @description Selector matches the pods this deployment owns. It is immutable once the
+             *     deployment exists, so it is only read on create.
+             */
+            selector?: {
+                [key: string]: string;
+            };
+        };
+        "kubernetes.K8sEnvVar": {
+            name?: string;
+            secretRef?: components["schemas"]["kubernetes.K8sSecretKeyRef"];
+            value?: string;
+        };
         "kubernetes.K8sEvent": {
             count?: number;
             eventTime?: string;
@@ -6010,6 +7099,14 @@ export interface components {
             name?: string;
             namespace?: string;
             uid?: string;
+        };
+        "kubernetes.K8sIngressClass": {
+            Annotations?: {
+                [key: string]: string;
+            };
+            Controller?: string;
+            IsDefault?: boolean;
+            Name?: string;
         };
         "kubernetes.K8sIngressController": {
             Availability?: boolean;
@@ -6046,6 +7143,7 @@ export interface components {
             Path?: string;
             PathType?: string;
             Port?: number;
+            PortName?: string;
             ServiceName?: string;
         };
         "kubernetes.K8sIngressTLS": {
@@ -6079,22 +7177,39 @@ export interface components {
             Owner?: string;
             ResourceQuota?: components["schemas"]["kubernetes.K8sResourceQuota"];
         };
+        "kubernetes.K8sPVCResizeRequest": {
+            name?: string;
+            namespace?: string;
+            newSize?: string;
+        };
+        "kubernetes.K8sPVReclaimPolicyRequest": {
+            name?: string;
+            reclaimPolicy?: components["schemas"]["v1.PersistentVolumeReclaimPolicy"];
+        };
         "kubernetes.K8sPersistentVolume": {
             accessModes?: string[];
             annotations?: {
                 [key: string]: string;
             };
             capacity?: components["schemas"]["v1.ResourceList"];
-            claimRef?: components["schemas"]["v1.ObjectReference"];
+            claimRef?: components["schemas"]["k8s_io_api_core_v1.ObjectReference"];
+            creationDate?: string;
             csi?: components["schemas"]["v1.CSIPersistentVolumeSource"];
+            humanReadableAccessModes?: components["schemas"]["v1.PersistentVolumeAccessMode"][];
+            labels?: {
+                [key: string]: string;
+            };
             name?: string;
-            persistentVolumeReclaimPolicy?: string;
+            persistentVolumeReclaimPolicy?: components["schemas"]["v1.PersistentVolumeReclaimPolicy"];
+            status?: components["schemas"]["v1.PersistentVolumePhase"];
             storageClassName?: string;
-            volumeMode?: string;
+            volumeMode?: components["schemas"]["v1.PersistentVolumeMode"];
         };
         "kubernetes.K8sPersistentVolumeClaim": {
             accessModes?: string[];
+            allowVolumeExpansion?: boolean;
             creationDate?: string;
+            humanReadableAccessModes?: components["schemas"]["v1.PersistentVolumeAccessMode"][];
             id?: string;
             labels?: {
                 [key: string]: string;
@@ -6102,27 +7217,63 @@ export interface components {
             name?: string;
             namespace?: string;
             owningApplications?: components["schemas"]["kubernetes.K8sApplication"][];
-            phase?: string;
+            phase?: components["schemas"]["v1.PersistentVolumeClaimPhase"];
             resourcesRequests?: components["schemas"]["v1.ResourceList"];
             storage?: number;
             storageClass?: string;
-            volumeMode?: string;
+            storageRequest?: string;
+            volumeMode?: components["schemas"]["v1.PersistentVolumeMode"];
             volumeName?: string;
+        };
+        "kubernetes.K8sPersistentVolumeClaimCreateRequest": {
+            accessModes?: components["schemas"]["v1.PersistentVolumeAccessMode"][];
+            annotations?: {
+                [key: string]: string;
+            };
+            labels?: {
+                [key: string]: string;
+            };
+            name?: string;
+            storage?: string;
+            storageClass?: string;
+            volumeMode?: components["schemas"]["v1.PersistentVolumeMode"];
+        };
+        "kubernetes.K8sPodTemplate": {
+            annotations?: {
+                [key: string]: string;
+            };
+            containers?: components["schemas"]["kubernetes.K8sContainer"][];
+            labels?: {
+                [key: string]: string;
+            };
+            volumes?: components["schemas"]["kubernetes.K8sPodVolume"][];
+        };
+        "kubernetes.K8sPodVolume": {
+            claimName?: string;
+            name?: string;
         };
         "kubernetes.K8sResourceQuota": {
             cpu?: string;
             enabled?: boolean;
             memory?: string;
         };
+        "kubernetes.K8sResourceRequirements": {
+            limits?: {
+                [key: string]: string;
+            };
+            requests?: {
+                [key: string]: string;
+            };
+        };
         "kubernetes.K8sRole": {
             creationDate?: string;
-            /** @description isSystem is true if prefixed with "system:" or exists in the kube-system namespace
-             *     or is one of the portainer roles */
+            /**
+             * @description isSystem is true if prefixed with "system:" or exists in the kube-system namespace
+             *     or is one of the portainer roles
+             */
             isSystem?: boolean;
             name?: string;
             namespace?: string;
-            /** @description UID of the referent.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids */
             uid?: string;
         };
         "kubernetes.K8sRoleBinding": {
@@ -6131,9 +7282,7 @@ export interface components {
             name?: string;
             namespace?: string;
             roleRef?: components["schemas"]["v1.RoleRef"];
-            subjects?: components["schemas"]["v1.Subject"][];
-            /** @description UID of the referent.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids */
+            subjects?: components["schemas"]["k8s_io_api_rbac_v1.Subject"][];
             uid?: string;
         };
         "kubernetes.K8sRoleBindingDeleteRequests": {
@@ -6162,44 +7311,70 @@ export interface components {
             SecretType?: string;
             UID?: string;
         };
-        "kubernetes.K8sServiceAccount": {
-            creationDate?: string;
-            isSystem?: boolean;
+        "kubernetes.K8sSecretKeyRef": {
+            key?: string;
             name?: string;
-            namespace?: string;
-            /** @description UID of the referent.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids */
-            uid?: string;
         };
-        "kubernetes.K8sServiceAccountDeleteRequests": {
-            [key: string]: string[];
+        "kubernetes.K8sSecretWriteRequest": {
+            Annotations?: {
+                [key: string]: string;
+            };
+            Data?: {
+                [key: string]: string;
+            };
+            Labels?: {
+                [key: string]: string;
+            };
+            Name?: string;
+            SecretType?: string;
         };
-        "kubernetes.K8sServiceDeleteRequests": {
-            [key: string]: string[];
-        };
-        "kubernetes.K8sServiceInfo": {
-            allocateLoadBalancerNodePorts?: boolean;
+        "kubernetes.K8sServiceAccount": {
             annotations?: {
                 [key: string]: string;
             };
-            /** @description serviceList screen */
-            applications?: components["schemas"]["kubernetes.K8sApplication"][];
-            clusterIPs?: string[];
+            automountServiceAccountToken?: boolean;
             creationDate?: string;
-            externalIPs?: string[];
-            externalName?: string;
-            ingressStatus?: components["schemas"]["kubernetes.K8sServiceIngress"][];
+            imagePullSecrets?: components["schemas"]["k8s_io_api_core_v1.LocalObjectReference"][];
+            isSystem?: boolean;
             labels?: {
                 [key: string]: string;
             };
             name?: string;
             namespace?: string;
-            ports?: components["schemas"]["kubernetes.K8sServicePort"][];
-            selector?: {
+            uid?: string;
+        };
+        "kubernetes.K8sServiceAccountDeleteRequests": {
+            [key: string]: string[];
+        };
+        "kubernetes.K8sServiceAccountImagePullSecretsUpdatePayload": {
+            secretNames?: string[];
+        };
+        "kubernetes.K8sServiceDeleteRequests": {
+            [key: string]: string[];
+        };
+        "kubernetes.K8sServiceInfo": {
+            AllocateLoadBalancerNodePorts?: boolean;
+            Annotations?: {
                 [key: string]: string;
             };
-            type?: string;
-            uid?: string;
+            /** @description serviceList screen */
+            Applications?: components["schemas"]["kubernetes.K8sApplication"][];
+            ClusterIPs?: string[];
+            CreationDate?: string;
+            ExternalIPs?: string[];
+            ExternalName?: string;
+            IngressStatus?: components["schemas"]["kubernetes.K8sServiceIngress"][];
+            Labels?: {
+                [key: string]: string;
+            };
+            Name?: string;
+            Namespace?: string;
+            Ports?: components["schemas"]["kubernetes.K8sServicePort"][];
+            Selector?: {
+                [key: string]: string;
+            };
+            Type?: string;
+            UID?: string;
         };
         "kubernetes.K8sServiceIngress": {
             Hostname?: string;
@@ -6214,16 +7389,268 @@ export interface components {
         };
         "kubernetes.K8sStorageClass": {
             allowVolumeExpansion?: boolean;
+            annotations?: {
+                [key: string]: string;
+            };
+            creationDate?: string;
+            isDefault?: boolean;
+            labels?: {
+                [key: string]: string;
+            };
+            mountOptions?: string[];
             name?: string;
+            parameters?: {
+                [key: string]: string;
+            };
             provisioner?: string;
-            reclaimPolicy?: string;
+            reclaimPolicy?: components["schemas"]["v1.PersistentVolumeReclaimPolicy"];
+        };
+        "kubernetes.K8sVolumeDeleteRequest": {
+            name?: string;
+            namespace?: string;
         };
         "kubernetes.K8sVolumeInfo": {
             persistentVolume?: components["schemas"]["kubernetes.K8sPersistentVolume"];
             persistentVolumeClaim?: components["schemas"]["kubernetes.K8sPersistentVolumeClaim"];
             storageClass?: components["schemas"]["kubernetes.K8sStorageClass"];
         };
+        "kubernetes.K8sVolumeMount": {
+            mountPath?: string;
+            name?: string;
+            readOnly?: boolean;
+            subPath?: string;
+        };
+        "kubernetes.KubernetesCreateNamespaceResponse": {
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
+             *     Servers should convert recognized schemas to the latest internal value, and
+             *     may reject unrecognized values.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+             *     +optional
+             */
+            apiVersion?: string;
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
+             *     Servers may infer this from the endpoint the client submits requests to.
+             *     Cannot be updated.
+             *     In CamelCase.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            kind?: string;
+            /**
+             * @description Standard object's metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ObjectMeta"];
+            /**
+             * @description Spec defines the behavior of the Namespace.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+             *     +optional
+             */
+            spec?: components["schemas"]["v1.NamespaceSpec"];
+            /**
+             * @description Status describes the current status of a Namespace.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+             *     +optional
+             */
+            status?: components["schemas"]["v1.NamespaceStatus"];
+        };
+        "kubernetes.KubernetesDeploymentListResponse": {
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
+             *     Servers should convert recognized schemas to the latest internal value, and
+             *     may reject unrecognized values.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+             *     +optional
+             */
+            apiVersion?: string;
+            /** @description Items is the list of Deployments. */
+            items?: components["schemas"]["v1.Deployment"][];
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
+             *     Servers may infer this from the endpoint the client submits requests to.
+             *     Cannot be updated.
+             *     In CamelCase.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            kind?: string;
+            /**
+             * @description Standard list metadata.
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ListMeta"];
+        };
+        "kubernetes.KubernetesDeploymentResponse": {
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
+             *     Servers should convert recognized schemas to the latest internal value, and
+             *     may reject unrecognized values.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+             *     +optional
+             */
+            apiVersion?: string;
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
+             *     Servers may infer this from the endpoint the client submits requests to.
+             *     Cannot be updated.
+             *     In CamelCase.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            kind?: string;
+            /**
+             * @description Standard object's metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ObjectMeta"];
+            /**
+             * @description Specification of the desired behavior of the Deployment.
+             *     +optional
+             */
+            spec?: components["schemas"]["v1.DeploymentSpec"];
+            /**
+             * @description Most recently observed status of the Deployment.
+             *     +optional
+             */
+            status?: components["schemas"]["v1.DeploymentStatus"];
+        };
+        "kubernetes.KubernetesNodeResponse": {
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
+             *     Servers should convert recognized schemas to the latest internal value, and
+             *     may reject unrecognized values.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+             *     +optional
+             */
+            apiVersion?: string;
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
+             *     Servers may infer this from the endpoint the client submits requests to.
+             *     Cannot be updated.
+             *     In CamelCase.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            kind?: string;
+            /**
+             * @description Standard object's metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ObjectMeta"];
+            /**
+             * @description Spec defines the behavior of a node.
+             *     https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+             *     +optional
+             */
+            spec?: components["schemas"]["v1.NodeSpec"];
+            /**
+             * @description Most recently observed status of the node.
+             *     Populated by the system.
+             *     Read-only.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+             *     +optional
+             */
+            status?: components["schemas"]["v1.NodeStatus"];
+        };
+        "kubernetes.KubernetesPodListResponse": {
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
+             *     Servers should convert recognized schemas to the latest internal value, and
+             *     may reject unrecognized values.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+             *     +optional
+             */
+            apiVersion?: string;
+            /**
+             * @description List of pods.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md
+             */
+            items?: components["schemas"]["v1.Pod"][];
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
+             *     Servers may infer this from the endpoint the client submits requests to.
+             *     Cannot be updated.
+             *     In CamelCase.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            kind?: string;
+            /**
+             * @description Standard list metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ListMeta"];
+        };
+        "kubernetes.KubernetesReplicaSetListResponse": {
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
+             *     Servers should convert recognized schemas to the latest internal value, and
+             *     may reject unrecognized values.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+             *     +optional
+             */
+            apiVersion?: string;
+            /**
+             * @description List of ReplicaSets.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset
+             */
+            items?: components["schemas"]["v1.ReplicaSet"][];
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
+             *     Servers may infer this from the endpoint the client submits requests to.
+             *     Cannot be updated.
+             *     In CamelCase.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            kind?: string;
+            /**
+             * @description Standard list metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ListMeta"];
+        };
+        "kubernetes.KubernetesResourceQuotaListResponse": {
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
+             *     Servers should convert recognized schemas to the latest internal value, and
+             *     may reject unrecognized values.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+             *     +optional
+             */
+            apiVersion?: string;
+            /**
+             * @description Items is a list of ResourceQuota objects.
+             *     More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/
+             */
+            items?: components["schemas"]["v1.ResourceQuota"][];
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
+             *     Servers may infer this from the endpoint the client submits requests to.
+             *     Cannot be updated.
+             *     In CamelCase.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            kind?: string;
+            /**
+             * @description Standard list metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ListMeta"];
+        };
         "kubernetes.Metadata": {
+            annotations?: {
+                [key: string]: string;
+            };
             labels?: {
                 [key: string]: string;
             };
@@ -6250,17 +7677,115 @@ export interface components {
         "kubernetes.describeResourceResponse": {
             describe?: string;
         };
+        "kubernetes.drainNodePayload": {
+            /**
+             * @description DeleteEmptyDirData allows eviction of pods using emptyDir volumes, whose data is lost once the pod is deleted.
+             * @example true
+             */
+            DeleteEmptyDirData?: boolean;
+            /**
+             * @description DisableEviction forces the use of direct pod deletion instead of the eviction API, ignoring any configured PodDisruptionBudgets.
+             * @example false
+             */
+            DisableEviction?: boolean;
+            /**
+             * @description Force allows deletion of standalone pods not managed by a controller.
+             * @example false
+             */
+            Force?: boolean;
+            /**
+             * @description GracePeriodSeconds overrides each pod's termination grace period. -1 uses the pod's own grace period.
+             * @example -1
+             */
+            GracePeriodSeconds?: number;
+            /**
+             * @description IgnoreDaemonSets skips DaemonSet-managed pods, which would otherwise block the drain.
+             * @example true
+             */
+            IgnoreDaemonSets?: boolean;
+            /**
+             * @description TimeoutSeconds is the overall time to wait for the drain to complete. Defaults to 60 when omitted.
+             * @example 60
+             */
+            TimeoutSeconds?: number;
+        };
+        "kubernetes.kubernetesVersionResponse": {
+            buildDate?: string;
+            compiler?: string;
+            /** @description EmulationMajor is the major version of the emulation version */
+            emulationMajor?: string;
+            /** @description EmulationMinor is the minor version of the emulation version */
+            emulationMinor?: string;
+            gitCommit?: string;
+            gitTreeState?: string;
+            gitVersion?: string;
+            goVersion?: string;
+            /** @description Major is the major version of the binary version */
+            major?: string;
+            /** @description MinCompatibilityMajor is the major version of the minimum compatibility version */
+            minCompatibilityMajor?: string;
+            /** @description MinCompatibilityMinor is the minor version of the minimum compatibility version */
+            minCompatibilityMinor?: string;
+            /** @description Minor is the minor version of the binary version */
+            minor?: string;
+            platform?: string;
+            /**
+             * @description SupportsPodRestart is true when the cluster exposes the `pods/restart`
+             *     subresource via API discovery — i.e. the feature gate is enabled and
+             *     the cluster version is recent enough. This is the authoritative
+             *     signal for whether Portainer can call the pod-restart endpoint, and
+             *     is preferred over a raw Kubernetes-version comparison.
+             */
+            supportsPodRestart?: boolean;
+        };
+        "kubernetes.manifestDryRunPayload": {
+            /**
+             * @description The manifests to validate. Each entry may hold several YAML documents separated by "---".
+             * @example [
+             *       "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: app-config"
+             *     ]
+             */
+            manifests?: string[];
+            /**
+             * @description The namespace applied to namespaced resources that do not declare one. A resource declaring a different namespace is rejected.
+             * @example default
+             */
+            namespace?: string;
+        };
+        "kubernetes.manifestDryRunResponse": {
+            results?: components["schemas"]["kubernetes.manifestDryRunResult"][];
+        };
+        "kubernetes.manifestDryRunResult": {
+            /**
+             * @description The zero-based position of the document among the non-empty documents of all manifests. It identifies a document rejected before its resource could be named, such as malformed YAML.
+             * @example 0
+             */
+            documentIndex?: number;
+            /** @example ConfigMap */
+            kind?: string;
+            /** @description The reason the resource was rejected. Empty when the resource passed. */
+            message?: string;
+            /** @example app-config */
+            name?: string;
+            /** @example default */
+            namespace?: string;
+            /**
+             * @description Either "pass" or "fail".
+             * @example pass
+             */
+            status?: string;
+        };
         "kubernetes.namespacesToggleSystemPayload": {
             /**
              * @description Toggle the system state of this namespace to true or false
              * @example true
              */
-            system?: boolean;
+            System?: boolean;
         };
         "ldap.checkPayload": {
-            ldapsettings?: components["schemas"]["portainer.LDAPSettings"];
+            LDAPSettings?: components["schemas"]["portainer.LDAPSettings"];
         };
-        "motd.motdResponse": {
+        "motd.Motd": {
             ContentLayout?: {
                 [key: string]: string;
             };
@@ -6269,22 +7794,10 @@ export interface components {
             Style?: string;
             Title?: string;
         };
-        "openamt.deviceActionPayload": {
-            action?: string;
-        };
-        "openamt.deviceFeaturesPayload": {
-            features?: components["schemas"]["portainer.OpenAMTDeviceEnabledFeatures"];
-        };
-        "openamt.openAMTConfigurePayload": {
-            certFileContent?: string;
-            certFileName?: string;
-            certFilePassword?: string;
-            domainName?: string;
-            enabled?: boolean;
-            mpspassword?: string;
-            mpsserver?: string;
-            mpsuser?: string;
-        };
+        /** @enum {integer} */
+        "oauth2.AuthStyle": 0 | 1 | 2;
+        /** @enum {string} */
+        "platform.ContainerPlatform": "Docker" | "Docker Standalone" | "Docker Swarm" | "Kubernetes" | "Podman";
         "portainer.APIKey": {
             /** @description Unix timestamp (UTC) when the API key was created */
             dateCreated?: number;
@@ -6298,19 +7811,41 @@ export interface components {
             lastUsed?: number;
             /** @description API key identifier (7 char prefix) */
             prefix?: string;
-            /**
-             * @description User Identifier
-             * @example 1
-             */
+            /** @example 1 */
             userId?: number;
         };
         "portainer.AccessPolicy": {
+            /** @description Namespaces is a list of namespaces that this access policy applies to. Only used for namespaced level roles */
+            Namespaces?: string[];
             /**
              * @description Role identifier. Reference the role that will be associated to this access policy
              * @example 1
              */
-            RoleId?: number;
+            RoleId: number;
         };
+        "portainer.Artifact": {
+            edgeGroups?: number[];
+            edgeStackId?: number;
+            envGroups?: number[];
+            envIds?: number[];
+            files?: components["schemas"]["portainer.ArtifactFile"][];
+            stackId?: number;
+        };
+        "portainer.ArtifactFile": {
+            /** @example abc123 */
+            hash?: string;
+            /** @example portainer.yaml */
+            path?: string;
+            pathError?: string;
+            pathStatus?: components["schemas"]["portainer.SourceStatus"];
+            /** @example refs/heads/main */
+            ref?: string;
+            refError?: string;
+            refStatus?: components["schemas"]["portainer.SourceStatus"];
+            sourceId?: number;
+        };
+        /** @enum {integer} */
+        "portainer.AuthenticationMethod": 0 | 1 | 2 | 3;
         "portainer.Authorizations": {
             [key: string]: boolean;
         };
@@ -6319,44 +7854,46 @@ export interface components {
              * @description Pull latest image
              * @example false
              */
-            forcePullImage?: boolean;
+            ForcePullImage?: boolean;
             /**
              * @description Force update ignores repo changes
              * @example false
              */
-            forceUpdate?: boolean;
+            ForceUpdate?: boolean;
             /**
              * @description Auto update interval
+             *     Deprecated: polling interval now lives on the associated Source (Source.Interval).
+             *     Kept for DB backwards-compatibility only; new code must not read or write this field.
              * @example 1m30s
              */
-            interval?: string;
+            Interval?: string;
             /**
              * @description Autoupdate job id
              * @example 15
              */
-            jobID?: string;
+            JobID?: string;
             /**
              * @description A UUID generated from client
              * @example 05de31a2-79fa-4644-9c12-faa67e5c49f0
              */
-            webhook?: string;
+            Webhook?: string;
         };
         "portainer.AzureCredentials": {
             /**
              * @description Azure application ID
              * @example eag7cdo9-o09l-9i83-9dO9-f0b23oe78db4
              */
-            ApplicationID?: string;
+            ApplicationID: string;
             /**
              * @description Azure authentication key
              * @example cOrXoK/1D35w8YQ8nH1/8ZGwzz45JIYD5jxHKXEQknk=
              */
-            AuthenticationKey?: string;
+            AuthenticationKey: string;
             /**
              * @description Azure tenant ID
              * @example 34ddc78d-4fel-2358-8cc1-df84c8o839f5
              */
-            TenantID?: string;
+            TenantID: string;
         };
         "portainer.CustomTemplate": {
             /**
@@ -6370,6 +7907,11 @@ export interface components {
              */
             Description?: string;
             /**
+             * @description EdgeTemplate indicates if this template purpose for Edge Stack
+             * @example false
+             */
+            EdgeTemplate?: boolean;
+            /**
              * @description Path to the Stack file
              * @example docker-compose.yml
              */
@@ -6380,6 +7922,11 @@ export interface components {
              * @example 1
              */
             Id?: number;
+            /**
+             * @description IsComposeFormat indicates if the Kubernetes template is created from a Docker Compose file
+             * @example false
+             */
+            IsComposeFormat?: boolean;
             /**
              * @description URL of the template's logo
              * @example https://portainer.io/img/logo.svg
@@ -6394,8 +7941,9 @@ export interface components {
              * @description Platform associated to the template.
              *     Valid values are: 1 - 'linux', 2 - 'windows'
              * @example 1
+             * @enum {unknown}
              */
-            Platform?: number;
+            Platform?: 1 | 2;
             /**
              * @description Path on disk to the repository hosting the Stack file
              * @example /data/custom_template/3
@@ -6413,20 +7961,14 @@ export interface components {
              *     * 2 - compose
              *     * 3 - kubernetes
              * @example 1
+             * @enum {unknown}
              */
-            Type?: number;
-            /**
-             * @description EdgeTemplate indicates if this template purpose for Edge Stack
-             * @example false
-             */
-            edgeTemplate?: boolean;
-            /**
-             * @description IsComposeFormat indicates if the Kubernetes template is created from a Docker Compose file
-             * @example false
-             */
-            isComposeFormat?: boolean;
-            variables?: components["schemas"]["portainer.CustomTemplateVariableDefinition"][];
+            Type?: 1 | 2 | 3;
+            Variables?: components["schemas"]["portainer.CustomTemplateVariableDefinition"][];
+            artifact?: components["schemas"]["portainer.Artifact"];
         };
+        /** @enum {integer} */
+        "portainer.CustomTemplatePlatform": 0 | 1 | 2;
         "portainer.CustomTemplateVariableDefinition": {
             /** @example default value */
             defaultValue?: string;
@@ -6450,26 +7992,27 @@ export interface components {
             };
         };
         "portainer.DockerSnapshot": {
-            ContainerCount?: number;
+            ContainerCount: number;
             DiagnosticsData?: components["schemas"]["portainer.DiagnosticsData"];
             DockerSnapshotRaw?: components["schemas"]["portainer.DockerSnapshotRaw"];
-            DockerVersion?: string;
-            GpuUseAll?: boolean;
+            DockerVersion: string;
+            GpuUseAll: boolean;
             GpuUseList?: string[];
-            HealthyContainerCount?: number;
-            ImageCount?: number;
-            IsPodman?: boolean;
-            NodeCount?: number;
-            RunningContainerCount?: number;
-            ServiceCount?: number;
-            StackCount?: number;
-            StoppedContainerCount?: number;
-            Swarm?: boolean;
-            Time?: number;
-            TotalCPU?: number;
-            TotalMemory?: number;
-            UnhealthyContainerCount?: number;
-            VolumeCount?: number;
+            HealthyContainerCount: number;
+            ImageCount: number;
+            IsPodman: boolean;
+            NodeCount: number;
+            PerformanceMetrics?: components["schemas"]["portainer.PerformanceMetrics"];
+            RunningContainerCount: number;
+            ServiceCount: number;
+            StackCount: number;
+            StoppedContainerCount: number;
+            Swarm: boolean;
+            Time: number;
+            TotalCPU: number;
+            TotalMemory: number;
+            UnhealthyContainerCount: number;
+            VolumeCount: number;
         };
         "portainer.DockerSnapshotRaw": Record<string, never>;
         "portainer.EcrData": {
@@ -6500,6 +8043,8 @@ export interface components {
         };
         "portainer.EdgeGroup": {
             Dynamic?: boolean;
+            EndpointIds?: components["schemas"]["roar.Roar-portainer_EndpointID"];
+            /** @description Deprecated: only used for API responses */
             Endpoints?: number[];
             /**
              * @description EdgeGroup Identifier
@@ -6517,6 +8062,10 @@ export interface components {
             Endpoints?: {
                 [key: string]: components["schemas"]["portainer.EdgeJobEndpointMeta"];
             };
+            /** @description Field used for log collection of Endpoints belonging to EdgeGroups */
+            GroupLogsCollection?: {
+                [key: string]: components["schemas"]["portainer.EdgeJobEndpointMeta"];
+            };
             /**
              * @description EdgeJob Identifier
              * @example 1
@@ -6526,19 +8075,27 @@ export interface components {
             Recurring?: boolean;
             ScriptPath?: string;
             Version?: number;
-            /** @description Field used for log collection of Endpoints belonging to EdgeGroups */
-            groupLogsCollection?: {
-                [key: string]: components["schemas"]["portainer.EdgeJobEndpointMeta"];
-            };
         };
         "portainer.EdgeJobEndpointMeta": {
-            collectLogs?: boolean;
-            logsStatus?: number;
+            CollectLogs?: boolean;
+            LogsStatus?: components["schemas"]["portainer.EdgeJobLogsStatus"];
         };
+        /** @enum {integer} */
+        "portainer.EdgeJobLogsStatus": 0 | 1 | 2 | 3;
         "portainer.EdgeStack": {
+            /**
+             * @description The username which created this stack
+             * @example admin
+             */
+            CreatedBy?: string;
+            /**
+             * @description The username id which created this stack
+             * @example 1
+             */
+            CreatedByUserId?: string;
             /** @description StatusArray    map[EndpointID][]EdgeStackStatus `json:"StatusArray"` */
             CreationDate?: number;
-            DeploymentType?: number;
+            DeploymentType?: components["schemas"]["portainer.EdgeStackDeploymentType"];
             EdgeGroups?: number[];
             EntryPoint?: string;
             /**
@@ -6553,75 +8110,76 @@ export interface components {
             Status?: {
                 [key: string]: components["schemas"]["portainer.EdgeStackStatus"];
             };
-            Version?: number;
             /** @description Uses the manifest's namespaces instead of the default one */
-            useManifestNamespaces?: boolean;
+            UseManifestNamespaces?: boolean;
+            Version?: number;
         };
         "portainer.EdgeStackDeploymentStatus": {
             Error?: string;
             /** @description EE only feature */
             RollbackTo?: number;
+            /** Format: int64 */
+            Time?: number;
+            Type?: components["schemas"]["portainer.EdgeStackStatusType"];
             Version?: number;
-            time?: number;
-            type?: number;
         };
+        /** @enum {integer} */
+        "portainer.EdgeStackDeploymentType": 0 | 1;
         "portainer.EdgeStackStatus": {
+            /** @description EE only feature */
+            DeploymentInfo?: components["schemas"]["portainer.StackDeploymentInfo"];
+            /** @description Deprecated */
             Details?: components["schemas"]["portainer.EdgeStackStatusDetails"];
+            EndpointID?: number;
             /** @description Deprecated */
             Error?: string;
             /** @description ReadyRePullImage is a flag to indicate whether the auto update is trigger to re-pull image */
             ReadyRePullImage?: boolean;
+            Status?: components["schemas"]["portainer.EdgeStackDeploymentStatus"][];
             /** @description Deprecated */
-            Type?: number;
-            deploymentInfo?: components["schemas"]["portainer.StackDeploymentInfo"];
-            endpointID?: number;
-            status?: components["schemas"]["portainer.EdgeStackDeploymentStatus"][];
+            Type?: components["schemas"]["portainer.EdgeStackStatusType"];
         };
         "portainer.EdgeStackStatusDetails": {
-            acknowledged?: boolean;
-            error?: boolean;
-            imagesPulled?: boolean;
-            ok?: boolean;
-            pending?: boolean;
-            remoteUpdateSuccess?: boolean;
-            remove?: boolean;
+            Acknowledged?: boolean;
+            Error?: boolean;
+            ImagesPulled?: boolean;
+            Ok?: boolean;
+            Pending?: boolean;
+            RemoteUpdateSuccess?: boolean;
+            Remove?: boolean;
         };
+        /** @enum {integer} */
+        "portainer.EdgeStackStatusType": 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
         "portainer.Endpoint": {
-            /**
-             * @description The identifier of the AMT Device associated with this environment(endpoint)
-             * @example 4c4c4544-004b-3910-8037-b6c04f504633
-             */
-            AMTDeviceGUID?: string;
-            AuthorizedTeams?: number[];
-            /** @description Deprecated in DBVersion == 18 */
-            AuthorizedUsers?: number[];
+            Agent: components["schemas"]["portainer.EnvironmentAgentData"];
             AzureCredentials?: components["schemas"]["portainer.AzureCredentials"];
             /**
              * @description Maximum version of docker-compose
              * @example 3.8
              */
-            ComposeSyntaxMaxVersion?: string;
+            ComposeSyntaxMaxVersion: string;
             /**
-             * @description ContainerEngine represents the container engine type. This can be 'docker' or 'podman' when interacting directly with these environmentes, otherwise '' for kubernetes environments.
+             * @description ContainerEngine represents the container engine type. This can be 'docker' or 'podman' when interacting directly with these environments, otherwise '' for kubernetes environments.
              * @example docker
              */
-            ContainerEngine?: string;
+            ContainerEngine: string;
+            Edge: components["schemas"]["portainer.EnvironmentEdgeSettings"];
             /**
              * @description The check in interval for edge agent (in seconds)
              * @example 5
              */
-            EdgeCheckinInterval?: number;
+            EdgeCheckinInterval: number;
             /** @description The identifier of the edge agent associated with this environment(endpoint) */
             EdgeID?: string;
             /** @description The key which is used to map the agent to Portainer */
-            EdgeKey?: string;
+            EdgeKey: string;
             EnableGPUManagement?: boolean;
             Gpus?: components["schemas"]["portainer.Pair"][];
             /**
              * @description Environment(Endpoint) group identifier
              * @example 1
              */
-            GroupId?: number;
+            GroupId: number;
             /**
              * @description Heartbeat indicates the heartbeat status of an edge environment
              * @example true
@@ -6632,163 +8190,153 @@ export interface components {
              * @example 1
              */
             Id: number;
-            /** @description Deprecated v2.18 */
-            IsEdgeDevice?: boolean;
-            Kubernetes?: components["schemas"]["portainer.KubernetesData"];
+            /** @description Associated Kubernetes data */
+            Kubernetes: components["schemas"]["portainer.KubernetesData"];
+            /** @description LastCheckInDate mark last check-in date on checkin */
+            LastCheckInDate: number;
             /**
              * @description Environment(Endpoint) name
              * @example my-environment
              */
-            Name?: string;
-            PostInitMigrations?: components["schemas"]["portainer.EndpointPostInitMigrations"];
+            Name: string;
             /**
              * @description URL or IP address where exposed containers will be reachable
              * @example docker.mydomain.tld:2375
              */
-            PublicURL?: string;
+            PublicURL: string;
+            /** @description Environment(Endpoint) specific security settings */
+            SecuritySettings: components["schemas"]["portainer.EndpointSecuritySettings"];
             /** @description List of snapshots */
             Snapshots?: components["schemas"]["portainer.DockerSnapshot"][];
             /**
-             * @description The status of the environment(endpoint) (1 - up, 2 - down)
+             * @description The status of the environment(endpoint) (1 - up, 2 - down, 3 - provisioning, 4 - error)
              * @example 1
+             * @enum {unknown}
              */
-            Status?: number;
-            /** @description Deprecated fields
-             *     Deprecated in DBVersion == 4 */
-            TLS?: boolean;
-            TLSCACert?: string;
-            TLSCert?: string;
-            TLSConfig?: components["schemas"]["portainer.TLSConfiguration"];
-            TLSKey?: string;
+            Status?: 1 | 2 | 3 | 4;
+            TLSConfig: components["schemas"]["portainer.TLSConfiguration"];
             /** @description List of tag identifiers to which this environment(endpoint) is associated */
             TagIds?: number[];
-            /** @description Deprecated in DBVersion == 22 */
-            Tags?: string[];
+            /** @description List of team identifiers authorized to connect to this environment(endpoint) */
             TeamAccessPolicies?: components["schemas"]["portainer.TeamAccessPolicies"];
             /**
              * @description Environment(Endpoint) environment(endpoint) type. 1 for a Docker environment(endpoint), 2 for an agent on Docker environment(endpoint) or 3 for an Azure environment(endpoint).
              * @example 1
              */
-            Type?: number;
+            Type: components["schemas"]["portainer.EndpointType"];
             /**
              * @description URL or IP address of the Docker host associated to this environment(endpoint)
              * @example docker.mydomain.tld:2375
              */
-            URL?: string;
+            URL: string;
+            /** @description List of user identifiers authorized to connect to this environment(endpoint) */
             UserAccessPolicies?: components["schemas"]["portainer.UserAccessPolicies"];
             /** @description Whether the device has been trusted or not by the user */
             UserTrusted?: boolean;
-            agent?: {
-                /** @example 1.0.0 */
-                version?: string;
-            };
-            edge?: components["schemas"]["portainer.EnvironmentEdgeSettings"];
-            /** @description LastCheckInDate mark last check-in date on checkin */
-            lastCheckInDate?: number;
-            /** @description QueryDate of each query with the endpoints list */
-            queryDate?: number;
-            securitySettings?: components["schemas"]["portainer.EndpointSecuritySettings"];
-        };
-        "portainer.EndpointAuthorizations": {
-            [key: string]: components["schemas"]["portainer.Authorizations"];
         };
         "portainer.EndpointGroup": {
-            AuthorizedTeams?: number[];
-            /** @description Deprecated in DBVersion == 18 */
-            AuthorizedUsers?: number[];
             /**
              * @description Description associated to the environment(endpoint) group
              * @example Environment(Endpoint) group description
              */
-            Description?: string;
+            Description: string;
             /**
              * @description Environment(Endpoint) group Identifier
              * @example 1
              */
-            Id?: number;
-            /** @description Deprecated fields */
-            Labels?: components["schemas"]["portainer.Pair"][];
+            Id: number;
             /**
              * @description Environment(Endpoint) group name
              * @example my-environment-group
              */
-            Name?: string;
+            Name: string;
             /** @description List of tags associated to this environment(endpoint) group */
             TagIds?: number[];
-            /** @description Deprecated in DBVersion == 22 */
-            Tags?: string[];
             TeamAccessPolicies?: components["schemas"]["portainer.TeamAccessPolicies"];
             UserAccessPolicies?: components["schemas"]["portainer.UserAccessPolicies"];
-        };
-        "portainer.EndpointPostInitMigrations": {
-            MigrateGPUs?: boolean;
-            MigrateIngresses?: boolean;
         };
         "portainer.EndpointSecuritySettings": {
             /**
              * @description Whether non-administrator should be able to use bind mounts when creating containers
              * @example false
              */
-            allowBindMountsForRegularUsers?: boolean;
+            allowBindMountsForRegularUsers: boolean;
             /**
              * @description Whether non-administrator should be able to use container capabilities
              * @example true
              */
-            allowContainerCapabilitiesForRegularUsers?: boolean;
+            allowContainerCapabilitiesForRegularUsers: boolean;
             /**
              * @description Whether non-administrator should be able to use device mapping
              * @example true
              */
-            allowDeviceMappingForRegularUsers?: boolean;
+            allowDeviceMappingForRegularUsers: boolean;
             /**
              * @description Whether non-administrator should be able to use the host pid
              * @example true
              */
-            allowHostNamespaceForRegularUsers?: boolean;
+            allowHostNamespaceForRegularUsers: boolean;
             /**
              * @description Whether non-administrator should be able to use privileged mode when creating containers
              * @example false
              */
-            allowPrivilegedModeForRegularUsers?: boolean;
+            allowPrivilegedModeForRegularUsers: boolean;
+            /**
+             * @description Whether non-administrator should be able to use security-opt settings
+             * @example true
+             */
+            allowSecurityOptForRegularUsers: boolean;
             /**
              * @description Whether non-administrator should be able to manage stacks
              * @example true
              */
-            allowStackManagementForRegularUsers?: boolean;
+            allowStackManagementForRegularUsers: boolean;
             /**
              * @description Whether non-administrator should be able to use sysctl settings
              * @example true
              */
-            allowSysctlSettingForRegularUsers?: boolean;
+            allowSysctlSettingForRegularUsers: boolean;
             /**
              * @description Whether non-administrator should be able to browse volumes
              * @example true
              */
-            allowVolumeBrowserForRegularUsers?: boolean;
+            allowVolumeBrowserForRegularUsers: boolean;
             /**
              * @description Whether host management features are enabled
              * @example true
              */
-            enableHostManagementFeatures?: boolean;
+            enableHostManagementFeatures: boolean;
+        };
+        /** @enum {integer} */
+        "portainer.EndpointStatus": 0 | 1 | 2;
+        /** @enum {integer} */
+        "portainer.EndpointType": 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+        "portainer.EnvironmentAgentData": {
+            /** @example 1.0.0 */
+            Version?: string;
         };
         "portainer.EnvironmentEdgeSettings": {
+            /** @description Whether the device has been started in edge async mode */
+            AsyncMode: boolean;
             /**
              * @description The command list interval for edge agent - used in edge async mode [seconds]
              * @example 60
              */
-            CommandInterval?: number;
+            CommandInterval: number;
             /**
              * @description The ping interval for edge agent - used in edge async mode [seconds]
              * @example 60
              */
-            PingInterval?: number;
+            PingInterval: number;
             /**
              * @description The snapshot interval for edge agent - used in edge async mode [seconds]
              * @example 60
              */
-            SnapshotInterval?: number;
-            /** @description Whether the device has been started in edge async mode */
-            asyncMode?: boolean;
+            SnapshotInterval: number;
+        };
+        "portainer.GithubRegistryData": {
+            OrganisationName?: string;
+            UseOrganisation?: boolean;
         };
         "portainer.GitlabRegistryData": {
             InstanceURL?: string;
@@ -6798,6 +8346,65 @@ export interface components {
         "portainer.GlobalDeploymentOptions": {
             /** @example false */
             hideStacksFunctionality?: boolean;
+        };
+        "portainer.HelmConfig": {
+            /**
+             * @description Atomic enables automatic rollback on deployment failure (equivalent to helm --atomic).
+             *     Used by both git repo and Helm repository deployments.
+             * @example true
+             */
+            Atomic?: boolean;
+            /**
+             * @description ChartName is the name of the Helm chart within the repository.
+             *     Required for Helm repository deployments.
+             * @example nginx
+             */
+            ChartName?: string;
+            /**
+             * @description ChartPath is the path to a Helm chart folder within the cloned git repository.
+             *     Used exclusively for git repo helm deployments. Mutually exclusive with ChartURL.
+             * @example charts/my-app
+             */
+            ChartPath?: string;
+            /**
+             * @description ChartURL is the URL of a Helm chart repository.
+             *     Used exclusively for Helm repository deployments. Mutually exclusive with ChartPath.
+             * @example https://charts.bitnami.com/bitnami
+             */
+            ChartURL?: string;
+            /**
+             * @description ChartVersion is the version of the Helm chart to deploy. Empty means latest.
+             *     Used exclusively for Helm repository deployments.
+             * @example 15.0.0
+             */
+            ChartVersion?: string;
+            /**
+             * @description Namespace is the Kubernetes namespace to deploy the Helm chart into.
+             *     Used by both git repo and Helm repository deployments.
+             * @example default
+             */
+            Namespace?: string;
+            /**
+             * @description Timeout sets the deadline for Helm operations (equivalent to helm --timeout, e.g. "5m0s").
+             *     Used by both git repo and Helm repository deployments.
+             * @example 5m0s
+             */
+            Timeout?: string;
+            /**
+             * @description ValuesFiles is a list of relative paths to Helm values YAML files within the cloned git repository.
+             *     Used exclusively for git repo helm deployments.
+             * @example [
+             *       "['values/prod.yaml'",
+             *       " 'values/secrets.yaml']"
+             *     ]
+             */
+            ValuesFiles?: string[];
+            /**
+             * @description ValuesInline is the inline YAML string of Helm values.
+             *     Used exclusively for Helm repository deployments.
+             * @example replicaCount: 2
+             */
+            ValuesInline?: string;
         };
         "portainer.HelmUserRepository": {
             /**
@@ -6817,7 +8424,7 @@ export interface components {
             UserId?: number;
         };
         "portainer.InternalAuthSettings": {
-            requiredPasswordLength?: number;
+            RequiredPasswordLength?: number;
         };
         "portainer.K8sNamespaceInfo": {
             Annotations?: {
@@ -6831,6 +8438,7 @@ export interface components {
             NamespaceOwner?: string;
             ResourceQuota?: components["schemas"]["v1.ResourceQuota"];
             Status?: components["schemas"]["v1.NamespaceStatus"];
+            UnhealthyEventCount?: number;
         };
         "portainer.K8sNodeLimits": {
             CPU?: number;
@@ -6840,9 +8448,9 @@ export interface components {
             [key: string]: components["schemas"]["portainer.K8sNodeLimits"];
         };
         "portainer.KubernetesConfiguration": {
-            AllowNoneIngressClass?: boolean;
+            AllowNoneIngressClass: boolean;
             EnableResourceOverCommit?: boolean;
-            IngressAvailabilityPerNamespace?: boolean;
+            IngressAvailabilityPerNamespace: boolean;
             IngressClasses?: components["schemas"]["portainer.KubernetesIngressClassConfig"][];
             ResourceOverCommitPercentage?: number;
             RestrictDefaultNamespace?: boolean;
@@ -6851,34 +8459,41 @@ export interface components {
             UseServerMetrics?: boolean;
         };
         "portainer.KubernetesData": {
-            Configuration?: components["schemas"]["portainer.KubernetesConfiguration"];
-            Flags?: components["schemas"]["portainer.KubernetesFlags"];
+            Configuration: components["schemas"]["portainer.KubernetesConfiguration"];
+            Flags: components["schemas"]["portainer.KubernetesFlags"];
             Snapshots?: components["schemas"]["portainer.KubernetesSnapshot"][];
         };
         "portainer.KubernetesFlags": {
-            IsServerIngressClassDetected?: boolean;
-            IsServerMetricsDetected?: boolean;
-            IsServerStorageDetected?: boolean;
+            GPUOperator?: boolean;
+            IsServerIngressClassDetected: boolean;
+            IsServerMetricsDetected: boolean;
+            IsServerStorageDetected: boolean;
         };
         "portainer.KubernetesIngressClassConfig": {
             Blocked?: boolean;
             BlockedNamespaces?: string[];
-            Name?: string;
-            Type?: string;
+            Name: string;
+            Type: string;
         };
         "portainer.KubernetesSnapshot": {
+            ClusterType?: string;
             DiagnosticsData?: components["schemas"]["portainer.DiagnosticsData"];
-            KubernetesVersion?: string;
-            NodeCount?: number;
-            Time?: number;
-            TotalCPU?: number;
-            TotalMemory?: number;
+            GPUNodeCount?: number;
+            KubernetesVersion: string;
+            NodeCount: number;
+            PerformanceMetrics?: components["schemas"]["portainer.PerformanceMetrics"];
+            Time: number;
+            TotalCPU: number;
+            TotalGPU?: {
+                [key: string]: number;
+            };
+            TotalMemory: number;
         };
         "portainer.KubernetesStorageClassConfig": {
             AccessModes?: string[];
-            AllowVolumeExpansion?: boolean;
-            Name?: string;
-            Provisioner?: string;
+            AllowVolumeExpansion: boolean;
+            Name: string;
+            Provisioner: string;
         };
         "portainer.LDAPGroupSearchSettings": {
             /**
@@ -6949,9 +8564,11 @@ export interface components {
              */
             URL?: string;
         };
+        /** @enum {integer} */
+        "portainer.MembershipRole": 0 | 1 | 2;
         "portainer.OAuthSettings": {
             AccessTokenURI?: string;
-            AuthStyle?: number;
+            AuthStyle?: components["schemas"]["oauth2.AuthStyle"];
             AuthorizationURI?: string;
             ClientID?: string;
             ClientSecret?: string;
@@ -6965,30 +8582,17 @@ export interface components {
             Scopes?: string;
             UserIdentifier?: string;
         };
-        "portainer.OpenAMTConfiguration": {
-            certFileContent?: string;
-            certFileName?: string;
-            certFilePassword?: string;
-            domainName?: string;
-            enabled?: boolean;
-            mpsPassword?: string;
-            mpsServer?: string;
-            /** @description retrieved from API */
-            mpsToken?: string;
-            mpsUser?: string;
-        };
-        "portainer.OpenAMTDeviceEnabledFeatures": {
-            IDER?: boolean;
-            KVM?: boolean;
-            SOL?: boolean;
-            redirection?: boolean;
-            userConsent?: string;
-        };
         "portainer.Pair": {
             /** @example name */
-            name?: string;
+            name: string;
             /** @example value */
-            value?: string;
+            value: string;
+        };
+        "portainer.PerformanceMetrics": {
+            CPUUsage?: number;
+            DiskUsage?: number;
+            MemoryUsage?: number;
+            NetworkUsage?: number;
         };
         "portainer.QuayRegistryData": {
             OrganisationName?: string;
@@ -7013,6 +8617,7 @@ export interface components {
              */
             BaseURL?: string;
             Ecr?: components["schemas"]["portainer.EcrData"];
+            Github?: components["schemas"]["portainer.GithubRegistryData"];
             Gitlab?: components["schemas"]["portainer.GitlabRegistryData"];
             /**
              * @description Registry Identifier
@@ -7032,14 +8637,22 @@ export interface components {
             Password?: string;
             Quay?: components["schemas"]["portainer.QuayRegistryData"];
             RegistryAccesses?: components["schemas"]["portainer.RegistryAccesses"];
+            /** @description Deprecated in DBVersion == 31 */
             TeamAccessPolicies?: components["schemas"]["portainer.TeamAccessPolicies"];
-            /** @description Registry Type (1 - Quay, 2 - Azure, 3 - Custom, 4 - Gitlab, 5 - ProGet, 6 - DockerHub, 7 - ECR) */
-            Type?: number;
+            /**
+             * @description Registry Type (1 - Quay, 2 - Azure, 3 - Custom, 4 - Gitlab, 5 - ProGet, 6 - DockerHub, 7 - ECR)
+             * @enum {unknown}
+             */
+            Type?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
             /**
              * @description URL or IP address of the Docker registry
              * @example registry.mydomain.tld:2375
              */
             URL?: string;
+            /**
+             * @description Deprecated fields
+             *     Deprecated in DBVersion == 31
+             */
             UserAccessPolicies?: components["schemas"]["portainer.UserAccessPolicies"];
             /**
              * @description Username or AccessKeyID used to authenticate against this registry
@@ -7048,8 +8661,10 @@ export interface components {
             Username?: string;
         };
         "portainer.RegistryAccessPolicies": {
+            /** @description Kubernetes specific fields (with kubernetes, namespaces have access to a registry, if users/teams have access to the same namespace, they have access to the registry) */
             Namespaces?: string[];
             TeamAccessPolicies?: components["schemas"]["portainer.TeamAccessPolicies"];
+            /** @description Docker specific fields (with docker, users/teams have access to a registry) */
             UserAccessPolicies?: components["schemas"]["portainer.UserAccessPolicies"];
         };
         "portainer.RegistryAccesses": {
@@ -7062,12 +8677,15 @@ export interface components {
             Ecr?: components["schemas"]["portainer.EcrData"];
             Password?: string;
             TLSConfig?: components["schemas"]["portainer.TLSConfiguration"];
-            /** @description Registry Type (1 - Quay, 2 - Azure, 3 - Custom, 4 - Gitlab, 5 - ProGet, 6 - DockerHub, 7 - ECR) */
-            Type?: number;
+            Type?: components["schemas"]["portainer.RegistryType"];
             Username?: string;
         };
+        /** @enum {integer} */
+        "portainer.RegistryType": 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+        /** @enum {integer} */
+        "portainer.ResourceAccessLevel": 0 | 1;
         "portainer.ResourceControl": {
-            AccessLevel?: number;
+            AccessLevel?: components["schemas"]["portainer.ResourceAccessLevel"];
             /**
              * @description Permit access to resource only to admins
              * @example true
@@ -7078,8 +8696,10 @@ export interface components {
              * @example 1
              */
             Id?: number;
-            /** @description Deprecated fields
-             *     Deprecated in DBVersion == 2 */
+            /**
+             * @description Deprecated fields
+             *     Deprecated in DBVersion == 2
+             */
             OwnerId?: number;
             /**
              * @description Permit access to the associated resource to any user
@@ -7106,10 +8726,13 @@ export interface components {
              *     3 - volume, 4 - secret, 5 - stack, 6 - config or 7 - custom template
              * @example 1
              */
-            Type?: number;
+            Type?: components["schemas"]["portainer.ResourceControlType"];
             UserAccesses?: components["schemas"]["portainer.UserResourceAccess"][];
         };
+        /** @enum {integer} */
+        "portainer.ResourceControlType": 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
         "portainer.Role": {
+            /** @description Authorizations associated to a role */
             Authorizations?: components["schemas"]["portainer.Authorizations"];
             /**
              * @description Role description
@@ -7148,7 +8771,7 @@ export interface components {
              * @description Active authentication method for the Portainer instance. Valid values are: 1 for internal, 2 for LDAP, or 3 for oauth
              * @example 1
              */
-            AuthenticationMethod?: number;
+            AuthenticationMethod?: components["schemas"]["portainer.AuthenticationMethod"];
             /** @description A list of label name & value that will be used to hide containers when querying containers */
             BlackListedLabels?: components["schemas"]["portainer.Pair"][];
             /** @description Deprecated fields */
@@ -7167,11 +8790,6 @@ export interface components {
             /** @description Deprecated fields v26 */
             EnableHostManagementFeatures?: boolean;
             /**
-             * @description Whether telemetry is enabled
-             * @example false
-             */
-            EnableTelemetry?: boolean;
-            /**
              * @description EnforceEdgeID makes Portainer store the Edge ID instead of accepting anyone
              * @example false
              */
@@ -7179,6 +8797,13 @@ export interface components {
             FeatureFlagSettings?: {
                 [key: string]: boolean;
             };
+            /**
+             * @description ForceSecureCookies forces the Secure attribute on auth cookies regardless of detected scheme.
+             *     Enable when Portainer runs behind a TLS-terminating proxy.
+             * @example false
+             */
+            ForceSecureCookies?: boolean;
+            /** @description Deployment options for encouraging git ops workflows */
             GlobalDeploymentOptions?: components["schemas"]["portainer.GlobalDeploymentOptions"];
             /**
              * @description Helm repository URL, defaults to "https://charts.bitnami.com/bitnami"
@@ -7224,24 +8849,88 @@ export interface components {
              * @example 5m
              */
             UserSessionTimeout?: string;
-            openAMTConfiguration?: components["schemas"]["portainer.OpenAMTConfiguration"];
         };
+        "portainer.Source": {
+            administratorsOnly?: boolean;
+            git?: components["schemas"]["gittypes.GitSource"];
+            helm?: components["schemas"]["portainer.HelmConfig"];
+            /** @example 1 */
+            id?: number;
+            /** @example 5m */
+            interval?: string;
+            /** @example 1587399600 */
+            lastSync?: number;
+            /** @example my-source */
+            name?: string;
+            ownerID?: number;
+            public?: boolean;
+            registry?: components["schemas"]["portainer.Registry"];
+            status?: components["schemas"]["portainer.SourceStatus"];
+            statusError?: string;
+            teamAccesses?: number[];
+            /** @example 1 */
+            type?: components["schemas"]["portainer.SourceType"];
+            userAccesses?: number[];
+        };
+        /** @enum {integer} */
+        "portainer.SourceStatus": 0 | 1 | 2;
+        /** @enum {integer} */
+        "portainer.SourceType": 0 | 1 | 2 | 3;
         "portainer.Stack": {
             /** @description Only applies when deploying stack with multiple files */
             AdditionalFiles?: string[];
+            /** @description The GitOps update settings of a git stack */
             AutoUpdate?: components["schemas"]["portainer.AutoUpdateSettings"];
+            /**
+             * @description The username which created this stack
+             * @example admin
+             */
+            CreatedBy?: string;
+            /**
+             * @description The date in unix time when stack was created
+             * @example 1587399600
+             */
+            CreationDate?: number;
+            /** @description CurrentDeploymentInfo records the git repository state at the time of the last actual deployment. */
+            CurrentDeploymentInfo?: components["schemas"]["portainer.StackDeploymentInfo"];
+            /**
+             * @description DeploymentStartStatus is the stack status captured when the current
+             *     deployment starts. It is used by deployment logic during the current
+             *     deployment attempt and is cleared/replaced when a new deployment begins.
+             * @example 1
+             */
+            DeploymentStartStatus?: components["schemas"]["portainer.StackStatus"];
+            /**
+             * @description DeploymentStatus records the status progression of the current deployment.
+             *     Cleared when a new deployment starts.
+             */
+            DeploymentStatus?: components["schemas"]["portainer.StackDeploymentStatus"][];
             /**
              * @description Environment(Endpoint) identifier. Reference the environment(endpoint) that will be used for deployment
              * @example 1
              */
             EndpointId?: number;
             /**
-             * @description Path to the Stack file
+             * @description EntryPoint is the path to the config file relative to the project root.
+             *     NOTE: For git stacks this mirrors GitConfig.ConfigFilePath and the two are kept in sync
+             *     by stackUpdateGit. The deploy command builder (compose_unpacker_cmd_builder) uses this
+             *     field directly; Kubernetes deploy and git clone operations use GitConfig.ConfigFilePath.
              * @example docker-compose.yml
              */
             EntryPoint?: string;
             /** @description A list of environment(endpoint) variables used during stack deployment */
             Env?: components["schemas"]["portainer.Pair"][];
+            /**
+             * @description Whether the stack is from a app template
+             * @example false
+             */
+            FromAppTemplate?: boolean;
+            /**
+             * @description GitConfig is the git repository configuration for git-backed stacks.
+             *     Deprecated: loaded from Source via WorkflowID; kept for DB backwards-compatibility only.
+             *     Non-migration code must not read or write this field; use Source records instead.
+             */
+            GitConfig?: components["schemas"]["gittypes.RepoConfig"];
             /**
              * @description Stack Identifier
              * @example 1
@@ -7252,13 +8941,24 @@ export interface components {
              * @example myStack
              */
             Name?: string;
+            /**
+             * @description Kubernetes namespace if stack is a kube application
+             * @example default
+             */
+            Namespace?: string;
+            /** @description The stack deployment option */
             Option?: components["schemas"]["portainer.StackOption"];
+            /**
+             * @description Path on disk to the repository hosting the Stack file
+             * @example /data/compose/myStack_jpofkc0i9uo9wtx1zesuk649w
+             */
+            ProjectPath?: string;
             ResourceControl?: components["schemas"]["portainer.ResourceControl"];
             /**
-             * @description Stack status (1 - active, 2 - inactive)
+             * @description Stack status (1 - active, 2 - inactive, 3 - deploying, 4 - error)
              * @example 1
              */
-            Status?: number;
+            Status?: components["schemas"]["portainer.StackStatus"];
             /**
              * @description Cluster identifier of the Swarm cluster where the stack is deployed
              * @example jpofkc0i9uo9wtx1zesuk649w
@@ -7268,65 +8968,66 @@ export interface components {
              * @description Stack type. 1 for a Swarm stack, 2 for a Compose stack
              * @example 2
              */
-            Type?: number;
-            /**
-             * @description The username which created this stack
-             * @example admin
-             */
-            createdBy?: string;
-            /**
-             * @description The date in unix time when stack was created
-             * @example 1587399600
-             */
-            creationDate?: number;
-            /**
-             * @description Whether the stack is from a app template
-             * @example false
-             */
-            fromAppTemplate?: boolean;
-            gitConfig?: components["schemas"]["gittypes.RepoConfig"];
-            /**
-             * @description Kubernetes namespace if stack is a kube application
-             * @example default
-             */
-            namespace?: string;
-            /**
-             * @description Path on disk to the repository hosting the Stack file
-             * @example /data/compose/myStack_jpofkc0i9uo9wtx1zesuk649w
-             */
-            projectPath?: string;
+            Type?: components["schemas"]["portainer.StackType"];
             /**
              * @description The date in unix time when stack was last updated
              * @example 1587399600
              */
-            updateDate?: number;
+            UpdateDate?: number;
             /**
              * @description The username which last updated this stack
              * @example bob
              */
-            updatedBy?: string;
+            UpdatedBy?: string;
+            /** @description WorkflowID is the ID of the Workflow that owns the Source for this stack. */
+            WorkflowID?: number;
         };
         "portainer.StackDeploymentInfo": {
+            /** @description AdditionalFiles are the additional files used for deploying the stack */
+            AdditionalFiles?: string[];
+            /** @description ConfigFilePath is the path to the config file in the git repository used for deploying the stack */
+            ConfigFilePath?: string;
             /** @description ConfigHash is the commit hash of the git repository used for deploying the stack */
             ConfigHash?: string;
             /** @description FileVersion is the version of the stack file, used to detect changes */
             FileVersion?: number;
+            /** @description ReferenceName is the git reference (branch/tag) used for deploying the stack */
+            ReferenceName?: string;
+            /** @description RepositoryURL is the git repository URL used for deploying the stack */
+            RepositoryURL?: string;
+            /** @description SourceID is the Source used for deploying the stack */
+            SourceID?: number;
             /** @description Version is the version of the stack and also is the deployed version in edge agent */
             Version?: number;
         };
+        "portainer.StackDeploymentStatus": {
+            /** @description populated on Error entries */
+            Message?: string;
+            Status?: components["schemas"]["portainer.StackStatus"];
+            Time?: number;
+        };
         "portainer.StackOption": {
+            /**
+             * @description Enable atomic rollback on failure (Helm --atomic flag for Kubernetes Helm stacks)
+             * @example false
+             */
+            HelmAtomic?: boolean;
             /**
              * @description Prune services that are no longer referenced
              * @example false
              */
-            prune?: boolean;
+            Prune?: boolean;
         };
+        /** @enum {integer} */
+        "portainer.StackStatus": 0 | 1 | 2 | 3 | 4;
+        /** @enum {integer} */
+        "portainer.StackType": 0 | 1 | 2 | 3;
         "portainer.TLSConfiguration": {
             /**
              * @description Use TLS
              * @example true
              */
-            TLS?: boolean;
+            TLS: boolean;
             /**
              * @description Path to the TLS CA certificate file
              * @example /data/tls/ca.pem
@@ -7346,7 +9047,7 @@ export interface components {
              * @description Skip the verification of the server TLS certificate
              * @example false
              */
-            TLSSkipVerify?: boolean;
+            TLSSkipVerify: boolean;
         };
         "portainer.Tag": {
             /** @description A set of environment(endpoint) group ids that have this tag */
@@ -7358,17 +9059,22 @@ export interface components {
                 [key: string]: boolean;
             };
             /**
+             * @description Tag identifier
+             * @example 1
+             */
+            ID?: number;
+            /**
              * @description Tag name
              * @example org/acme
              */
             Name?: string;
-            /**
-             * @description Tag identifier
-             * @example 1
-             */
-            id?: number;
         };
         "portainer.Team": {
+            /**
+             * @description Whether members of this team are denied access to Portainer itself (EE only)
+             * @example false
+             */
+            DenyPortainerAccess?: boolean;
             /**
              * @description Team Identifier
              * @example 1
@@ -7393,7 +9099,7 @@ export interface components {
              * @description Team role (1 for team leader and 2 for team member)
              * @example 1
              */
-            Role?: number;
+            Role?: components["schemas"]["portainer.MembershipRole"];
             /**
              * @description Team identifier
              * @example 1
@@ -7406,7 +9112,7 @@ export interface components {
             UserID?: number;
         };
         "portainer.TeamResourceAccess": {
-            AccessLevel?: number;
+            AccessLevel?: components["schemas"]["portainer.ResourceAccessLevel"];
             TeamId?: number;
         };
         "portainer.Template": {
@@ -7504,14 +9210,17 @@ export interface components {
              * @example quay.io
              */
             registry?: string;
+            /** @description Mandatory stack fields */
             repository?: components["schemas"]["portainer.TemplateRepository"];
             /**
              * @description Container restart policy
              * @example on-failure
              */
             restart_policy?: string;
-            /** @description Mandatory Edge stack fields
-             *     Stack file used for this template */
+            /**
+             * @description Mandatory Edge stack fields
+             *     Stack file used for this template
+             */
             stackFile?: string;
             /**
              * @description Title of the template
@@ -7522,7 +9231,7 @@ export interface components {
              * @description Template type. Valid values are: 1 (container), 2 (Swarm stack), 3 (Compose stack), 4 (Compose edge stack)
              * @example 1
              */
-            type?: number;
+            type?: components["schemas"]["portainer.TemplateType"];
             /** @description A list of volumes used during the container template deployment */
             volumes?: components["schemas"]["portainer.TemplateVolume"][];
         };
@@ -7584,6 +9293,8 @@ export interface components {
              */
             url?: string;
         };
+        /** @enum {integer} */
+        "portainer.TemplateType": 0 | 1 | 2 | 3;
         "portainer.TemplateVolume": {
             /**
              * @description Path on the host
@@ -7606,180 +9317,238 @@ export interface components {
              * @description User Identifier
              * @example 1
              */
-            Id?: number;
+            Id: number;
             /**
              * @description User role (1 for administrator account and 2 for regular account)
              * @example 1
              */
-            Role?: number;
+            Role: components["schemas"]["portainer.UserRole"];
             ThemeSettings?: components["schemas"]["portainer.UserThemeSettings"];
             /** @example 1 */
             TokenIssueAt?: number;
             /** @example true */
             UseCache?: boolean;
-            /**
-             * @description Deprecated
-             * @example dark
-             */
-            UserTheme?: string;
             /** @example bob */
-            Username?: string;
-            endpointAuthorizations?: components["schemas"]["portainer.EndpointAuthorizations"];
-            portainerAuthorizations?: components["schemas"]["portainer.Authorizations"];
+            Username: string;
         };
         "portainer.UserAccessPolicies": {
             [key: string]: components["schemas"]["portainer.AccessPolicy"];
         };
         "portainer.UserResourceAccess": {
-            AccessLevel?: number;
-            /** @description User identifier who created this template */
+            AccessLevel?: components["schemas"]["portainer.ResourceAccessLevel"];
             UserId?: number;
         };
+        /** @enum {integer} */
+        "portainer.UserRole": 0 | 1 | 2;
         "portainer.UserThemeSettings": {
             /**
              * @description Color represents the color theme of the UI
              * @example dark
              * @enum {string}
              */
-            color?: "dark" | "light" | "highcontrast" | "auto";
+            color?: "dark" | "light" | "highcontrast" | "auto" | "";
         };
         "portainer.Webhook": {
-            /** @description Environment(Endpoint) identifier. Reference the environment(endpoint) that will be used for deployment */
             EndpointId?: number;
             /**
              * @description Webhook Identifier
              * @example 1
              */
             Id?: number;
-            /** @description Registry Identifier */
             RegistryId?: number;
             ResourceId?: string;
             Token?: string;
             /** @description Type of webhook (1 - service) */
-            Type?: number;
+            Type?: components["schemas"]["portainer.WebhookType"];
         };
+        /** @enum {integer} */
+        "portainer.WebhookType": 0 | 1;
         "registries.registryConfigurePayload": {
             /**
              * @description Is authentication against this registry enabled
              * @example false
              */
-            authentication: boolean;
+            Authentication: boolean;
             /**
              * @description Password used to authenticate against this registry. required when Authentication is true
              * @example registry_password
              */
-            password?: string;
+            Password?: string;
             /** @description ECR region */
-            region?: string;
+            Region?: string;
             /**
              * @description Use TLS
              * @example true
              */
-            tls?: boolean;
+            TLS?: boolean;
             /** @description The TLS CA certificate file */
-            tlscacertFile?: number[];
+            TLSCACertFile?: number[];
             /** @description The TLS client certificate file */
-            tlscertFile?: number[];
+            TLSCertFile?: number[];
             /** @description The TLS client key file */
-            tlskeyFile?: number[];
+            TLSKeyFile?: number[];
             /**
              * @description Skip the verification of the server TLS certificate
              * @example false
              */
-            tlsskipVerify?: boolean;
+            TLSSkipVerify?: boolean;
             /**
              * @description Username used to authenticate against this registry. Required when Authentication is true
              * @example registry_user
              */
-            username?: string;
+            Username?: string;
         };
         "registries.registryCreatePayload": {
             /**
              * @description Is authentication against this registry enabled
              * @example false
              */
-            authentication: boolean;
+            Authentication: boolean;
             /**
              * @description BaseURL required for ProGet registry
              * @example registry.mydomain.tld:2375
              */
-            baseURL?: string;
-            ecr?: components["schemas"]["portainer.EcrData"];
-            gitlab?: components["schemas"]["portainer.GitlabRegistryData"];
+            BaseURL?: string;
+            /** @description ECR specific details, required when type = 7 */
+            Ecr?: components["schemas"]["portainer.EcrData"];
+            /** @description Gitlab specific details, required when type = 4 */
+            Gitlab?: components["schemas"]["portainer.GitlabRegistryData"];
             /**
              * @description Name that will be used to identify this registry
              * @example my-registry
              */
-            name: string;
+            Name: string;
             /**
              * @description Password used to authenticate against this registry. required when Authentication is true
              * @example registry_password
              */
-            password?: string;
-            quay?: components["schemas"]["portainer.QuayRegistryData"];
+            Password?: string;
+            /** @description Quay specific details, required when type = 1 */
+            Quay?: components["schemas"]["portainer.QuayRegistryData"];
+            /**
+             * @description Use TLS
+             * @example true
+             */
+            TLS?: boolean;
             /**
              * @description Registry Type. Valid values are:
-             *     	1 (Quay.io),
-             *     	2 (Azure container registry),
-             *     	3 (custom registry),
-             *     	4 (Gitlab registry),
-             *     	5 (ProGet registry),
-             *     	6 (DockerHub)
-             *     	7 (ECR)
+             *       1 (Quay.io),
+             *       2 (Azure container registry),
+             *       3 (custom registry),
+             *       4 (Gitlab registry),
+             *       5 (ProGet registry),
+             *       6 (DockerHub)
+             *       7 (ECR)
              * @example 1
+             * @enum {unknown}
              */
-            type: number;
+            Type: 1 | 2 | 3 | 4 | 5 | 6 | 7;
             /**
              * @description URL or IP address of the Docker registry
              * @example registry.mydomain.tld:2375/feed
              */
-            url: string;
+            URL: string;
             /**
              * @description Username used to authenticate against this registry. Required when Authentication is true
              * @example registry_user
              */
-            username?: string;
+            Username?: string;
+        };
+        "registries.registryPingPayload": {
+            /**
+             * @description Password used to authenticate against this registry
+             * @example registry_password
+             */
+            Password?: string;
+            /**
+             * @description Use TLS
+             * @example true
+             */
+            TLS?: boolean;
+            /**
+             * @description Registry Type. Valid values are:
+             *       1 (Quay.io),
+             *       2 (Azure container registry),
+             *       3 (custom registry),
+             *       4 (Gitlab registry),
+             *       5 (ProGet registry),
+             *       6 (DockerHub)
+             *       7 (ECR)
+             *       8 (Github registry)
+             * @example 6
+             * @enum {unknown}
+             */
+            Type: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+            /**
+             * @description URL or IP address of the Docker registry
+             * @example registry-1.docker.io
+             */
+            URL: string;
+            /**
+             * @description Username used to authenticate against this registry
+             * @example registry_user
+             */
+            Username?: string;
+        };
+        "registries.registryPingResponse": {
+            /**
+             * @description Message provides details about the connection test result
+             * @example Registry connection successful
+             */
+            message?: string;
+            /**
+             * @description Success indicates if the registry connection was successful
+             * @example true
+             */
+            success?: boolean;
         };
         "registries.registryUpdatePayload": {
             /**
              * @description Is authentication against this registry enabled
              * @example false
              */
-            authentication: boolean;
+            Authentication: boolean;
             /**
              * @description BaseURL is used for quay registry
              * @example registry.mydomain.tld:2375
              */
-            baseURL?: string;
-            ecr?: components["schemas"]["portainer.EcrData"];
+            BaseURL?: string;
+            /** @description ECR data */
+            Ecr?: components["schemas"]["portainer.EcrData"];
             /**
              * @description Name that will be used to identify this registry
              * @example my-registry
              */
-            name: string;
+            Name: string;
             /**
              * @description Password used to authenticate against this registry. required when Authentication is true
              * @example registry_password
              */
-            password?: string;
-            quay?: components["schemas"]["portainer.QuayRegistryData"];
-            registryAccesses?: components["schemas"]["portainer.RegistryAccesses"];
+            Password?: string;
+            /** @description Quay data */
+            Quay?: components["schemas"]["portainer.QuayRegistryData"];
+            /** @description Registry access control */
+            RegistryAccesses?: components["schemas"]["portainer.RegistryAccesses"];
             /**
              * @description URL or IP address of the Docker registry
              * @example registry.mydomain.tld:2375
              */
-            url: string;
+            URL: string;
             /**
              * @description Username used to authenticate against this registry. Required when Authentication is true
              * @example registry_user
              */
-            username?: string;
+            Username?: string;
         };
         "release.Chart": {
-            /** @description Files are miscellaneous files in a chart archive,
-             *     e.g. README, LICENSE, etc. */
+            /**
+             * @description Files are miscellaneous files in a chart archive,
+             *     e.g. README, LICENSE, etc.
+             */
             files?: components["schemas"]["release.File"][];
+            /** @description Lock is the contents of Chart.lock. */
             lock?: components["schemas"]["release.Lock"];
+            /** @description Metadata is the contents of the Chartfile. */
             metadata?: components["schemas"]["release.Metadata"];
             /** @description Schema is an optional JSON schema for imposing structure on Values */
             schema?: number[];
@@ -7787,8 +9556,13 @@ export interface components {
             templates?: components["schemas"]["release.File"][];
             /** @description Values are default config for this chart. */
             values?: {
-                [key: string]: Record<string, never>;
+                [key: string]: unknown;
             };
+        };
+        "release.ChartReference": {
+            chartPath?: string;
+            registryID?: number;
+            repoURL?: string;
         };
         "release.Dependency": {
             /** @description Alias usable alias to be used for the chart */
@@ -7797,24 +9571,32 @@ export interface components {
             condition?: string;
             /** @description Enabled bool determines if chart should be loaded */
             enabled?: boolean;
-            /** @description ImportValues holds the mapping of source values to parent key to be imported. Each item can be a
-             *     string or pair of child/parent sublist items. */
-            "import-values"?: Record<string, never>[];
-            /** @description Name is the name of the dependency.
+            /**
+             * @description ImportValues holds the mapping of source values to parent key to be imported. Each item can be a
+             *     string or pair of child/parent sublist items.
+             */
+            "import-values"?: unknown[];
+            /**
+             * @description Name is the name of the dependency.
              *
-             *     This must mach the name in the dependency's Chart.yaml. */
+             *     This must mach the name in the dependency's Chart.yaml.
+             */
             name?: string;
-            /** @description The URL to the repository.
+            /**
+             * @description The URL to the repository.
              *
              *     Appending `index.yaml` to this string should result in a URL that can be
-             *     used to fetch the repository index. */
+             *     used to fetch the repository index.
+             */
             repository?: string;
             /** @description Tags can be used to group charts for enabling/disabling together */
             tags?: string[];
-            /** @description Version is the version (range) of this chart.
+            /**
+             * @description Version is the version (range) of this chart.
              *
              *     A lock file will always produce a single version, while a dependency
-             *     may contain a semantic version range. */
+             *     may contain a semantic version range.
+             */
             version?: string;
         };
         "release.File": {
@@ -7822,22 +9604,6 @@ export interface components {
             data?: number[];
             /** @description Name is the path-like name of the template. */
             name?: string;
-        };
-        "release.Hook": {
-            /** @description DeletePolicies are the policies that indicate when to delete the hook */
-            delete_policies?: string[];
-            /** @description Events are the events that this hook fires on. */
-            events?: string[];
-            /** @description Kind is the Kubernetes kind. */
-            kind?: string;
-            last_run?: components["schemas"]["release.HookExecution"];
-            /** @description Manifest is the manifest contents. */
-            manifest?: string;
-            name?: string;
-            /** @description Path is the chart-relative path to the template. */
-            path?: string;
-            /** @description Weight indicates the sort order for execution among similar Hook type */
-            weight?: number;
         };
         "release.HookExecution": {
             /** @description CompletedAt indicates the date/time this hook was completed. */
@@ -7880,8 +9646,10 @@ export interface components {
             url?: string;
         };
         "release.Metadata": {
-            /** @description Annotations are additional mappings uninterpreted by Helm,
-             *     made available for inspection by other applications. */
+            /**
+             * @description Annotations are additional mappings uninterpreted by Helm,
+             *     made available for inspection by other applications.
+             */
             annotations?: {
                 [key: string]: string;
             };
@@ -7921,14 +9689,20 @@ export interface components {
         "release.Release": {
             /** @description AppVersion is the app version of the release. */
             appVersion?: string;
+            /** @description Chart is the chart that was released. */
             chart?: components["schemas"]["release.Chart"];
-            /** @description Config is the set of extra Values added to the chart.
-             *     These values override the default values inside of the chart. */
+            /** @description ChartReference are the labels that are used to identify the chart source. */
+            chartReference?: components["schemas"]["release.ChartReference"];
+            /**
+             * @description Config is the set of extra Values added to the chart.
+             *     These values override the default values inside of the chart.
+             */
             config?: {
-                [key: string]: Record<string, never>;
+                [key: string]: unknown;
             };
             /** @description Hooks are all of the hooks declared for this release. */
-            hooks?: components["schemas"]["release.Hook"][];
+            hooks?: components["schemas"]["github_com_portainer_portainer_pkg_libhelm_release.Hook"][];
+            /** @description Info provides information about a release */
             info?: components["schemas"]["release.Info"];
             /** @description Manifest is the string representation of the rendered template. */
             manifest?: string;
@@ -7936,6 +9710,9 @@ export interface components {
             name?: string;
             /** @description Namespace is the kubernetes namespace of the release. */
             namespace?: string;
+            /** @description StackID is the ID of the Portainer stack associated with this release (if using GitOps) */
+            stackID?: number;
+            /** @description Values are the values used to deploy the chart. */
             values?: components["schemas"]["release.Values"];
             /** @description Version is an int which represents the revision of the release. */
             version?: number;
@@ -7954,28 +9731,29 @@ export interface components {
             userSuppliedValues?: string;
         };
         "resource.Quantity": {
-            Format?: string;
+            /** @enum {string} */
+            Format?: "DecimalExponent" | "BinarySI" | "DecimalSI";
         };
         "resourcecontrols.resourceControlCreatePayload": {
             /**
              * @description Permit access to resource only to admins
              * @example true
              */
-            administratorsOnly?: boolean;
+            AdministratorsOnly?: boolean;
             /**
              * @description Permit access to the associated resource to any user
              * @example true
              */
-            public?: boolean;
+            Public?: boolean;
             /** @example 617c5f22bb9b023d6daab7cba43a57576f83492867bc767d1c59416b065e5f08 */
-            resourceID: string;
+            ResourceID: string;
             /**
              * @description List of Docker resources that will inherit this access control
              * @example [
              *       "617c5f22bb9b023d6daab7cba43a57576f83492867bc767d1c59416b065e5f08"
              *     ]
              */
-            subResourceIDs?: string[];
+            SubResourceIDs?: string[];
             /**
              * @description List of team identifiers with access to the associated resource
              * @example [
@@ -7983,13 +9761,14 @@ export interface components {
              *       7
              *     ]
              */
-            teams?: number[];
+            Teams?: number[];
             /**
              * @description Type of Resource. Valid values are: 1 - container, 2 - service
              *     3 - volume, 4 - network, 5 - secret, 6 - stack, 7 - config, 8 - custom template, 9 - azure-container-group
              * @example 1
+             * @enum {unknown}
              */
-            type: number;
+            Type: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
             /**
              * @description List of user identifiers with access to the associated resource
              * @example [
@@ -7997,57 +9776,82 @@ export interface components {
              *       4
              *     ]
              */
-            users?: number[];
+            Users?: number[];
         };
         "resourcecontrols.resourceControlUpdatePayload": {
             /**
              * @description Permit access to resource only to admins
              * @example true
              */
-            administratorsOnly?: boolean;
+            AdministratorsOnly?: boolean;
             /**
              * @description Permit access to the associated resource to any user
              * @example true
              */
-            public?: boolean;
+            Public?: boolean;
             /**
              * @description List of team identifiers with access to the associated resource
              * @example [
              *       7
              *     ]
              */
-            teams?: number[];
+            Teams?: number[];
             /**
              * @description List of user identifiers with access to the associated resource
              * @example [
              *       4
              *     ]
              */
-            users?: number[];
+            Users?: number[];
         };
+        "roar.Roar-portainer_EndpointID": Record<string, never>;
         "settings.publicSettingsResponse": {
             /**
              * @description Active authentication method for the Portainer instance. Valid values are: 1 for internal, 2 for LDAP, or 3 for oauth
              * @example 1
              */
-            AuthenticationMethod?: number;
+            AuthenticationMethod?: components["schemas"]["portainer.AuthenticationMethod"];
+            Edge?: {
+                /**
+                 * @description The check in interval for edge agent (in seconds) - used in non async mode [seconds]
+                 * @example 60
+                 */
+                CheckinInterval?: number;
+                /**
+                 * @description The command list interval for edge agent - used in edge async mode [seconds]
+                 * @example 60
+                 */
+                CommandInterval?: number;
+                /**
+                 * @description The ping interval for edge agent - used in edge async mode [seconds]
+                 * @example 60
+                 */
+                PingInterval?: number;
+                /**
+                 * @description The snapshot interval for edge agent - used in edge async mode [seconds]
+                 * @example 60
+                 */
+                SnapshotInterval?: number;
+            };
             /**
              * @description Whether edge compute features are enabled
              * @example true
              */
             EnableEdgeComputeFeatures?: boolean;
-            /**
-             * @description Whether telemetry is enabled
-             * @example true
-             */
-            EnableTelemetry?: boolean;
             /** @description Supported feature flags */
             Features?: {
                 [key: string]: boolean;
             };
+            /** @description Deployment options for encouraging deployment as code */
             GlobalDeploymentOptions?: components["schemas"]["portainer.GlobalDeploymentOptions"];
             /** @example false */
             IsDockerDesktopExtension?: boolean;
+            /**
+             * @description The expiry of a Kubeconfig
+             * @default 0
+             * @example 24h
+             */
+            KubeconfigExpiry: string;
             /**
              * @description URL to a logo that will be displayed on the login page as well as on top of the sidebar. Will use default Portainer logo when value is empty string
              * @example https://mycompany.mydomain.tld/logo.png
@@ -8069,133 +9873,200 @@ export interface components {
              */
             RequiredPasswordLength?: number;
             /**
+             * @description Whether the setup wizard must send the X-Setup-Token header for admin init / restore
+             * @example false
+             */
+            RequiresSetupToken?: boolean;
+            /**
              * @description Whether team sync is enabled
              * @example true
              */
             TeamSync?: boolean;
-            edge?: {
-                /**
-                 * @description The command list interval for edge agent - used in edge async mode [seconds]
-                 * @example 60
-                 */
-                CommandInterval?: number;
-                /**
-                 * @description The ping interval for edge agent - used in edge async mode [seconds]
-                 * @example 60
-                 */
-                PingInterval?: number;
-                /**
-                 * @description The snapshot interval for edge agent - used in edge async mode [seconds]
-                 * @example 60
-                 */
-                SnapshotInterval?: number;
-                /**
-                 * @description The check in interval for edge agent (in seconds) - used in non async mode [seconds]
-                 * @example 60
-                 */
-                checkinInterval?: number;
-            };
-            /** @description Whether AMT is enabled */
-            isAMTEnabled?: boolean;
-            /**
-             * @description The expiry of a Kubeconfig
-             * @default 0
-             * @example 24h
-             */
-            kubeconfigExpiry: string;
         };
         "settings.settingsUpdatePayload": {
-            /** @description EdgePortainerURL is the URL that is exposed to edge agents */
-            EdgePortainerURL?: string;
             /**
              * @description Active authentication method for the Portainer instance. Valid values are: 1 for internal, 2 for LDAP, or 3 for oauth
              * @example 1
              */
-            authenticationMethod?: number;
+            AuthenticationMethod?: number;
             /** @description A list of label name & value that will be used to hide containers when querying containers */
-            blackListedLabels?: components["schemas"]["portainer.Pair"][];
+            BlackListedLabels?: components["schemas"]["portainer.Pair"][];
             /** @example 5 */
-            edgeAgentCheckinInterval?: number;
+            EdgeAgentCheckinInterval?: number;
+            /** @description EdgePortainerURL is the URL that is exposed to edge agents */
+            EdgePortainerURL?: string;
             /**
              * @description Whether edge compute features are enabled
              * @example true
              */
-            enableEdgeComputeFeatures?: boolean;
-            /**
-             * @description Whether telemetry is enabled
-             * @example false
-             */
-            enableTelemetry?: boolean;
+            EnableEdgeComputeFeatures?: boolean;
             /**
              * @description EnforceEdgeID makes Portainer store the Edge ID instead of accepting anyone
              * @example false
              */
-            enforceEdgeID?: boolean;
-            globalDeploymentOptions?: components["schemas"]["portainer.GlobalDeploymentOptions"];
+            EnforceEdgeID?: boolean;
+            /**
+             * @description ForceSecureCookies forces the Secure attribute on auth cookies regardless of the detected scheme
+             * @example false
+             */
+            ForceSecureCookies?: boolean;
+            /** @description Deployment options for encouraging deployment as code */
+            GlobalDeploymentOptions?: components["schemas"]["portainer.GlobalDeploymentOptions"];
             /**
              * @description Helm repository URL
              * @example https://charts.bitnami.com/bitnami
              */
-            helmRepositoryURL?: string;
-            internalAuthSettings?: components["schemas"]["portainer.InternalAuthSettings"];
+            HelmRepositoryURL?: string;
+            InternalAuthSettings?: components["schemas"]["portainer.InternalAuthSettings"];
             /**
              * @description The expiry of a Kubeconfig
              * @default 0
              * @example 24h
              */
-            kubeconfigExpiry: string;
+            KubeconfigExpiry: string;
             /**
              * @description Kubectl Shell Image
              * @example portainer/kubectl-shell:latest
              */
-            kubectlShellImage?: string;
-            ldapsettings?: components["schemas"]["portainer.LDAPSettings"];
+            KubectlShellImage?: string;
+            LDAPSettings?: components["schemas"]["portainer.LDAPSettings"];
             /**
              * @description URL to a logo that will be displayed on the login page as well as on top of the sidebar. Will use default Portainer logo when value is empty string
              * @example https://mycompany.mydomain.tld/logo.png
              */
-            logoURL?: string;
-            oauthSettings?: components["schemas"]["portainer.OAuthSettings"];
+            LogoURL?: string;
+            OAuthSettings?: components["schemas"]["portainer.OAuthSettings"];
             /**
              * @description The interval in which environment(endpoint) snapshots are created
              * @example 5m
              */
-            snapshotInterval?: string;
+            SnapshotInterval?: string;
             /**
              * @description URL to the templates that will be displayed in the UI when navigating to App Templates
              * @example https://raw.githubusercontent.com/portainer/templates/master/templates.json
              */
-            templatesURL?: string;
+            TemplatesURL?: string;
             /**
              * @description TrustOnFirstConnect makes Portainer accepting edge agent connection by default
              * @example false
              */
-            trustOnFirstConnect?: boolean;
+            TrustOnFirstConnect?: boolean;
             /**
              * @description The duration of a user session
              * @example 5m
              */
-            userSessionTimeout?: string;
+            UserSessionTimeout?: string;
+        };
+        "sources.ConnectionTestResult": {
+            error?: string;
+            success?: boolean;
+        };
+        "sources.GitAuthenticationPayload": {
+            password?: string;
+            username?: string;
+        };
+        "sources.GitAuthenticationUpdatePayload": {
+            password?: string;
+            username?: string;
+        };
+        "sources.GitSourceCreatePayload": {
+            /** @example true */
+            administratorsOnly?: boolean;
+            authentication?: components["schemas"]["sources.GitAuthenticationPayload"];
+            interval?: string;
+            name?: string;
+            /** @example true */
+            public?: boolean;
+            teamAccesses?: number[];
+            tlsSkipVerify?: boolean;
+            url: string;
+            userAccesses?: number[];
+        };
+        "sources.GitSourceUpdatePayload": {
+            authentication?: components["schemas"]["sources.GitAuthenticationUpdatePayload"];
+            interval?: string;
+            name?: string;
+            tlsSkipVerify?: boolean;
+            url?: string;
+        };
+        "sources.Source": {
+            environments?: number;
+            error?: string;
+            id: number;
+            /** @example 5m */
+            interval?: string;
+            lastSync?: number;
+            name: string;
+            status: components["schemas"]["workflows.Status"];
+            type: components["schemas"]["sources.SourceType"];
+            url: string;
+            usedBy?: number;
+        };
+        "sources.SourceAccess": {
+            public?: boolean;
+            teams?: number[];
+            users?: number[];
+        };
+        "sources.SourceAccessUpdatePayload": {
+            public?: boolean;
+            teams?: number[];
+            users?: number[];
+        };
+        "sources.SourceDetail": {
+            access?: components["schemas"]["sources.SourceAccess"];
+            connection: components["schemas"]["sources.connectionInfo"];
+            error?: string;
+            id: number;
+            /** @example 5m */
+            interval?: string;
+            lastSync?: number;
+            name: string;
+            status: components["schemas"]["workflows.Status"];
+            type: components["schemas"]["sources.SourceType"];
+            url: string;
+        };
+        /** @enum {string} */
+        "sources.SourceType": "git" | "helm" | "oci";
+        /** @enum {string} */
+        "sources.Status": "unknown" | "healthy" | "error";
+        "sources.Workflow": {
+            creationDate?: number;
+            gitConfig?: components["schemas"]["gittypes.RepoConfig"];
+            id: number;
+            lastSyncDate?: number;
+            name: string;
+            platform: components["schemas"]["workflows.DeploymentPlatform"];
+            sourceId?: number;
+            status: components["schemas"]["workflows.WorkflowStatusObject"];
+            target: components["schemas"]["workflows.Target"];
+            type: components["schemas"]["workflows.Type"];
+        };
+        "sources.connectionInfo": {
+            authentication?: components["schemas"]["sources.gitAuthInfo"];
+            tlsSkipVerify?: boolean;
+        };
+        "sources.gitAuthInfo": {
+            username?: string;
         };
         "ssl.sslUpdatePayload": {
             /** @description SSL Certificates */
-            cert?: string;
-            httpenabled?: boolean;
-            key?: string;
+            Cert?: string;
+            HTTPEnabled?: boolean;
+            Key?: string;
         };
         "stacks.composeStackFromFileContentPayload": {
             /** @description A list of environment variables used during stack deployment */
-            env?: components["schemas"]["portainer.Pair"][];
+            Env?: components["schemas"]["portainer.Pair"][];
             /**
              * @description Whether the stack is from a app template
              * @example false
              */
-            fromAppTemplate?: boolean;
+            FromAppTemplate?: boolean;
             /**
              * @description Name of the stack
              * @example myStack
              */
-            name: string;
+            Name: string;
             /**
              * @description Content of the Stack file
              * @example version: 3
@@ -8203,7 +10074,7 @@ export interface components {
              *      web:
              *      image:nginx
              */
-            stackFileContent: string;
+            StackFileContent: string;
         };
         "stacks.composeStackFromGitRepositoryPayload": {
             /**
@@ -8213,91 +10084,112 @@ export interface components {
              *       " uat.compose.yml]"
              *     ]
              */
-            additionalFiles?: string[];
-            autoUpdate?: components["schemas"]["portainer.AutoUpdateSettings"];
+            AdditionalFiles?: string[];
+            /** @description Optional GitOps update configuration */
+            AutoUpdate?: components["schemas"]["portainer.AutoUpdateSettings"];
             /**
              * @description Path to the Stack file inside the Git repository
              * @default docker-compose.yml
              * @example docker-compose.yml
              */
-            composeFile: string;
+            ComposeFile: string;
             /** @description A list of environment variables used during stack deployment */
-            env?: components["schemas"]["portainer.Pair"][];
+            Env?: components["schemas"]["portainer.Pair"][];
             /**
              * @description Whether the stack is from a app template
              * @example false
              */
-            fromAppTemplate?: boolean;
+            FromAppTemplate?: boolean;
             /**
              * @description Name of the stack
              * @example myStack
              */
-            name: string;
+            Name: string;
             /**
-             * @description Use basic authentication to clone the Git repository
+             * @description Deprecated: use SourceID instead. Use basic authentication to clone the Git repository.
              * @example true
              */
-            repositoryAuthentication?: boolean;
+            RepositoryAuthentication?: boolean;
             /**
-             * @description Password used in basic authentication. Required when RepositoryAuthentication is true.
+             * @description Deprecated: use SourceID instead. Password used in basic authentication.
              * @example myGitPassword
              */
-            repositoryPassword?: string;
+            RepositoryPassword?: string;
             /**
              * @description Reference name of a Git repository hosting the Stack file
              * @example refs/heads/master
              */
-            repositoryReferenceName?: string;
+            RepositoryReferenceName?: string;
             /**
-             * @description URL of a Git repository hosting the Stack file
+             * @description Deprecated: use SourceID instead. URL of a Git repository hosting the Stack file.
              * @example https://github.com/openfaas/faas
              */
-            repositoryURL: string;
+            RepositoryURL?: string;
             /**
-             * @description Username used in basic authentication. Required when RepositoryAuthentication is true.
+             * @description Deprecated: use SourceID instead. Username used in basic authentication.
              * @example myGitUsername
              */
-            repositoryUsername?: string;
+            RepositoryUsername?: string;
             /**
-             * @description TLSSkipVerify skips SSL verification when cloning the Git repository
+             * @description SourceID references an existing Source for git credentials/URL.
+             *     When set, the inline URL and authentication fields are ignored.
+             * @example 1
+             */
+            SourceID?: number;
+            /**
+             * @description Deprecated: use SourceID instead. TLSSkipVerify skips SSL verification when cloning the Git repository.
              * @example false
              */
-            tlsskipVerify?: boolean;
+            TLSSkipVerify?: boolean;
+        };
+        "stacks.createKubernetesStackResponse": {
+            Output?: string;
         };
         "stacks.kubernetesGitDeploymentPayload": {
-            additionalFiles?: string[];
-            autoUpdate?: components["schemas"]["portainer.AutoUpdateSettings"];
-            composeFormat?: boolean;
-            manifestFile?: string;
-            namespace?: string;
-            repositoryAuthentication?: boolean;
-            repositoryPassword?: string;
-            repositoryReferenceName?: string;
-            repositoryURL?: string;
-            repositoryUsername?: string;
-            stackName?: string;
+            AdditionalFiles?: string[];
+            AutoUpdate?: components["schemas"]["portainer.AutoUpdateSettings"];
+            ComposeFormat?: boolean;
+            ManifestFile?: string;
+            Namespace?: string;
+            /** @description Deprecated: use SourceID instead. Use basic authentication to clone the Git repository. */
+            RepositoryAuthentication?: boolean;
+            /** @description Deprecated: use SourceID instead. Password used in basic authentication. */
+            RepositoryPassword?: string;
+            /** @description Deprecated: use SourceID instead. Reference name of a Git repository hosting the Stack file. */
+            RepositoryReferenceName?: string;
+            /** @description Deprecated: use SourceID instead. URL of a Git repository hosting the Stack file. */
+            RepositoryURL?: string;
+            /** @description Deprecated: use SourceID instead. Username used in basic authentication. */
+            RepositoryUsername?: string;
             /**
-             * @description TLSSkipVerify skips SSL verification when cloning the Git repository
+             * @description SourceID references an existing Source for git credentials/URL.
+             *     When set, the inline URL and authentication fields are ignored.
+             * @example 1
+             */
+            SourceID?: number;
+            StackName?: string;
+            /**
+             * @description Deprecated: use SourceID instead. TLSSkipVerify skips SSL verification when cloning the Git repository.
              * @example false
              */
-            tlsskipVerify?: boolean;
+            TLSSkipVerify?: boolean;
         };
         "stacks.kubernetesManifestURLDeploymentPayload": {
-            composeFormat?: boolean;
-            manifestURL?: string;
-            namespace?: string;
-            stackName?: string;
+            ComposeFormat?: boolean;
+            ManifestURL?: string;
+            Namespace?: string;
+            StackName?: string;
         };
         "stacks.kubernetesStringDeploymentPayload": {
-            composeFormat?: boolean;
+            ComposeFormat?: boolean;
             /**
              * @description Whether the stack is from a app template
              * @example false
              */
-            fromAppTemplate?: boolean;
-            namespace?: string;
-            stackFileContent?: string;
-            stackName?: string;
+            FromAppTemplate?: boolean;
+            Namespace?: string;
+            StackFileContent?: string;
+            StackName?: string;
         };
         "stacks.stackFileResponse": {
             /**
@@ -8309,60 +10201,185 @@ export interface components {
              */
             StackFileContent?: string;
         };
-        "stacks.stackGitRedployPayload": {
-            env?: components["schemas"]["portainer.Pair"][];
-            prune?: boolean;
+        "stacks.stackGitRedeployPayload": {
+            Env?: components["schemas"]["portainer.Pair"][];
+            Prune?: boolean;
             /**
-             * @description Force a pulling to current image with the original tag though the image is already the latest
+             * @description Deprecated(2.36): use RepullImageAndRedeploy instead for cleaner responsibility
+             *     Force a pulling to current image with the original tag though the image is already the latest
              * @example false
              */
-            pullImage?: boolean;
-            repositoryAuthentication?: boolean;
-            repositoryPassword?: string;
-            repositoryReferenceName?: string;
-            repositoryUsername?: string;
-            stackName?: string;
+            PullImage?: boolean;
+            /** @description When true and RepositoryPassword is non-empty, stored credentials are replaced. */
+            RepositoryAuthentication?: boolean;
+            /** @description Non-empty value (with RepositoryAuthentication=true) replaces stored credentials; leave blank to keep them. */
+            RepositoryPassword?: string;
+            RepositoryReferenceName?: string;
+            RepositoryUsername?: string;
+            /** @description RepullImageAndRedeploy indicates whether to force repulling images and redeploying the stack */
+            RepullImageAndRedeploy?: boolean;
+            StackName?: string;
         };
         "stacks.stackGitUpdatePayload": {
-            autoUpdate?: components["schemas"]["portainer.AutoUpdateSettings"];
-            env?: components["schemas"]["portainer.Pair"][];
-            prune?: boolean;
-            repositoryAuthentication?: boolean;
-            repositoryPassword?: string;
-            repositoryReferenceName?: string;
-            repositoryUsername?: string;
-            tlsskipVerify?: boolean;
+            AdditionalFiles?: string[];
+            AutoUpdate?: components["schemas"]["portainer.AutoUpdateSettings"];
+            ConfigFilePath?: string;
+            Env?: components["schemas"]["portainer.Pair"][];
+            Prune?: boolean;
+            /** @description Deprecated: use SourceID instead. Use basic authentication to clone the Git repository. */
+            RepositoryAuthentication?: boolean;
+            /** @description Deprecated: use SourceID instead. Password used in basic authentication. */
+            RepositoryPassword?: string;
+            RepositoryReferenceName?: string;
+            /** @description Deprecated: use SourceID instead. URL of a Git repository hosting the Stack file. */
+            RepositoryURL?: string;
+            /** @description Deprecated: use SourceID instead. Username used in basic authentication. */
+            RepositoryUsername?: string;
+            /**
+             * @description SourceID references an existing Source for git credentials/URL.
+             *     When set, the inline URL and authentication fields are ignored.
+             */
+            SourceID?: number;
+            /** @description Deprecated: use SourceID instead. Skip TLS verification when cloning the Git repository. */
+            TLSSkipVerify?: boolean;
         };
         "stacks.stackMigratePayload": {
             /**
              * @description Environment(Endpoint) identifier of the target environment(endpoint) where the stack will be relocated
              * @example 2
              */
-            endpointID: number;
+            EndpointID: number;
             /**
              * @description If provided will rename the migrated stack
              * @example new-stack
              */
-            name?: string;
+            Name?: string;
             /**
              * @description Swarm cluster identifier, must match the identifier of the cluster where the stack will be relocated
              * @example jpofkc0i9uo9wtx1zesuk649w
              */
-            swarmID?: string;
+            SwarmID?: string;
         };
-        "stacks.swarmStackFromFileContentPayload": {
-            /** @description A list of environment variables used during stack deployment */
-            env?: components["schemas"]["portainer.Pair"][];
+        "stacks.stackResponse": {
+            /** @description Only applies when deploying stack with multiple files */
+            AdditionalFiles?: string[];
+            /** @description The GitOps update settings of a git stack */
+            AutoUpdate?: components["schemas"]["portainer.AutoUpdateSettings"];
+            /**
+             * @description The username which created this stack
+             * @example admin
+             */
+            CreatedBy?: string;
+            /**
+             * @description The date in unix time when stack was created
+             * @example 1587399600
+             */
+            CreationDate?: number;
+            /** @description CurrentDeploymentInfo records the git repository state at the time of the last actual deployment. */
+            CurrentDeploymentInfo?: components["schemas"]["portainer.StackDeploymentInfo"];
+            /**
+             * @description DeploymentStartStatus is the stack status captured when the current
+             *     deployment starts. It is used by deployment logic during the current
+             *     deployment attempt and is cleared/replaced when a new deployment begins.
+             * @example 1
+             */
+            DeploymentStartStatus?: components["schemas"]["portainer.StackStatus"];
+            /**
+             * @description DeploymentStatus records the status progression of the current deployment.
+             *     Cleared when a new deployment starts.
+             */
+            DeploymentStatus?: components["schemas"]["portainer.StackDeploymentStatus"][];
+            /**
+             * @description Environment(Endpoint) identifier. Reference the environment(endpoint) that will be used for deployment
+             * @example 1
+             */
+            EndpointId?: number;
+            /**
+             * @description EntryPoint is the path to the config file relative to the project root.
+             *     NOTE: For git stacks this mirrors GitConfig.ConfigFilePath and the two are kept in sync
+             *     by stackUpdateGit. The deploy command builder (compose_unpacker_cmd_builder) uses this
+             *     field directly; Kubernetes deploy and git clone operations use GitConfig.ConfigFilePath.
+             * @example docker-compose.yml
+             */
+            EntryPoint?: string;
+            /** @description A list of environment(endpoint) variables used during stack deployment */
+            Env?: components["schemas"]["portainer.Pair"][];
             /**
              * @description Whether the stack is from a app template
              * @example false
              */
-            fromAppTemplate?: boolean;
+            FromAppTemplate?: boolean;
+            /**
+             * @description GitConfig is the git repository configuration for git-backed stacks.
+             *     Deprecated: loaded from Source via WorkflowID; kept for DB backwards-compatibility only.
+             *     Non-migration code must not read or write this field; use Source records instead.
+             */
+            GitConfig?: components["schemas"]["gittypes.RepoConfig"];
+            GitSourceId?: number;
+            /**
+             * @description Stack Identifier
+             * @example 1
+             */
+            Id?: number;
+            /**
+             * @description Stack name
+             * @example myStack
+             */
+            Name?: string;
+            /**
+             * @description Kubernetes namespace if stack is a kube application
+             * @example default
+             */
+            Namespace?: string;
+            /** @description The stack deployment option */
+            Option?: components["schemas"]["portainer.StackOption"];
+            /**
+             * @description Path on disk to the repository hosting the Stack file
+             * @example /data/compose/myStack_jpofkc0i9uo9wtx1zesuk649w
+             */
+            ProjectPath?: string;
+            ResourceControl?: components["schemas"]["portainer.ResourceControl"];
+            /**
+             * @description Stack status (1 - active, 2 - inactive, 3 - deploying, 4 - error)
+             * @example 1
+             */
+            Status?: components["schemas"]["portainer.StackStatus"];
+            /**
+             * @description Cluster identifier of the Swarm cluster where the stack is deployed
+             * @example jpofkc0i9uo9wtx1zesuk649w
+             */
+            SwarmId?: string;
+            /**
+             * @description Stack type. 1 for a Swarm stack, 2 for a Compose stack
+             * @example 2
+             */
+            Type?: components["schemas"]["portainer.StackType"];
+            /**
+             * @description The date in unix time when stack was last updated
+             * @example 1587399600
+             */
+            UpdateDate?: number;
+            /**
+             * @description The username which last updated this stack
+             * @example bob
+             */
+            UpdatedBy?: string;
+            /** @description WorkflowID is the ID of the Workflow that owns the Source for this stack. */
+            WorkflowID?: number;
+        };
+        "stacks.swarmStackFromFileContentPayload": {
+            /** @description A list of environment variables used during stack deployment */
+            Env?: components["schemas"]["portainer.Pair"][];
+            /**
+             * @description Whether the stack is from a app template
+             * @example false
+             */
+            FromAppTemplate?: boolean;
             /**
              * @description Name of the stack
              * @example myStack
              */
-            name: string;
+            Name: string;
             /**
              * @description Content of the Stack file
              * @example version: 3
@@ -8370,12 +10387,12 @@ export interface components {
              *      web:
              *      image:nginx
              */
-            stackFileContent: string;
+            StackFileContent: string;
             /**
              * @description Swarm cluster identifier
              * @example jpofkc0i9uo9wtx1zesuk649w
              */
-            swarmID: string;
+            SwarmID: string;
         };
         "stacks.swarmStackFromGitRepositoryPayload": {
             /**
@@ -8385,75 +10402,85 @@ export interface components {
              *       " uat.compose.yml]"
              *     ]
              */
-            additionalFiles?: string[];
-            autoUpdate?: components["schemas"]["portainer.AutoUpdateSettings"];
+            AdditionalFiles?: string[];
+            /** @description Optional GitOps update configuration */
+            AutoUpdate?: components["schemas"]["portainer.AutoUpdateSettings"];
             /**
              * @description Path to the Stack file inside the Git repository
              * @default docker-compose.yml
              * @example docker-compose.yml
              */
-            composeFile: string;
+            ComposeFile: string;
             /** @description A list of environment variables used during stack deployment */
-            env?: components["schemas"]["portainer.Pair"][];
+            Env?: components["schemas"]["portainer.Pair"][];
             /**
              * @description Whether the stack is from a app template
              * @example false
              */
-            fromAppTemplate?: boolean;
+            FromAppTemplate?: boolean;
             /**
              * @description Name of the stack
              * @example myStack
              */
-            name: string;
+            Name: string;
             /**
-             * @description Use basic authentication to clone the Git repository
+             * @description Deprecated: use SourceID instead. Use basic authentication to clone the Git repository.
              * @example true
              */
-            repositoryAuthentication?: boolean;
+            RepositoryAuthentication?: boolean;
             /**
-             * @description Password used in basic authentication. Required when RepositoryAuthentication is true.
+             * @description Deprecated: use SourceID instead. Password used in basic authentication.
              * @example myGitPassword
              */
-            repositoryPassword?: string;
+            RepositoryPassword?: string;
             /**
              * @description Reference name of a Git repository hosting the Stack file
              * @example refs/heads/master
              */
-            repositoryReferenceName?: string;
+            RepositoryReferenceName?: string;
             /**
-             * @description URL of a Git repository hosting the Stack file
+             * @description Deprecated: use SourceID instead. URL of a Git repository hosting the Stack file.
              * @example https://github.com/openfaas/faas
              */
-            repositoryURL: string;
+            RepositoryURL?: string;
             /**
-             * @description Username used in basic authentication. Required when RepositoryAuthentication is true.
+             * @description Deprecated: use SourceID instead. Username used in basic authentication.
              * @example myGitUsername
              */
-            repositoryUsername?: string;
+            RepositoryUsername?: string;
+            /**
+             * @description SourceID references an existing Source for git credentials/URL.
+             *     When set, the inline URL and authentication fields are ignored.
+             * @example 1
+             */
+            SourceID?: number;
             /**
              * @description Swarm cluster identifier
              * @example jpofkc0i9uo9wtx1zesuk649w
              */
-            swarmID: string;
+            SwarmID: string;
             /**
-             * @description TLSSkipVerify skips SSL verification when cloning the Git repository
+             * @description Deprecated: use SourceID instead. TLSSkipVerify skips SSL verification when cloning the Git repository.
              * @example false
              */
-            tlsskipVerify?: boolean;
+            TLSSkipVerify?: boolean;
         };
         "stacks.updateSwarmStackPayload": {
             /** @description A list of environment(endpoint) variables used during stack deployment */
-            env?: components["schemas"]["portainer.Pair"][];
+            Env?: components["schemas"]["portainer.Pair"][];
             /**
-             * @description Prune services that are no longer referenced (only available for Swarm stacks)
+             * @description Prune services that are no longer referenced
              * @example true
              */
-            prune?: boolean;
+            Prune?: boolean;
             /**
-             * @description Force a pulling to current image with the original tag though the image is already the latest
+             * @description Deprecated(2.36): use RepullImageAndRedeploy instead for cleaner responsibility
+             *     Force a pulling to current image with the original tag though the image is already the latest
              * @example false
              */
-            pullImage?: boolean;
+            PullImage?: boolean;
+            /** @description RepullImageAndRedeploy indicates whether to force repulling images and redeploying the stack */
+            RepullImageAndRedeploy?: boolean;
             /**
              * @description New content of the Stack file
              * @example version: 3
@@ -8461,7 +10488,14 @@ export interface components {
              *      web:
              *      image:nginx
              */
-            stackFileContent?: string;
+            StackFileContent?: string;
+        };
+        "stats.ContainerStats": {
+            healthy?: number;
+            running?: number;
+            stopped?: number;
+            total?: number;
+            unhealthy?: number;
         };
         "swarm.ServiceUpdateResponse": {
             /** @description Optional warning messages */
@@ -8472,29 +10506,34 @@ export interface components {
         };
         "system.status": {
             /**
+             * @description Server Instance ID
+             * @example 299ab403-70a8-4c05-92f7-bf7a994d50df
+             */
+            InstanceID?: string;
+            /**
              * @description Portainer API version
              * @example 2.0.0
              */
             Version?: string;
-            /**
-             * @description Server Instance ID
-             * @example 299ab403-70a8-4c05-92f7-bf7a994d50df
-             */
-            instanceID?: string;
         };
         "system.systemInfoResponse": {
             agents?: number;
             edgeAgents?: number;
-            platform?: string;
+            platform?: components["schemas"]["platform.ContainerPlatform"];
         };
         "system.versionResponse": {
+            Build?: components["schemas"]["build.BuildInfo"];
+            DatabaseVersion?: string;
+            Dependencies?: components["schemas"]["build.DependenciesInfo"];
             /**
              * @description The latest version available
              * @example 2.0.0
              */
             LatestVersion?: string;
+            Runtime?: components["schemas"]["build.RuntimeInfo"];
             /** @example CE/EE */
             ServerEdition?: string;
+            ServerVersion?: string;
             /**
              * @description Whether portainer has an update available
              * @example false
@@ -8502,56 +10541,53 @@ export interface components {
             UpdateAvailable?: boolean;
             /** @example STS/LTS */
             VersionSupport?: string;
-            build?: components["schemas"]["build.BuildInfo"];
-            databaseVersion?: string;
-            dependencies?: components["schemas"]["build.DependenciesInfo"];
-            runtime?: components["schemas"]["build.RuntimeInfo"];
-            serverVersion?: string;
         };
         "tags.tagCreatePayload": {
             /** @example org/acme */
-            name: string;
+            Name: string;
         };
         "teammemberships.teamMembershipCreatePayload": {
             /**
              * @description Role for the user inside the team (1 for leader and 2 for regular member)
              * @example 1
+             * @enum {integer}
              */
-            role: number;
+            Role: 1 | 2;
             /**
              * @description Team identifier
              * @example 1
              */
-            teamID: number;
+            TeamID: number;
             /**
              * @description User identifier
              * @example 1
              */
-            userID: number;
+            UserID: number;
         };
         "teammemberships.teamMembershipUpdatePayload": {
             /**
              * @description Role for the user inside the team (1 for leader and 2 for regular member)
              * @example 1
+             * @enum {integer}
              */
-            role: number;
+            Role: 1 | 2;
             /**
              * @description Team identifier
              * @example 1
              */
-            teamID: number;
+            TeamID: number;
             /**
              * @description User identifier
              * @example 1
              */
-            userID: number;
+            UserID: number;
         };
         "teams.teamCreatePayload": {
             /**
              * @description Name
              * @example developers
              */
-            name: string;
+            Name: string;
             /**
              * @description TeamLeaders
              * @example [
@@ -8559,33 +10595,49 @@ export interface components {
              *       5
              *     ]
              */
-            teamLeaders?: number[];
+            TeamLeaders?: number[];
         };
         "teams.teamUpdatePayload": {
             /**
              * @description Name
              * @example developers
              */
-            name?: string;
+            Name?: string;
         };
         "templates.fileResponse": {
             /**
              * @description The requested file content
              * @example version:2
              */
-            fileContent?: string;
+            FileContent?: string;
         };
         "templates.listResponse": {
             templates?: components["schemas"]["portainer.Template"][];
             version?: string;
         };
         "unstructured.Unstructured": {
-            /** @description Object is a JSON compatible map with string, float, int, bool, []interface{}, or
+            /**
+             * @description Object is a JSON compatible map with string, float, int, bool, []interface{}, or
              *     map[string]interface{}
-             *     children. */
-            object?: {
+             *     children.
+             */
+            Object?: {
                 [key: string]: unknown;
             };
+        };
+        /** @enum {string} */
+        "users.AccessLocation": "environment" | "environmentGroup";
+        "users.EffectiveAccessEntry": {
+            accessLocation?: components["schemas"]["users.AccessLocation"];
+            endpointId?: number;
+            endpointName?: string;
+            groupId?: number;
+            groupName?: string;
+            roleId?: number;
+            roleName?: string;
+            rolePriority?: number;
+            teamId?: number;
+            teamName?: string;
         };
         "users.accessTokenResponse": {
             apiKey?: components["schemas"]["portainer.APIKey"];
@@ -8599,12 +10651,12 @@ export interface components {
              * @description Password for the admin user
              * @example admin-password
              */
-            password: string;
+            Password: string;
             /**
              * @description Username for the admin user
              * @example admin
              */
-            username: string;
+            Username: string;
         };
         "users.helmUserRepositoryResponse": {
             GlobalRepository?: string;
@@ -8626,151 +10678,398 @@ export interface components {
         };
         "users.userCreatePayload": {
             /** @example cg9Wgky3 */
-            password: string;
+            Password: string;
             /**
              * @description User role (1 for administrator account and 2 for regular account)
              * @example 2
+             * @enum {integer}
              */
-            role: number;
+            Role: 1 | 2;
             /** @example bob */
-            username: string;
+            Username: string;
         };
         "users.userUpdatePasswordPayload": {
             /**
              * @description New Password
              * @example new_passwd
              */
-            newPassword: string;
+            NewPassword: string;
             /**
              * @description Current Password
              * @example passwd
              */
-            password: string;
+            Password: string;
         };
         "users.userUpdatePayload": {
             /** @example asfj2emv */
-            newPassword: string;
+            NewPassword: string;
             /** @example cg9Wgky3 */
-            password: string;
+            Password: string;
             /**
              * @description User role (1 for administrator account and 2 for regular account)
              * @example 2
+             * @enum {integer}
              */
-            role: number;
-            theme?: components["schemas"]["users.themePayload"];
+            Role: 1 | 2;
+            Theme?: components["schemas"]["users.themePayload"];
             /** @example true */
-            useCache: boolean;
+            UseCache: boolean;
             /** @example bob */
-            username: string;
+            Username: string;
+        };
+        "v1.AWSElasticBlockStoreVolumeSource": {
+            /**
+             * @description fsType is the filesystem type of the volume that you want to mount.
+             *     Tip: Ensure that the filesystem type is supported by the host operating system.
+             *     Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
+             *     TODO: how do we prevent errors in the filesystem from compromising the machine
+             *     +optional
+             */
+            fsType?: string;
+            /**
+             * @description partition is the partition in the volume that you want to mount.
+             *     If omitted, the default is to mount by volume name.
+             *     Examples: For volume /dev/sda1, you specify the partition as "1".
+             *     Similarly, the volume partition for /dev/sda is "0" (or you can leave the property empty).
+             *     +optional
+             */
+            partition?: number;
+            /**
+             * @description readOnly value true will force the readOnly setting in VolumeMounts.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description volumeID is unique ID of the persistent disk resource in AWS (Amazon EBS volume).
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
+             */
+            volumeID?: string;
+        };
+        "v1.Affinity": {
+            /**
+             * @description Describes node affinity scheduling rules for the pod.
+             *     +optional
+             */
+            nodeAffinity?: components["schemas"]["v1.NodeAffinity"];
+            /**
+             * @description Describes pod affinity scheduling rules (e.g. co-locate this pod in the same node, zone, etc. as some other pod(s)).
+             *     +optional
+             */
+            podAffinity?: components["schemas"]["v1.PodAffinity"];
+            /**
+             * @description Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the same node, zone, etc. as some other pod(s)).
+             *     +optional
+             */
+            podAntiAffinity?: components["schemas"]["v1.PodAntiAffinity"];
         };
         "v1.AppArmorProfile": {
-            /** @description localhostProfile indicates a profile loaded on the node that should be used.
+            /**
+             * @description localhostProfile indicates a profile loaded on the node that should be used.
              *     The profile must be preconfigured on the node to work.
              *     Must match the loaded name of the profile.
              *     Must be set if and only if type is "Localhost".
-             *     +optional */
+             *     +optional
+             */
             localhostProfile?: string;
-            /** @description type indicates which kind of AppArmor profile will be applied.
+            /**
+             * @description type indicates which kind of AppArmor profile will be applied.
              *     Valid options are:
              *       Localhost - a profile pre-loaded on the node.
              *       RuntimeDefault - the container runtime's default profile.
              *       Unconfined - no AppArmor enforcement.
-             *     +unionDiscriminator */
-            type?: string;
+             *     +unionDiscriminator
+             */
+            type?: components["schemas"]["v1.AppArmorProfileType"];
+        };
+        /** @enum {string} */
+        "v1.AppArmorProfileType": "Unconfined" | "RuntimeDefault" | "Localhost";
+        "v1.AttachedVolume": {
+            /** @description DevicePath represents the device path where the volume should be available */
+            devicePath?: string;
+            /** @description Name of the attached volume */
+            name?: string;
+        };
+        /** @enum {string} */
+        "v1.AzureDataDiskCachingMode": "None" | "ReadOnly" | "ReadWrite";
+        /** @enum {string} */
+        "v1.AzureDataDiskKind": "Shared" | "Dedicated" | "Managed";
+        "v1.AzureDiskVolumeSource": {
+            /**
+             * @description cachingMode is the Host Caching mode: None, Read Only, Read Write.
+             *     +optional
+             *     +default=ref(AzureDataDiskCachingReadWrite)
+             */
+            cachingMode?: components["schemas"]["v1.AzureDataDiskCachingMode"];
+            /** @description diskName is the Name of the data disk in the blob storage */
+            diskName?: string;
+            /** @description diskURI is the URI of data disk in the blob storage */
+            diskURI?: string;
+            /**
+             * @description fsType is Filesystem type to mount.
+             *     Must be a filesystem type supported by the host operating system.
+             *     Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+             *     +optional
+             *     +default="ext4"
+             */
+            fsType?: string;
+            /**
+             * @description kind expected values are Shared: multiple blob disks per storage account  Dedicated: single blob disk per storage account  Managed: azure managed data disk (only in managed availability set). defaults to shared
+             *     +default=ref(AzureSharedBlobDisk)
+             */
+            kind?: components["schemas"]["v1.AzureDataDiskKind"];
+            /**
+             * @description readOnly Defaults to false (read/write). ReadOnly here will force
+             *     the ReadOnly setting in VolumeMounts.
+             *     +optional
+             *     +default=false
+             */
+            readOnly?: boolean;
+        };
+        "v1.AzureFileVolumeSource": {
+            /**
+             * @description readOnly defaults to false (read/write). ReadOnly here will force
+             *     the ReadOnly setting in VolumeMounts.
+             *     +optional
+             */
+            readOnly?: boolean;
+            /** @description secretName is the  name of secret that contains Azure Storage Account Name and Key */
+            secretName?: string;
+            /** @description shareName is the azure share Name */
+            shareName?: string;
         };
         "v1.CSIPersistentVolumeSource": {
+            /**
+             * @description controllerExpandSecretRef is a reference to the secret object containing
+             *     sensitive information to pass to the CSI driver to complete the CSI
+             *     ControllerExpandVolume call.
+             *     This field is optional, and may be empty if no secret is required. If the
+             *     secret object contains more than one secret, all secrets are passed.
+             *     +optional
+             */
             controllerExpandSecretRef?: components["schemas"]["v1.SecretReference"];
+            /**
+             * @description controllerPublishSecretRef is a reference to the secret object containing
+             *     sensitive information to pass to the CSI driver to complete the CSI
+             *     ControllerPublishVolume and ControllerUnpublishVolume calls.
+             *     This field is optional, and may be empty if no secret is required. If the
+             *     secret object contains more than one secret, all secrets are passed.
+             *     +optional
+             */
             controllerPublishSecretRef?: components["schemas"]["v1.SecretReference"];
-            /** @description driver is the name of the driver to use for this volume.
-             *     Required. */
+            /**
+             * @description driver is the name of the driver to use for this volume.
+             *     Required.
+             */
             driver?: string;
-            /** @description fsType to mount. Must be a filesystem type supported by the host operating system.
+            /**
+             * @description fsType to mount. Must be a filesystem type supported by the host operating system.
              *     Ex. "ext4", "xfs", "ntfs".
-             *     +optional */
+             *     +optional
+             */
             fsType?: string;
+            /**
+             * @description nodeExpandSecretRef is a reference to the secret object containing
+             *     sensitive information to pass to the CSI driver to complete the CSI
+             *     NodeExpandVolume call.
+             *     This field is optional, may be omitted if no secret is required. If the
+             *     secret object contains more than one secret, all secrets are passed.
+             *     +optional
+             */
             nodeExpandSecretRef?: components["schemas"]["v1.SecretReference"];
+            /**
+             * @description nodePublishSecretRef is a reference to the secret object containing
+             *     sensitive information to pass to the CSI driver to complete the CSI
+             *     NodePublishVolume and NodeUnpublishVolume calls.
+             *     This field is optional, and may be empty if no secret is required. If the
+             *     secret object contains more than one secret, all secrets are passed.
+             *     +optional
+             */
             nodePublishSecretRef?: components["schemas"]["v1.SecretReference"];
+            /**
+             * @description nodeStageSecretRef is a reference to the secret object containing sensitive
+             *     information to pass to the CSI driver to complete the CSI NodeStageVolume
+             *     and NodeStageVolume and NodeUnstageVolume calls.
+             *     This field is optional, and may be empty if no secret is required. If the
+             *     secret object contains more than one secret, all secrets are passed.
+             *     +optional
+             */
             nodeStageSecretRef?: components["schemas"]["v1.SecretReference"];
-            /** @description readOnly value to pass to ControllerPublishVolumeRequest.
+            /**
+             * @description readOnly value to pass to ControllerPublishVolumeRequest.
              *     Defaults to false (read/write).
-             *     +optional */
+             *     +optional
+             */
             readOnly?: boolean;
-            /** @description volumeAttributes of the volume to publish.
-             *     +optional */
+            /**
+             * @description volumeAttributes of the volume to publish.
+             *     +optional
+             */
             volumeAttributes?: {
                 [key: string]: string;
             };
-            /** @description volumeHandle is the unique volume name returned by the CSI volume
+            /**
+             * @description volumeHandle is the unique volume name returned by the CSI volume
              *     plugin’s CreateVolume to refer to the volume on all subsequent calls.
-             *     Required. */
+             *     Required.
+             */
             volumeHandle?: string;
         };
+        "v1.CSIVolumeSource": {
+            /**
+             * @description driver is the name of the CSI driver that handles this volume.
+             *     Consult with your admin for the correct name as registered in the cluster.
+             */
+            driver?: string;
+            /**
+             * @description fsType to mount. Ex. "ext4", "xfs", "ntfs".
+             *     If not provided, the empty value is passed to the associated CSI driver
+             *     which will determine the default filesystem to apply.
+             *     +optional
+             */
+            fsType?: string;
+            /**
+             * @description nodePublishSecretRef is a reference to the secret object containing
+             *     sensitive information to pass to the CSI driver to complete the CSI
+             *     NodePublishVolume and NodeUnpublishVolume calls.
+             *     This field is optional, and  may be empty if no secret is required. If the
+             *     secret object contains more than one secret, all secret references are passed.
+             *     +optional
+             */
+            nodePublishSecretRef?: components["schemas"]["k8s_io_api_core_v1.LocalObjectReference"];
+            /**
+             * @description readOnly specifies a read-only configuration for the volume.
+             *     Defaults to false (read/write).
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description volumeAttributes stores driver-specific properties that are passed to the CSI
+             *     driver. Consult your driver's documentation for supported values.
+             *     +optional
+             */
+            volumeAttributes?: {
+                [key: string]: string;
+            };
+        };
         "v1.Capabilities": {
-            /** @description Added capabilities
+            /**
+             * @description Added capabilities
              *     +optional
-             *     +listType=atomic */
+             *     +listType=atomic
+             */
             add?: string[];
-            /** @description Removed capabilities
+            /**
+             * @description Removed capabilities
              *     +optional
-             *     +listType=atomic */
+             *     +listType=atomic
+             */
             drop?: string[];
         };
-        "v1.ClientIPConfig": {
-            /** @description timeoutSeconds specifies the seconds of ClientIP type session sticky time.
-             *     The value must be >0 && <=86400(for 1 day) if ServiceAffinity == "ClientIP".
-             *     Default value is 10800(for 3 hours).
-             *     +optional */
-            timeoutSeconds?: number;
-        };
-        "v1.Condition": {
-            /** @description lastTransitionTime is the last time the condition transitioned from one status to another.
-             *     This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-             *     +required
-             *     +kubebuilder:validation:Required
-             *     +kubebuilder:validation:Type=string
-             *     +kubebuilder:validation:Format=date-time */
-            lastTransitionTime?: string;
-            /** @description message is a human readable message indicating details about the transition.
-             *     This may be an empty string.
-             *     +required
-             *     +kubebuilder:validation:Required
-             *     +kubebuilder:validation:MaxLength=32768 */
-            message?: string;
-            /** @description observedGeneration represents the .metadata.generation that the condition was set based upon.
-             *     For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-             *     with respect to the current state of the instance.
+        "v1.CephFSVolumeSource": {
+            /**
+             * @description monitors is Required: Monitors is a collection of Ceph monitors
+             *     More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
+             *     +listType=atomic
+             */
+            monitors?: string[];
+            /**
+             * @description path is Optional: Used as the mounted root, rather than the full Ceph tree, default is /
              *     +optional
-             *     +kubebuilder:validation:Minimum=0 */
-            observedGeneration?: number;
-            /** @description reason contains a programmatic identifier indicating the reason for the condition's last transition.
-             *     Producers of specific condition types may define expected values and meanings for this field,
-             *     and whether the values are considered a guaranteed API.
-             *     The value should be a CamelCase string.
-             *     This field may not be empty.
-             *     +required
-             *     +kubebuilder:validation:Required
-             *     +kubebuilder:validation:MaxLength=1024
-             *     +kubebuilder:validation:MinLength=1
-             *     +kubebuilder:validation:Pattern=`^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$` */
-            reason?: string;
-            /** @description status of the condition, one of True, False, Unknown.
-             *     +required
-             *     +kubebuilder:validation:Required
-             *     +kubebuilder:validation:Enum=True;False;Unknown */
-            status?: string;
-            /** @description type of condition in CamelCase or in foo.example.com/CamelCase.
-             *     ---
-             *     Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-             *     useful (see .node.status.conditions), the ability to deconflict is important.
-             *     The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
-             *     +required
-             *     +kubebuilder:validation:Required
-             *     +kubebuilder:validation:Pattern=`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$`
-             *     +kubebuilder:validation:MaxLength=316 */
-            type?: string;
+             */
+            path?: string;
+            /**
+             * @description readOnly is Optional: Defaults to false (read/write). ReadOnly here will force
+             *     the ReadOnly setting in VolumeMounts.
+             *     More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description secretFile is Optional: SecretFile is the path to key ring for User, default is /etc/ceph/user.secret
+             *     More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
+             *     +optional
+             */
+            secretFile?: string;
+            /**
+             * @description secretRef is Optional: SecretRef is reference to the authentication secret for User, default is empty.
+             *     More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
+             *     +optional
+             */
+            secretRef?: components["schemas"]["k8s_io_api_core_v1.LocalObjectReference"];
+            /**
+             * @description user is optional: User is the rados user name, default is admin
+             *     More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
+             *     +optional
+             */
+            user?: string;
+        };
+        "v1.CinderVolumeSource": {
+            /**
+             * @description fsType is the filesystem type to mount.
+             *     Must be a filesystem type supported by the host operating system.
+             *     Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+             *     More info: https://examples.k8s.io/mysql-cinder-pd/README.md
+             *     +optional
+             */
+            fsType?: string;
+            /**
+             * @description readOnly defaults to false (read/write). ReadOnly here will force
+             *     the ReadOnly setting in VolumeMounts.
+             *     More info: https://examples.k8s.io/mysql-cinder-pd/README.md
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description secretRef is optional: points to a secret object containing parameters used to connect
+             *     to OpenStack.
+             *     +optional
+             */
+            secretRef?: components["schemas"]["k8s_io_api_core_v1.LocalObjectReference"];
+            /**
+             * @description volumeID used to identify the volume in cinder.
+             *     More info: https://examples.k8s.io/mysql-cinder-pd/README.md
+             */
+            volumeID?: string;
+        };
+        "v1.ClusterTrustBundleProjection": {
+            /**
+             * @description Select all ClusterTrustBundles that match this label selector.  Only has
+             *     effect if signerName is set.  Mutually-exclusive with name.  If unset,
+             *     interpreted as "match nothing".  If set but empty, interpreted as "match
+             *     everything".
+             *     +optional
+             */
+            labelSelector?: components["schemas"]["v1.LabelSelector"];
+            /**
+             * @description Select a single ClusterTrustBundle by object name.  Mutually-exclusive
+             *     with signerName and labelSelector.
+             *     +optional
+             */
+            name?: string;
+            /**
+             * @description If true, don't block pod startup if the referenced ClusterTrustBundle(s)
+             *     aren't available.  If using name, then the named ClusterTrustBundle is
+             *     allowed not to exist.  If using signerName, then the combination of
+             *     signerName and labelSelector is allowed to match zero
+             *     ClusterTrustBundles.
+             *     +optional
+             */
+            optional?: boolean;
+            /** @description Relative path from the volume root to write the bundle. */
+            path?: string;
+            /**
+             * @description Select all ClusterTrustBundles that match this signer name.
+             *     Mutually-exclusive with name.  The contents of all selected
+             *     ClusterTrustBundles will be unified and deduplicated.
+             *     +optional
+             */
+            signerName?: string;
         };
         "v1.ConfigMapEnvSource": {
-            /** @description Name of the referent.
+            /**
+             * @description Name of the referent.
              *     This field is effectively required, but due to backwards compatibility is
              *     allowed to be empty. Instances of this type with an empty value here are
              *     almost certainly wrong.
@@ -8778,16 +11077,20 @@ export interface components {
              *     +optional
              *     +default=""
              *     +kubebuilder:default=""
-             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896. */
+             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+             */
             name?: string;
-            /** @description Specify whether the ConfigMap must be defined
-             *     +optional */
+            /**
+             * @description Specify whether the ConfigMap must be defined
+             *     +optional
+             */
             optional?: boolean;
         };
         "v1.ConfigMapKeySelector": {
             /** @description The key to select. */
             key?: string;
-            /** @description Name of the referent.
+            /**
+             * @description Name of the referent.
              *     This field is effectively required, but due to backwards compatibility is
              *     allowed to be empty. Instances of this type with an empty value here are
              *     almost certainly wrong.
@@ -8795,14 +11098,120 @@ export interface components {
              *     +optional
              *     +default=""
              *     +kubebuilder:default=""
-             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896. */
+             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+             */
             name?: string;
-            /** @description Specify whether the ConfigMap or its key must be defined
-             *     +optional */
+            /**
+             * @description Specify whether the ConfigMap or its key must be defined
+             *     +optional
+             */
+            optional?: boolean;
+        };
+        "v1.ConfigMapNodeConfigSource": {
+            /**
+             * @description KubeletConfigKey declares which key of the referenced ConfigMap corresponds to the KubeletConfiguration structure
+             *     This field is required in all cases.
+             */
+            kubeletConfigKey?: string;
+            /**
+             * @description Name is the metadata.name of the referenced ConfigMap.
+             *     This field is required in all cases.
+             */
+            name?: string;
+            /**
+             * @description Namespace is the metadata.namespace of the referenced ConfigMap.
+             *     This field is required in all cases.
+             */
+            namespace?: string;
+            /**
+             * @description ResourceVersion is the metadata.ResourceVersion of the referenced ConfigMap.
+             *     This field is forbidden in Node.Spec, and required in Node.Status.
+             *     +optional
+             */
+            resourceVersion?: string;
+            /**
+             * @description UID is the metadata.UID of the referenced ConfigMap.
+             *     This field is forbidden in Node.Spec, and required in Node.Status.
+             *     +optional
+             */
+            uid?: string;
+        };
+        "v1.ConfigMapProjection": {
+            /**
+             * @description items if unspecified, each key-value pair in the Data field of the referenced
+             *     ConfigMap will be projected into the volume as a file whose name is the
+             *     key and content is the value. If specified, the listed keys will be
+             *     projected into the specified paths, and unlisted keys will not be
+             *     present. If a key is specified which is not present in the ConfigMap,
+             *     the volume setup will error unless it is marked optional. Paths must be
+             *     relative and may not contain the '..' path or start with '..'.
+             *     +optional
+             *     +listType=atomic
+             */
+            items?: components["schemas"]["v1.KeyToPath"][];
+            /**
+             * @description Name of the referent.
+             *     This field is effectively required, but due to backwards compatibility is
+             *     allowed to be empty. Instances of this type with an empty value here are
+             *     almost certainly wrong.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             *     +optional
+             *     +default=""
+             *     +kubebuilder:default=""
+             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+             */
+            name?: string;
+            /**
+             * @description optional specify whether the ConfigMap or its keys must be defined
+             *     +optional
+             */
+            optional?: boolean;
+        };
+        "v1.ConfigMapVolumeSource": {
+            /**
+             * @description defaultMode is optional: mode bits used to set permissions on created files by default.
+             *     Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+             *     YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+             *     Defaults to 0644.
+             *     Directories within the path are not affected by this setting.
+             *     This might be in conflict with other options that affect the file
+             *     mode, like fsGroup, and the result can be other mode bits set.
+             *     +optional
+             */
+            defaultMode?: number;
+            /**
+             * @description items if unspecified, each key-value pair in the Data field of the referenced
+             *     ConfigMap will be projected into the volume as a file whose name is the
+             *     key and content is the value. If specified, the listed keys will be
+             *     projected into the specified paths, and unlisted keys will not be
+             *     present. If a key is specified which is not present in the ConfigMap,
+             *     the volume setup will error unless it is marked optional. Paths must be
+             *     relative and may not contain the '..' path or start with '..'.
+             *     +optional
+             *     +listType=atomic
+             */
+            items?: components["schemas"]["v1.KeyToPath"][];
+            /**
+             * @description Name of the referent.
+             *     This field is effectively required, but due to backwards compatibility is
+             *     allowed to be empty. Instances of this type with an empty value here are
+             *     almost certainly wrong.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             *     +optional
+             *     +default=""
+             *     +kubebuilder:default=""
+             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+             */
+            name?: string;
+            /**
+             * @description optional specify whether the ConfigMap or its keys must be defined
+             *     +optional
+             */
             optional?: boolean;
         };
         "v1.Container": {
-            /** @description Arguments to the entrypoint.
+            /**
+             * @description Arguments to the entrypoint.
              *     The container image's CMD is used if this is not provided.
              *     Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
              *     cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
@@ -8811,9 +11220,11 @@ export interface components {
              *     of whether the variable exists or not. Cannot be updated.
              *     More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
              *     +optional
-             *     +listType=atomic */
+             *     +listType=atomic
+             */
             args?: string[];
-            /** @description Entrypoint array. Not executed within a shell.
+            /**
+             * @description Entrypoint array. Not executed within a shell.
              *     The container image's ENTRYPOINT is used if this is not provided.
              *     Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
              *     cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
@@ -8822,45 +11233,69 @@ export interface components {
              *     of whether the variable exists or not. Cannot be updated.
              *     More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
              *     +optional
-             *     +listType=atomic */
+             *     +listType=atomic
+             */
             command?: string[];
-            /** @description List of environment variables to set in the container.
+            /**
+             * @description List of environment variables to set in the container.
              *     Cannot be updated.
              *     +optional
              *     +patchMergeKey=name
              *     +patchStrategy=merge
              *     +listType=map
-             *     +listMapKey=name */
+             *     +listMapKey=name
+             */
             env?: components["schemas"]["v1.EnvVar"][];
-            /** @description List of sources to populate environment variables in the container.
-             *     The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-             *     will be reported as an event when the container is starting. When a key exists in multiple
+            /**
+             * @description List of sources to populate environment variables in the container.
+             *     The keys defined within a source may consist of any printable ASCII characters except '='.
+             *     When a key exists in multiple
              *     sources, the value associated with the last source will take precedence.
              *     Values defined by an Env with a duplicate key will take precedence.
              *     Cannot be updated.
              *     +optional
-             *     +listType=atomic */
+             *     +listType=atomic
+             */
             envFrom?: components["schemas"]["v1.EnvFromSource"][];
-            /** @description Container image name.
+            /**
+             * @description Container image name.
              *     More info: https://kubernetes.io/docs/concepts/containers/images
              *     This field is optional to allow higher level config management to default or override
              *     container images in workload controllers like Deployments and StatefulSets.
-             *     +optional */
+             *     +optional
+             */
             image?: string;
-            /** @description Image pull policy.
+            /**
+             * @description Image pull policy.
              *     One of Always, Never, IfNotPresent.
              *     Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
              *     Cannot be updated.
              *     More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-             *     +optional */
-            imagePullPolicy?: string;
+             *     +optional
+             */
+            imagePullPolicy?: components["schemas"]["v1.PullPolicy"];
+            /**
+             * @description Actions that the management system should take in response to container lifecycle events.
+             *     Cannot be updated.
+             *     +optional
+             */
             lifecycle?: components["schemas"]["v1.Lifecycle"];
+            /**
+             * @description Periodic probe of container liveness.
+             *     Container will be restarted if the probe fails.
+             *     Cannot be updated.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+             *     +optional
+             */
             livenessProbe?: components["schemas"]["v1.Probe"];
-            /** @description Name of the container specified as a DNS_LABEL.
+            /**
+             * @description Name of the container specified as a DNS_LABEL.
              *     Each container in a pod must have a unique name (DNS_LABEL).
-             *     Cannot be updated. */
+             *     Cannot be updated.
+             */
             name?: string;
-            /** @description List of ports to expose from the container. Not specifying a port here
+            /**
+             * @description List of ports to expose from the container. Not specifying a port here
              *     DOES NOT prevent that port from being exposed. Any port which is
              *     listening on the default "0.0.0.0" address inside a container will be
              *     accessible from the network.
@@ -8872,20 +11307,38 @@ export interface components {
              *     +patchStrategy=merge
              *     +listType=map
              *     +listMapKey=containerPort
-             *     +listMapKey=protocol */
+             *     +listMapKey=protocol
+             */
             ports?: components["schemas"]["v1.ContainerPort"][];
+            /**
+             * @description Periodic probe of container service readiness.
+             *     Container will be removed from service endpoints if the probe fails.
+             *     Cannot be updated.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+             *     +optional
+             */
             readinessProbe?: components["schemas"]["v1.Probe"];
-            /** @description Resources resize policy for the container.
+            /**
+             * @description Resources resize policy for the container.
+             *     This field cannot be set on ephemeral containers.
              *     +featureGate=InPlacePodVerticalScaling
              *     +optional
-             *     +listType=atomic */
+             *     +listType=atomic
+             */
             resizePolicy?: components["schemas"]["v1.ContainerResizePolicy"][];
+            /**
+             * @description Compute Resources required by this container.
+             *     Cannot be updated.
+             *     More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+             *     +optional
+             */
             resources?: components["schemas"]["v1.ResourceRequirements"];
-            /** @description RestartPolicy defines the restart behavior of individual containers in a pod.
-             *     This field may only be set for init containers, and the only allowed value is "Always".
-             *     For non-init containers or when this field is not specified,
+            /**
+             * @description RestartPolicy defines the restart behavior of individual containers in a pod.
+             *     This overrides the pod-level restart policy. When this field is not specified,
              *     the restart behavior is defined by the Pod's restart policy and the container type.
-             *     Setting the RestartPolicy as "Always" for the init container will have the following effect:
+             *     Additionally, setting the RestartPolicy as "Always" for the init container will
+             *     have the following effect:
              *     this init container will be continually restarted on
              *     exit until all regular containers have terminated. Once all regular
              *     containers have completed, all init containers with restartPolicy "Always"
@@ -8896,115 +11349,703 @@ export interface components {
              *     container. Instead, the next init container starts immediately after this
              *     init container is started, or after any startupProbe has successfully
              *     completed.
-             *     +featureGate=SidecarContainers
-             *     +optional */
-            restartPolicy?: string;
+             *     +optional
+             */
+            restartPolicy?: components["schemas"]["v1.ContainerRestartPolicy"];
+            /**
+             * @description Represents a list of rules to be checked to determine if the
+             *     container should be restarted on exit. The rules are evaluated in
+             *     order. Once a rule matches a container exit condition, the remaining
+             *     rules are ignored. If no rule matches the container exit condition,
+             *     the Container-level restart policy determines the whether the container
+             *     is restarted or not. Constraints on the rules:
+             *     - At most 20 rules are allowed.
+             *     - Rules can have the same action.
+             *     - Identical rules are not forbidden in validations.
+             *     When rules are specified, container MUST set RestartPolicy explicitly
+             *     even it if matches the Pod's RestartPolicy.
+             *     +featureGate=ContainerRestartRules
+             *     +optional
+             *     +listType=atomic
+             */
+            restartPolicyRules?: components["schemas"]["v1.ContainerRestartRule"][];
+            /**
+             * @description SecurityContext defines the security options the container should be run with.
+             *     If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.
+             *     More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+             *     +optional
+             */
             securityContext?: components["schemas"]["v1.SecurityContext"];
+            /**
+             * @description StartupProbe indicates that the Pod has successfully initialized.
+             *     If specified, no other probes are executed until this completes successfully.
+             *     If this probe fails, the Pod will be restarted, just as if the livenessProbe failed.
+             *     This can be used to provide different probe parameters at the beginning of a Pod's lifecycle,
+             *     when it might take a long time to load data or warm a cache, than during steady-state operation.
+             *     This cannot be updated.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+             *     +optional
+             */
             startupProbe?: components["schemas"]["v1.Probe"];
-            /** @description Whether this container should allocate a buffer for stdin in the container runtime. If this
+            /**
+             * @description Whether this container should allocate a buffer for stdin in the container runtime. If this
              *     is not set, reads from stdin in the container will always result in EOF.
              *     Default is false.
-             *     +optional */
+             *     +optional
+             */
             stdin?: boolean;
-            /** @description Whether the container runtime should close the stdin channel after it has been opened by
+            /**
+             * @description Whether the container runtime should close the stdin channel after it has been opened by
              *     a single attach. When stdin is true the stdin stream will remain open across multiple attach
              *     sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the
              *     first client attaches to stdin, and then remains open and accepts data until the client disconnects,
              *     at which time stdin is closed and remains closed until the container is restarted. If this
              *     flag is false, a container processes that reads from stdin will never receive an EOF.
              *     Default is false
-             *     +optional */
+             *     +optional
+             */
             stdinOnce?: boolean;
-            /** @description Optional: Path at which the file to which the container's termination message
+            /**
+             * @description Optional: Path at which the file to which the container's termination message
              *     will be written is mounted into the container's filesystem.
              *     Message written is intended to be brief final status, such as an assertion failure message.
              *     Will be truncated by the node if greater than 4096 bytes. The total message length across
              *     all containers will be limited to 12kb.
              *     Defaults to /dev/termination-log.
              *     Cannot be updated.
-             *     +optional */
+             *     +optional
+             */
             terminationMessagePath?: string;
-            /** @description Indicate how the termination message should be populated. File will use the contents of
+            /**
+             * @description Indicate how the termination message should be populated. File will use the contents of
              *     terminationMessagePath to populate the container status message on both success and failure.
              *     FallbackToLogsOnError will use the last chunk of container log output if the termination
              *     message file is empty and the container exited with an error.
              *     The log output is limited to 2048 bytes or 80 lines, whichever is smaller.
              *     Defaults to File.
              *     Cannot be updated.
-             *     +optional */
-            terminationMessagePolicy?: string;
-            /** @description Whether this container should allocate a TTY for itself, also requires 'stdin' to be true.
+             *     +optional
+             */
+            terminationMessagePolicy?: components["schemas"]["v1.TerminationMessagePolicy"];
+            /**
+             * @description Whether this container should allocate a TTY for itself, also requires 'stdin' to be true.
              *     Default is false.
-             *     +optional */
+             *     +optional
+             */
             tty?: boolean;
-            /** @description volumeDevices is the list of block devices to be used by the container.
+            /**
+             * @description volumeDevices is the list of block devices to be used by the container.
              *     +patchMergeKey=devicePath
              *     +patchStrategy=merge
              *     +listType=map
              *     +listMapKey=devicePath
-             *     +optional */
+             *     +optional
+             */
             volumeDevices?: components["schemas"]["v1.VolumeDevice"][];
-            /** @description Pod volumes to mount into the container's filesystem.
+            /**
+             * @description Pod volumes to mount into the container's filesystem.
              *     Cannot be updated.
              *     +optional
              *     +patchMergeKey=mountPath
              *     +patchStrategy=merge
              *     +listType=map
-             *     +listMapKey=mountPath */
+             *     +listMapKey=mountPath
+             */
             volumeMounts?: components["schemas"]["v1.VolumeMount"][];
-            /** @description Container's working directory.
+            /**
+             * @description Container's working directory.
              *     If not specified, the container runtime's default will be used, which
              *     might be configured in the container image.
              *     Cannot be updated.
-             *     +optional */
+             *     +optional
+             */
             workingDir?: string;
         };
+        "v1.ContainerExtendedResourceRequest": {
+            /** @description The name of the container requesting resources. */
+            containerName?: string;
+            /** @description The name of the request in the special ResourceClaim which corresponds to the extended resource. */
+            requestName?: string;
+            /** @description The name of the extended resource in that container which gets backed by DRA. */
+            resourceName?: string;
+        };
+        "v1.ContainerImage": {
+            /**
+             * @description Names by which this image is known.
+             *     e.g. ["kubernetes.example/hyperkube:v1.0.7", "cloud-vendor.registry.example/cloud-vendor/hyperkube:v1.0.7"]
+             *     +optional
+             *     +listType=atomic
+             */
+            names?: string[];
+            /**
+             * @description The size of the image in bytes.
+             *     +optional
+             */
+            sizeBytes?: number;
+        };
         "v1.ContainerPort": {
-            /** @description Number of port to expose on the pod's IP address.
-             *     This must be a valid port number, 0 < x < 65536. */
+            /**
+             * @description Number of port to expose on the pod's IP address.
+             *     This must be a valid port number, 0 < x < 65536.
+             */
             containerPort?: number;
-            /** @description What host IP to bind the external port to.
-             *     +optional */
+            /**
+             * @description What host IP to bind the external port to.
+             *     +optional
+             */
             hostIP?: string;
-            /** @description Number of port to expose on the host.
+            /**
+             * @description Number of port to expose on the host.
              *     If specified, this must be a valid port number, 0 < x < 65536.
              *     If HostNetwork is specified, this must match ContainerPort.
              *     Most containers do not need this.
-             *     +optional */
+             *     +optional
+             */
             hostPort?: number;
-            /** @description If specified, this must be an IANA_SVC_NAME and unique within the pod. Each
+            /**
+             * @description If specified, this must be an IANA_SVC_NAME and unique within the pod. Each
              *     named port in a pod must have a unique name. Name for the port that can be
              *     referred to by services.
-             *     +optional */
+             *     +optional
+             */
             name?: string;
-            /** @description Protocol for port. Must be UDP, TCP, or SCTP.
+            /**
+             * @description Protocol for port. Must be UDP, TCP, or SCTP.
              *     Defaults to "TCP".
              *     +optional
-             *     +default="TCP" */
-            protocol?: string;
+             *     +default="TCP"
+             */
+            protocol?: components["schemas"]["v1.Protocol"];
         };
         "v1.ContainerResizePolicy": {
-            /** @description Name of the resource to which this resource resize policy applies.
-             *     Supported values: cpu, memory. */
-            resourceName?: string;
-            /** @description Restart policy to apply when specified resource is resized.
-             *     If not specified, it defaults to NotRequired. */
-            restartPolicy?: string;
+            /**
+             * @description Name of the resource to which this resource resize policy applies.
+             *     Supported values: cpu, memory.
+             */
+            resourceName?: components["schemas"]["v1.ResourceName"];
+            /**
+             * @description Restart policy to apply when specified resource is resized.
+             *     If not specified, it defaults to NotRequired.
+             */
+            restartPolicy?: components["schemas"]["v1.ResourceResizeRestartPolicy"];
         };
-        "v1.Duration": {
-            "time.Duration"?: number;
+        /** @enum {string} */
+        "v1.ContainerRestartPolicy": "Always" | "Never" | "OnFailure";
+        "v1.ContainerRestartRule": {
+            /**
+             * @description Specifies the action taken on a container exit if the requirements
+             *     are satisfied. The only possible value is "Restart" to restart the
+             *     container.
+             *     +required
+             */
+            action?: components["schemas"]["v1.ContainerRestartRuleAction"];
+            /**
+             * @description Represents the exit codes to check on container exits.
+             *     +optional
+             *     +oneOf=when
+             */
+            exitCodes?: components["schemas"]["v1.ContainerRestartRuleOnExitCodes"];
+        };
+        /** @enum {string} */
+        "v1.ContainerRestartRuleAction": "Restart" | "RestartAllContainers";
+        "v1.ContainerRestartRuleOnExitCodes": {
+            /**
+             * @description Represents the relationship between the container exit code(s) and the
+             *     specified values. Possible values are:
+             *     - In: the requirement is satisfied if the container exit code is in the
+             *       set of specified values.
+             *     - NotIn: the requirement is satisfied if the container exit code is
+             *       not in the set of specified values.
+             *     +required
+             */
+            operator?: components["schemas"]["v1.ContainerRestartRuleOnExitCodesOperator"];
+            /**
+             * @description Specifies the set of values to check for container exit codes.
+             *     At most 255 elements are allowed.
+             *     +optional
+             *     +listType=set
+             */
+            values?: number[];
+        };
+        /** @enum {string} */
+        "v1.ContainerRestartRuleOnExitCodesOperator": "In" | "NotIn";
+        "v1.ContainerState": {
+            /**
+             * @description Details about a running container
+             *     +optional
+             */
+            running?: components["schemas"]["v1.ContainerStateRunning"];
+            /**
+             * @description Details about a terminated container
+             *     +optional
+             */
+            terminated?: components["schemas"]["v1.ContainerStateTerminated"];
+            /**
+             * @description Details about a waiting container
+             *     +optional
+             */
+            waiting?: components["schemas"]["v1.ContainerStateWaiting"];
+        };
+        "v1.ContainerStateRunning": {
+            /**
+             * @description Time at which the container was last (re-)started
+             *     +optional
+             */
+            startedAt?: string;
+        };
+        "v1.ContainerStateTerminated": {
+            /**
+             * @description Container's ID in the format '<type>://<container_id>'
+             *     +optional
+             */
+            containerID?: string;
+            /** @description Exit status from the last termination of the container */
+            exitCode?: number;
+            /**
+             * @description Time at which the container last terminated
+             *     +optional
+             */
+            finishedAt?: string;
+            /**
+             * @description Message regarding the last termination of the container
+             *     +optional
+             */
+            message?: string;
+            /**
+             * @description (brief) reason from the last termination of the container
+             *     +optional
+             */
+            reason?: string;
+            /**
+             * @description Signal from the last termination of the container
+             *     +optional
+             */
+            signal?: number;
+            /**
+             * @description Time at which previous execution of the container started
+             *     +optional
+             */
+            startedAt?: string;
+        };
+        "v1.ContainerStateWaiting": {
+            /**
+             * @description Message regarding why the container is not yet running.
+             *     +optional
+             */
+            message?: string;
+            /**
+             * @description (brief) reason the container is not yet running.
+             *     +optional
+             */
+            reason?: string;
+        };
+        "v1.ContainerStatus": {
+            /**
+             * @description AllocatedResources represents the compute resources allocated for this container by the
+             *     node. Kubelet sets this value to Container.Resources.Requests upon successful pod admission
+             *     and after successfully admitting desired pod resize.
+             *     +featureGate=InPlacePodVerticalScalingAllocatedStatus
+             *     +optional
+             */
+            allocatedResources?: components["schemas"]["v1.ResourceList"];
+            /**
+             * @description AllocatedResourcesStatus represents the status of various resources
+             *     allocated for this Pod.
+             *     +featureGate=ResourceHealthStatus
+             *     +optional
+             *     +patchMergeKey=name
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=name
+             */
+            allocatedResourcesStatus?: components["schemas"]["v1.ResourceStatus"][];
+            /**
+             * @description ContainerID is the ID of the container in the format '<type>://<container_id>'.
+             *     Where type is a container runtime identifier, returned from Version call of CRI API
+             *     (for example "containerd").
+             *     +optional
+             */
+            containerID?: string;
+            /**
+             * @description Image is the name of container image that the container is running.
+             *     The container image may not match the image used in the PodSpec,
+             *     as it may have been resolved by the runtime.
+             *     More info: https://kubernetes.io/docs/concepts/containers/images.
+             */
+            image?: string;
+            /**
+             * @description ImageID is the image ID of the container's image. The image ID may not
+             *     match the image ID of the image used in the PodSpec, as it may have been
+             *     resolved by the runtime.
+             */
+            imageID?: string;
+            /**
+             * @description LastTerminationState holds the last termination state of the container to
+             *     help debug container crashes and restarts. This field is not
+             *     populated if the container is still running and RestartCount is 0.
+             *     +optional
+             */
+            lastState?: components["schemas"]["v1.ContainerState"];
+            /**
+             * @description Name is a DNS_LABEL representing the unique name of the container.
+             *     Each container in a pod must have a unique name across all container types.
+             *     Cannot be updated.
+             */
+            name?: string;
+            /**
+             * @description Ready specifies whether the container is currently passing its readiness check.
+             *     The value will change as readiness probes keep executing. If no readiness
+             *     probes are specified, this field defaults to true once the container is
+             *     fully started (see Started field).
+             *
+             *     The value is typically used to determine whether a container is ready to
+             *     accept traffic.
+             */
+            ready?: boolean;
+            /**
+             * @description Resources represents the compute resource requests and limits that have been successfully
+             *     enacted on the running container after it has been started or has been successfully resized.
+             *     +featureGate=InPlacePodVerticalScaling
+             *     +optional
+             */
+            resources?: components["schemas"]["v1.ResourceRequirements"];
+            /**
+             * @description RestartCount holds the number of times the container has been restarted.
+             *     Kubelet makes an effort to always increment the value, but there
+             *     are cases when the state may be lost due to node restarts and then the value
+             *     may be reset to 0. The value is never negative.
+             */
+            restartCount?: number;
+            /**
+             * @description Started indicates whether the container has finished its postStart lifecycle hook
+             *     and passed its startup probe.
+             *     Initialized as false, becomes true after startupProbe is considered
+             *     successful. Resets to false when the container is restarted, or if kubelet
+             *     loses state temporarily. In both cases, startup probes will run again.
+             *     Is always true when no startupProbe is defined and container is running and
+             *     has passed the postStart lifecycle hook. The null value must be treated the
+             *     same as false.
+             *     +optional
+             */
+            started?: boolean;
+            /**
+             * @description State holds details about the container's current condition.
+             *     +optional
+             */
+            state?: components["schemas"]["v1.ContainerState"];
+            /**
+             * @description StopSignal reports the effective stop signal for this container
+             *     +featureGate=ContainerStopSignals
+             *     +optional
+             */
+            stopSignal?: components["schemas"]["v1.Signal"];
+            /**
+             * @description User represents user identity information initially attached to the first process of the container
+             *     +featureGate=SupplementalGroupsPolicy
+             *     +optional
+             */
+            user?: components["schemas"]["v1.ContainerUser"];
+            /**
+             * @description Status of volume mounts.
+             *     +optional
+             *     +patchMergeKey=mountPath
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=mountPath
+             */
+            volumeMounts?: components["schemas"]["v1.VolumeMountStatus"][];
+        };
+        "v1.ContainerUser": {
+            /**
+             * @description Linux holds user identity information initially attached to the first process of the containers in Linux.
+             *     Note that the actual running identity can be changed if the process has enough privilege to do so.
+             *     +optional
+             */
+            linux?: components["schemas"]["v1.LinuxContainerUser"];
+        };
+        /** @enum {string} */
+        "v1.DNSPolicy": "ClusterFirstWithHostNet" | "ClusterFirst" | "Default" | "None";
+        "v1.DaemonEndpoint": {
+            /** @description Port number of the given endpoint. */
+            Port?: number;
+        };
+        "v1.Deployment": {
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
+             *     Servers should convert recognized schemas to the latest internal value, and
+             *     may reject unrecognized values.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+             *     +optional
+             */
+            apiVersion?: string;
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
+             *     Servers may infer this from the endpoint the client submits requests to.
+             *     Cannot be updated.
+             *     In CamelCase.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            kind?: string;
+            /**
+             * @description Standard object's metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ObjectMeta"];
+            /**
+             * @description Specification of the desired behavior of the Deployment.
+             *     +optional
+             */
+            spec?: components["schemas"]["v1.DeploymentSpec"];
+            /**
+             * @description Most recently observed status of the Deployment.
+             *     +optional
+             */
+            status?: components["schemas"]["v1.DeploymentStatus"];
+        };
+        "v1.DeploymentCondition": {
+            /** @description Last time the condition transitioned from one status to another. */
+            lastTransitionTime?: string;
+            /** @description The last time this condition was updated. */
+            lastUpdateTime?: string;
+            /** @description A human readable message indicating details about the transition. */
+            message?: string;
+            /** @description The reason for the condition's last transition. */
+            reason?: string;
+            /** @description Status of the condition, one of True, False, Unknown. */
+            status?: components["schemas"]["k8s_io_api_core_v1.ConditionStatus"];
+            /** @description Type of deployment condition. */
+            type?: components["schemas"]["v1.DeploymentConditionType"];
+        };
+        /** @enum {string} */
+        "v1.DeploymentConditionType": "Available" | "Progressing" | "ReplicaFailure";
+        "v1.DeploymentSpec": {
+            /**
+             * @description Minimum number of seconds for which a newly created pod should be ready
+             *     without any of its container crashing, for it to be considered available.
+             *     Defaults to 0 (pod will be considered available as soon as it is ready)
+             *     +optional
+             */
+            minReadySeconds?: number;
+            /**
+             * @description Indicates that the deployment is paused.
+             *     +optional
+             */
+            paused?: boolean;
+            /**
+             * @description The maximum time in seconds for a deployment to make progress before it
+             *     is considered to be failed. The deployment controller will continue to
+             *     process failed deployments and a condition with a ProgressDeadlineExceeded
+             *     reason will be surfaced in the deployment status. Note that progress will
+             *     not be estimated during the time a deployment is paused. Defaults to 600s.
+             */
+            progressDeadlineSeconds?: number;
+            /**
+             * @description Number of desired pods. This is a pointer to distinguish between explicit
+             *     zero and not specified. Defaults to 1.
+             *     +optional
+             */
+            replicas?: number;
+            /**
+             * @description The number of old ReplicaSets to retain to allow rollback.
+             *     This is a pointer to distinguish between explicit zero and not specified.
+             *     Defaults to 10.
+             *     +optional
+             */
+            revisionHistoryLimit?: number;
+            /**
+             * @description Label selector for pods. Existing ReplicaSets whose pods are
+             *     selected by this will be the ones affected by this deployment.
+             *     It must match the pod template's labels.
+             */
+            selector?: components["schemas"]["v1.LabelSelector"];
+            /**
+             * @description The deployment strategy to use to replace existing pods with new ones.
+             *     +optional
+             *     +patchStrategy=retainKeys
+             */
+            strategy?: components["schemas"]["v1.DeploymentStrategy"];
+            /**
+             * @description Template describes the pods that will be created.
+             *     The only allowed template.spec.restartPolicy value is "Always".
+             */
+            template?: components["schemas"]["v1.PodTemplateSpec"];
+        };
+        "v1.DeploymentStatus": {
+            /**
+             * @description Total number of available non-terminating pods (ready for at least minReadySeconds) targeted by this deployment.
+             *     +optional
+             */
+            availableReplicas?: number;
+            /**
+             * @description Count of hash collisions for the Deployment. The Deployment controller uses this
+             *     field as a collision avoidance mechanism when it needs to create the name for the
+             *     newest ReplicaSet.
+             *     +optional
+             */
+            collisionCount?: number;
+            /**
+             * @description Represents the latest available observations of a deployment's current state.
+             *     +patchMergeKey=type
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=type
+             */
+            conditions?: components["schemas"]["v1.DeploymentCondition"][];
+            /**
+             * @description The generation observed by the deployment controller.
+             *     +optional
+             */
+            observedGeneration?: number;
+            /**
+             * @description Total number of non-terminating pods targeted by this Deployment with a Ready Condition.
+             *     +optional
+             */
+            readyReplicas?: number;
+            /**
+             * @description Total number of non-terminating pods targeted by this deployment (their labels match the selector).
+             *     +optional
+             */
+            replicas?: number;
+            /**
+             * @description Total number of terminating pods targeted by this deployment. Terminating pods have a non-null
+             *     .metadata.deletionTimestamp and have not yet reached the Failed or Succeeded .status.phase.
+             *
+             *     This is a beta field and requires enabling DeploymentReplicaSetTerminatingReplicas feature (enabled by default).
+             *     +optional
+             */
+            terminatingReplicas?: number;
+            /**
+             * @description Total number of unavailable pods targeted by this deployment. This is the total number of
+             *     pods that are still required for the deployment to have 100% available capacity. They may
+             *     either be pods that are running but not yet available or pods that still have not been created.
+             *     +optional
+             */
+            unavailableReplicas?: number;
+            /**
+             * @description Total number of non-terminating pods targeted by this deployment that have the desired template spec.
+             *     +optional
+             */
+            updatedReplicas?: number;
+        };
+        "v1.DeploymentStrategy": {
+            /**
+             * @description Rolling update config params. Present only if DeploymentStrategyType =
+             *     RollingUpdate.
+             *     ---
+             *     TODO: Update this to follow our convention for oneOf, whatever we decide it
+             *     to be.
+             *     +optional
+             */
+            rollingUpdate?: components["schemas"]["v1.RollingUpdateDeployment"];
+            /**
+             * @description Type of deployment. Can be "Recreate" or "RollingUpdate". Default is RollingUpdate.
+             *     +optional
+             */
+            type?: components["schemas"]["v1.DeploymentStrategyType"];
+        };
+        /** @enum {string} */
+        "v1.DeploymentStrategyType": "Recreate" | "RollingUpdate";
+        "v1.DownwardAPIProjection": {
+            /**
+             * @description Items is a list of DownwardAPIVolume file
+             *     +optional
+             *     +listType=atomic
+             */
+            items?: components["schemas"]["v1.DownwardAPIVolumeFile"][];
+        };
+        "v1.DownwardAPIVolumeFile": {
+            /**
+             * @description Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.
+             *     +optional
+             */
+            fieldRef?: components["schemas"]["v1.ObjectFieldSelector"];
+            /**
+             * @description Optional: mode bits used to set permissions on this file, must be an octal value
+             *     between 0000 and 0777 or a decimal value between 0 and 511.
+             *     YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+             *     If not specified, the volume defaultMode will be used.
+             *     This might be in conflict with other options that affect the file
+             *     mode, like fsGroup, and the result can be other mode bits set.
+             *     +optional
+             */
+            mode?: number;
+            /** @description Required: Path is  the relative path name of the file to be created. Must not be absolute or contain the '..' path. Must be utf-8 encoded. The first item of the relative path must not start with '..' */
+            path?: string;
+            /**
+             * @description Selects a resource of the container: only resources limits and requests
+             *     (limits.cpu, limits.memory, requests.cpu and requests.memory) are currently supported.
+             *     +optional
+             */
+            resourceFieldRef?: components["schemas"]["v1.ResourceFieldSelector"];
+        };
+        "v1.DownwardAPIVolumeSource": {
+            /**
+             * @description Optional: mode bits to use on created files by default. Must be a
+             *     Optional: mode bits used to set permissions on created files by default.
+             *     Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+             *     YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+             *     Defaults to 0644.
+             *     Directories within the path are not affected by this setting.
+             *     This might be in conflict with other options that affect the file
+             *     mode, like fsGroup, and the result can be other mode bits set.
+             *     +optional
+             */
+            defaultMode?: number;
+            /**
+             * @description Items is a list of downward API volume file
+             *     +optional
+             *     +listType=atomic
+             */
+            items?: components["schemas"]["v1.DownwardAPIVolumeFile"][];
+        };
+        "v1.EmptyDirVolumeSource": {
+            /**
+             * @description medium represents what type of storage medium should back this directory.
+             *     The default is "" which means to use the node's default medium.
+             *     Must be an empty string (default) or Memory.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir
+             *     +optional
+             */
+            medium?: components["schemas"]["v1.StorageMedium"];
+            /**
+             * @description sizeLimit is the total amount of local storage required for this EmptyDir volume.
+             *     The size limit is also applicable for memory medium.
+             *     The maximum usage on memory medium EmptyDir would be the minimum value between
+             *     the SizeLimit specified here and the sum of memory limits of all containers in a pod.
+             *     The default is nil which means that the limit is undefined.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir
+             *     +optional
+             */
+            sizeLimit?: components["schemas"]["resource.Quantity"];
         };
         "v1.EnvFromSource": {
+            /**
+             * @description The ConfigMap to select from
+             *     +optional
+             */
             configMapRef?: components["schemas"]["v1.ConfigMapEnvSource"];
-            /** @description An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.
-             *     +optional */
+            /**
+             * @description Optional text to prepend to the name of each environment variable.
+             *     May consist of any printable ASCII characters except '='.
+             *     +optional
+             */
             prefix?: string;
+            /**
+             * @description The Secret to select from
+             *     +optional
+             */
             secretRef?: components["schemas"]["v1.SecretEnvSource"];
         };
         "v1.EnvVar": {
-            /** @description Name of the environment variable. Must be a C_IDENTIFIER. */
+            /**
+             * @description Name of the environment variable.
+             *     May consist of any printable ASCII characters except '='.
+             */
             name?: string;
-            /** @description Variable references $(VAR_NAME) are expanded
+            /**
+             * @description Variable references $(VAR_NAME) are expanded
              *     using the previously defined environment variables in the container and
              *     any service environment variables. If a variable cannot be resolved,
              *     the reference in the input string will be unchanged. Double $$ are reduced
@@ -9013,235 +12054,1515 @@ export interface components {
              *     Escaped references will never be expanded, regardless of whether the variable
              *     exists or not.
              *     Defaults to "".
-             *     +optional */
+             *     +optional
+             */
             value?: string;
+            /**
+             * @description Source for the environment variable's value. Cannot be used if value is not empty.
+             *     +optional
+             */
             valueFrom?: components["schemas"]["v1.EnvVarSource"];
         };
         "v1.EnvVarSource": {
+            /**
+             * @description Selects a key of a ConfigMap.
+             *     +optional
+             */
             configMapKeyRef?: components["schemas"]["v1.ConfigMapKeySelector"];
+            /**
+             * @description Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+             *     spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+             *     +optional
+             */
             fieldRef?: components["schemas"]["v1.ObjectFieldSelector"];
+            /**
+             * @description FileKeyRef selects a key of the env file.
+             *     Requires the EnvFiles feature gate to be enabled.
+             *
+             *     +featureGate=EnvFiles
+             *     +optional
+             */
+            fileKeyRef?: components["schemas"]["v1.FileKeySelector"];
+            /**
+             * @description Selects a resource of the container: only resources limits and requests
+             *     (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+             *     +optional
+             */
             resourceFieldRef?: components["schemas"]["v1.ResourceFieldSelector"];
+            /**
+             * @description Selects a key of a secret in the pod's namespace
+             *     +optional
+             */
             secretKeyRef?: components["schemas"]["v1.SecretKeySelector"];
         };
+        "v1.EphemeralContainer": {
+            /**
+             * @description Arguments to the entrypoint.
+             *     The image's CMD is used if this is not provided.
+             *     Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+             *     cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
+             *     to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will
+             *     produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless
+             *     of whether the variable exists or not. Cannot be updated.
+             *     More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
+             *     +optional
+             *     +listType=atomic
+             */
+            args?: string[];
+            /**
+             * @description Entrypoint array. Not executed within a shell.
+             *     The image's ENTRYPOINT is used if this is not provided.
+             *     Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+             *     cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
+             *     to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will
+             *     produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless
+             *     of whether the variable exists or not. Cannot be updated.
+             *     More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
+             *     +optional
+             *     +listType=atomic
+             */
+            command?: string[];
+            /**
+             * @description List of environment variables to set in the container.
+             *     Cannot be updated.
+             *     +optional
+             *     +patchMergeKey=name
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=name
+             */
+            env?: components["schemas"]["v1.EnvVar"][];
+            /**
+             * @description List of sources to populate environment variables in the container.
+             *     The keys defined within a source may consist of any printable ASCII characters except '='.
+             *     When a key exists in multiple
+             *     sources, the value associated with the last source will take precedence.
+             *     Values defined by an Env with a duplicate key will take precedence.
+             *     Cannot be updated.
+             *     +optional
+             *     +listType=atomic
+             */
+            envFrom?: components["schemas"]["v1.EnvFromSource"][];
+            /**
+             * @description Container image name.
+             *     More info: https://kubernetes.io/docs/concepts/containers/images
+             */
+            image?: string;
+            /**
+             * @description Image pull policy.
+             *     One of Always, Never, IfNotPresent.
+             *     Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+             *     Cannot be updated.
+             *     More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
+             *     +optional
+             */
+            imagePullPolicy?: components["schemas"]["v1.PullPolicy"];
+            /**
+             * @description Lifecycle is not allowed for ephemeral containers.
+             *     +optional
+             */
+            lifecycle?: components["schemas"]["v1.Lifecycle"];
+            /**
+             * @description Probes are not allowed for ephemeral containers.
+             *     +optional
+             */
+            livenessProbe?: components["schemas"]["v1.Probe"];
+            /**
+             * @description Name of the ephemeral container specified as a DNS_LABEL.
+             *     This name must be unique among all containers, init containers and ephemeral containers.
+             */
+            name?: string;
+            /**
+             * @description Ports are not allowed for ephemeral containers.
+             *     +optional
+             *     +patchMergeKey=containerPort
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=containerPort
+             *     +listMapKey=protocol
+             */
+            ports?: components["schemas"]["v1.ContainerPort"][];
+            /**
+             * @description Probes are not allowed for ephemeral containers.
+             *     +optional
+             */
+            readinessProbe?: components["schemas"]["v1.Probe"];
+            /**
+             * @description Resources resize policy for the container.
+             *     +featureGate=InPlacePodVerticalScaling
+             *     +optional
+             *     +listType=atomic
+             */
+            resizePolicy?: components["schemas"]["v1.ContainerResizePolicy"][];
+            /**
+             * @description Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
+             *     already allocated to the pod.
+             *     +optional
+             */
+            resources?: components["schemas"]["v1.ResourceRequirements"];
+            /**
+             * @description Restart policy for the container to manage the restart behavior of each
+             *     container within a pod.
+             *     You cannot set this field on ephemeral containers.
+             *     +optional
+             */
+            restartPolicy?: components["schemas"]["v1.ContainerRestartPolicy"];
+            /**
+             * @description Represents a list of rules to be checked to determine if the
+             *     container should be restarted on exit. You cannot set this field on
+             *     ephemeral containers.
+             *     +featureGate=ContainerRestartRules
+             *     +optional
+             *     +listType=atomic
+             */
+            restartPolicyRules?: components["schemas"]["v1.ContainerRestartRule"][];
+            /**
+             * @description Optional: SecurityContext defines the security options the ephemeral container should be run with.
+             *     If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.
+             *     +optional
+             */
+            securityContext?: components["schemas"]["v1.SecurityContext"];
+            /**
+             * @description Probes are not allowed for ephemeral containers.
+             *     +optional
+             */
+            startupProbe?: components["schemas"]["v1.Probe"];
+            /**
+             * @description Whether this container should allocate a buffer for stdin in the container runtime. If this
+             *     is not set, reads from stdin in the container will always result in EOF.
+             *     Default is false.
+             *     +optional
+             */
+            stdin?: boolean;
+            /**
+             * @description Whether the container runtime should close the stdin channel after it has been opened by
+             *     a single attach. When stdin is true the stdin stream will remain open across multiple attach
+             *     sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the
+             *     first client attaches to stdin, and then remains open and accepts data until the client disconnects,
+             *     at which time stdin is closed and remains closed until the container is restarted. If this
+             *     flag is false, a container processes that reads from stdin will never receive an EOF.
+             *     Default is false
+             *     +optional
+             */
+            stdinOnce?: boolean;
+            /**
+             * @description If set, the name of the container from PodSpec that this ephemeral container targets.
+             *     The ephemeral container will be run in the namespaces (IPC, PID, etc) of this container.
+             *     If not set then the ephemeral container uses the namespaces configured in the Pod spec.
+             *
+             *     The container runtime must implement support for this feature. If the runtime does not
+             *     support namespace targeting then the result of setting this field is undefined.
+             *     +optional
+             */
+            targetContainerName?: string;
+            /**
+             * @description Optional: Path at which the file to which the container's termination message
+             *     will be written is mounted into the container's filesystem.
+             *     Message written is intended to be brief final status, such as an assertion failure message.
+             *     Will be truncated by the node if greater than 4096 bytes. The total message length across
+             *     all containers will be limited to 12kb.
+             *     Defaults to /dev/termination-log.
+             *     Cannot be updated.
+             *     +optional
+             */
+            terminationMessagePath?: string;
+            /**
+             * @description Indicate how the termination message should be populated. File will use the contents of
+             *     terminationMessagePath to populate the container status message on both success and failure.
+             *     FallbackToLogsOnError will use the last chunk of container log output if the termination
+             *     message file is empty and the container exited with an error.
+             *     The log output is limited to 2048 bytes or 80 lines, whichever is smaller.
+             *     Defaults to File.
+             *     Cannot be updated.
+             *     +optional
+             */
+            terminationMessagePolicy?: components["schemas"]["v1.TerminationMessagePolicy"];
+            /**
+             * @description Whether this container should allocate a TTY for itself, also requires 'stdin' to be true.
+             *     Default is false.
+             *     +optional
+             */
+            tty?: boolean;
+            /**
+             * @description volumeDevices is the list of block devices to be used by the container.
+             *     +patchMergeKey=devicePath
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=devicePath
+             *     +optional
+             */
+            volumeDevices?: components["schemas"]["v1.VolumeDevice"][];
+            /**
+             * @description Pod volumes to mount into the container's filesystem. Subpath mounts are not allowed for ephemeral containers.
+             *     Cannot be updated.
+             *     +optional
+             *     +patchMergeKey=mountPath
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=mountPath
+             */
+            volumeMounts?: components["schemas"]["v1.VolumeMount"][];
+            /**
+             * @description Container's working directory.
+             *     If not specified, the container runtime's default will be used, which
+             *     might be configured in the container image.
+             *     Cannot be updated.
+             *     +optional
+             */
+            workingDir?: string;
+        };
+        "v1.EphemeralVolumeSource": {
+            /**
+             * @description Will be used to create a stand-alone PVC to provision the volume.
+             *     The pod in which this EphemeralVolumeSource is embedded will be the
+             *     owner of the PVC, i.e. the PVC will be deleted together with the
+             *     pod.  The name of the PVC will be `<pod name>-<volume name>` where
+             *     `<volume name>` is the name from the `PodSpec.Volumes` array
+             *     entry. Pod validation will reject the pod if the concatenated name
+             *     is not valid for a PVC (for example, too long).
+             *
+             *     An existing PVC with that name that is not owned by the pod
+             *     will *not* be used for the pod to avoid using an unrelated
+             *     volume by mistake. Starting the pod is then blocked until
+             *     the unrelated PVC is removed. If such a pre-created PVC is
+             *     meant to be used by the pod, the PVC has to updated with an
+             *     owner reference to the pod once the pod exists. Normally
+             *     this should not be necessary, but it may be useful when
+             *     manually reconstructing a broken cluster.
+             *
+             *     This field is read-only and no changes will be made by Kubernetes
+             *     to the PVC after it has been created.
+             *
+             *     Required, must not be nil.
+             */
+            volumeClaimTemplate?: components["schemas"]["v1.PersistentVolumeClaimTemplate"];
+        };
         "v1.ExecAction": {
-            /** @description Command is the command line to execute inside the container, the working directory for the
+            /**
+             * @description Command is the command line to execute inside the container, the working directory for the
              *     command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
              *     not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
              *     a shell, you need to explicitly call out to that shell.
              *     Exit status of 0 is treated as live/healthy and non-zero is unhealthy.
              *     +optional
-             *     +listType=atomic */
+             *     +listType=atomic
+             */
             command?: string[];
         };
+        "v1.FCVolumeSource": {
+            /**
+             * @description fsType is the filesystem type to mount.
+             *     Must be a filesystem type supported by the host operating system.
+             *     Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+             *     TODO: how do we prevent errors in the filesystem from compromising the machine
+             *     +optional
+             */
+            fsType?: string;
+            /**
+             * @description lun is Optional: FC target lun number
+             *     +optional
+             */
+            lun?: number;
+            /**
+             * @description readOnly is Optional: Defaults to false (read/write). ReadOnly here will force
+             *     the ReadOnly setting in VolumeMounts.
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description targetWWNs is Optional: FC target worldwide names (WWNs)
+             *     +optional
+             *     +listType=atomic
+             */
+            targetWWNs?: string[];
+            /**
+             * @description wwids Optional: FC volume world wide identifiers (wwids)
+             *     Either wwids or combination of targetWWNs and lun must be set, but not both simultaneously.
+             *     +optional
+             *     +listType=atomic
+             */
+            wwids?: string[];
+        };
         "v1.FieldsV1": Record<string, never>;
+        "v1.FileKeySelector": {
+            /**
+             * @description The key within the env file. An invalid key will prevent the pod from starting.
+             *     The keys defined within a source may consist of any printable ASCII characters except '='.
+             *     During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.
+             *     +required
+             */
+            key?: string;
+            /**
+             * @description Specify whether the file or its key must be defined. If the file or key
+             *     does not exist, then the env var is not published.
+             *     If optional is set to true and the specified key does not exist,
+             *     the environment variable will not be set in the Pod's containers.
+             *
+             *     If optional is set to false and the specified key does not exist,
+             *     an error will be returned during Pod creation.
+             *     +optional
+             *     +default=false
+             */
+            optional?: boolean;
+            /**
+             * @description The path within the volume from which to select the file.
+             *     Must be relative and may not contain the '..' path or start with '..'.
+             *     +required
+             */
+            path?: string;
+            /**
+             * @description The name of the volume mount containing the env file.
+             *     +required
+             */
+            volumeName?: string;
+        };
+        /** @enum {string} */
+        "v1.FinalizerName": "kubernetes";
+        "v1.FlexVolumeSource": {
+            /** @description driver is the name of the driver to use for this volume. */
+            driver?: string;
+            /**
+             * @description fsType is the filesystem type to mount.
+             *     Must be a filesystem type supported by the host operating system.
+             *     Ex. "ext4", "xfs", "ntfs". The default filesystem depends on FlexVolume script.
+             *     +optional
+             */
+            fsType?: string;
+            /**
+             * @description options is Optional: this field holds extra command options if any.
+             *     +optional
+             */
+            options?: {
+                [key: string]: string;
+            };
+            /**
+             * @description readOnly is Optional: defaults to false (read/write). ReadOnly here will force
+             *     the ReadOnly setting in VolumeMounts.
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description secretRef is Optional: secretRef is reference to the secret object containing
+             *     sensitive information to pass to the plugin scripts. This may be
+             *     empty if no secret object is specified. If the secret object
+             *     contains more than one secret, all secrets are passed to the plugin
+             *     scripts.
+             *     +optional
+             */
+            secretRef?: components["schemas"]["k8s_io_api_core_v1.LocalObjectReference"];
+        };
+        "v1.FlockerVolumeSource": {
+            /**
+             * @description datasetName is Name of the dataset stored as metadata -> name on the dataset for Flocker
+             *     should be considered as deprecated
+             *     +optional
+             */
+            datasetName?: string;
+            /**
+             * @description datasetUUID is the UUID of the dataset. This is unique identifier of a Flocker dataset
+             *     +optional
+             */
+            datasetUUID?: string;
+        };
+        "v1.GCEPersistentDiskVolumeSource": {
+            /**
+             * @description fsType is filesystem type of the volume that you want to mount.
+             *     Tip: Ensure that the filesystem type is supported by the host operating system.
+             *     Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
+             *     TODO: how do we prevent errors in the filesystem from compromising the machine
+             *     +optional
+             */
+            fsType?: string;
+            /**
+             * @description partition is the partition in the volume that you want to mount.
+             *     If omitted, the default is to mount by volume name.
+             *     Examples: For volume /dev/sda1, you specify the partition as "1".
+             *     Similarly, the volume partition for /dev/sda is "0" (or you can leave the property empty).
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
+             *     +optional
+             */
+            partition?: number;
+            /**
+             * @description pdName is unique name of the PD resource in GCE. Used to identify the disk in GCE.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
+             */
+            pdName?: string;
+            /**
+             * @description readOnly here will force the ReadOnly setting in VolumeMounts.
+             *     Defaults to false.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
+             *     +optional
+             */
+            readOnly?: boolean;
+        };
         "v1.GRPCAction": {
             /** @description Port number of the gRPC service. Number must be in the range 1 to 65535. */
             port?: number;
-            /** @description Service is the name of the service to place in the gRPC HealthCheckRequest
+            /**
+             * @description Service is the name of the service to place in the gRPC HealthCheckRequest
              *     (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
              *
              *     If this is not specified, the default behavior is defined by gRPC.
              *     +optional
-             *     +default="" */
+             *     +default=""
+             */
             service?: string;
         };
-        "v1.HTTPGetAction": {
-            /** @description Host name to connect to, defaults to the pod IP. You probably want to set
-             *     "Host" in httpHeaders instead.
-             *     +optional */
-            host?: string;
-            /** @description Custom headers to set in the request. HTTP allows repeated headers.
+        "v1.GitRepoVolumeSource": {
+            /**
+             * @description directory is the target directory name.
+             *     Must not contain or start with '..'.  If '.' is supplied, the volume directory will be the
+             *     git repository.  Otherwise, if specified, the volume will contain the git repository in
+             *     the subdirectory with the given name.
              *     +optional
-             *     +listType=atomic */
-            httpHeaders?: components["schemas"]["v1.HTTPHeader"][];
-            /** @description Path to access on the HTTP server.
-             *     +optional */
-            path?: string;
-            port?: components["schemas"]["intstr.IntOrString"];
-            /** @description Scheme to use for connecting to the host.
-             *     Defaults to HTTP.
-             *     +optional */
-            scheme?: string;
+             */
+            directory?: string;
+            /** @description repository is the URL */
+            repository?: string;
+            /**
+             * @description revision is the commit hash for the specified revision.
+             *     +optional
+             */
+            revision?: string;
         };
-        "v1.HTTPHeader": {
-            /** @description The header field name.
-             *     This will be canonicalized upon output, so case-variant names will be understood as the same header. */
-            name?: string;
-            /** @description The header field value */
-            value?: string;
+        "v1.GlusterfsVolumeSource": {
+            /** @description endpoints is the endpoint name that details Glusterfs topology. */
+            endpoints?: string;
+            /**
+             * @description path is the Glusterfs volume path.
+             *     More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod
+             */
+            path?: string;
+            /**
+             * @description readOnly here will force the Glusterfs volume to be mounted with read-only permissions.
+             *     Defaults to false.
+             *     More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod
+             *     +optional
+             */
+            readOnly?: boolean;
+        };
+        "v1.HTTPGetAction": {
+            /**
+             * @description Host name to connect to, defaults to the pod IP. You probably want to set
+             *     "Host" in httpHeaders instead.
+             *     +optional
+             */
+            host?: string;
+            /**
+             * @description Custom headers to set in the request. HTTP allows repeated headers.
+             *     +optional
+             *     +listType=atomic
+             */
+            httpHeaders?: components["schemas"]["k8s_io_api_core_v1.HTTPHeader"][];
+            /**
+             * @description Path to access on the HTTP server.
+             *     +optional
+             */
+            path?: string;
+            /**
+             * @description Name or number of the port to access on the container.
+             *     Number must be in the range 1 to 65535.
+             *     Name must be an IANA_SVC_NAME.
+             */
+            port?: components["schemas"]["intstr.IntOrString"];
+            /**
+             * @description Scheme to use for connecting to the host.
+             *     Defaults to HTTP.
+             *     +optional
+             */
+            scheme?: components["schemas"]["v1.URIScheme"];
+        };
+        "v1.HostAlias": {
+            /**
+             * @description Hostnames for the above IP address.
+             *     +listType=atomic
+             */
+            hostnames?: string[];
+            /**
+             * @description IP address of the host file entry.
+             *     +required
+             */
+            ip?: string;
+        };
+        "v1.HostIP": {
+            /**
+             * @description IP is the IP address assigned to the host
+             *     +required
+             */
+            ip?: string;
+        };
+        /** @enum {string} */
+        "v1.HostPathType": "" | "DirectoryOrCreate" | "Directory" | "FileOrCreate" | "File" | "Socket" | "CharDevice" | "BlockDevice";
+        "v1.HostPathVolumeSource": {
+            /**
+             * @description path of the directory on the host.
+             *     If the path is a symlink, it will follow the link to the real path.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+             */
+            path?: string;
+            /**
+             * @description type for HostPath Volume
+             *     Defaults to ""
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+             *     +optional
+             */
+            type?: components["schemas"]["v1.HostPathType"];
+        };
+        "v1.ISCSIVolumeSource": {
+            /**
+             * @description chapAuthDiscovery defines whether support iSCSI Discovery CHAP authentication
+             *     +optional
+             */
+            chapAuthDiscovery?: boolean;
+            /**
+             * @description chapAuthSession defines whether support iSCSI Session CHAP authentication
+             *     +optional
+             */
+            chapAuthSession?: boolean;
+            /**
+             * @description fsType is the filesystem type of the volume that you want to mount.
+             *     Tip: Ensure that the filesystem type is supported by the host operating system.
+             *     Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi
+             *     TODO: how do we prevent errors in the filesystem from compromising the machine
+             *     +optional
+             */
+            fsType?: string;
+            /**
+             * @description initiatorName is the custom iSCSI Initiator Name.
+             *     If initiatorName is specified with iscsiInterface simultaneously, new iSCSI interface
+             *     <target portal>:<volume name> will be created for the connection.
+             *     +optional
+             */
+            initiatorName?: string;
+            /** @description iqn is the target iSCSI Qualified Name. */
+            iqn?: string;
+            /**
+             * @description iscsiInterface is the interface Name that uses an iSCSI transport.
+             *     Defaults to 'default' (tcp).
+             *     +optional
+             *     +default="default"
+             */
+            iscsiInterface?: string;
+            /** @description lun represents iSCSI Target Lun number. */
+            lun?: number;
+            /**
+             * @description portals is the iSCSI Target Portal List. The portal is either an IP or ip_addr:port if the port
+             *     is other than default (typically TCP ports 860 and 3260).
+             *     +optional
+             *     +listType=atomic
+             */
+            portals?: string[];
+            /**
+             * @description readOnly here will force the ReadOnly setting in VolumeMounts.
+             *     Defaults to false.
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description secretRef is the CHAP Secret for iSCSI target and initiator authentication
+             *     +optional
+             */
+            secretRef?: components["schemas"]["k8s_io_api_core_v1.LocalObjectReference"];
+            /**
+             * @description targetPortal is iSCSI Target Portal. The Portal is either an IP or ip_addr:port if the port
+             *     is other than default (typically TCP ports 860 and 3260).
+             */
+            targetPortal?: string;
+        };
+        "v1.ImageVolumeSource": {
+            /**
+             * @description Policy for pulling OCI objects. Possible values are:
+             *     Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+             *     Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+             *     IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+             *     Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+             *     +optional
+             */
+            pullPolicy?: components["schemas"]["v1.PullPolicy"];
+            /**
+             * @description Required: Image or artifact reference to be used.
+             *     Behaves in the same way as pod.spec.containers[*].image.
+             *     Pull secrets will be assembled in the same way as for the container image by looking up node credentials, SA image pull secrets, and pod spec image pull secrets.
+             *     More info: https://kubernetes.io/docs/concepts/containers/images
+             *     This field is optional to allow higher level config management to default or override
+             *     container images in workload controllers like Deployments and StatefulSets.
+             *     +optional
+             */
+            reference?: string;
+        };
+        "v1.KeyToPath": {
+            /** @description key is the key to project. */
+            key?: string;
+            /**
+             * @description mode is Optional: mode bits used to set permissions on this file.
+             *     Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+             *     YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+             *     If not specified, the volume defaultMode will be used.
+             *     This might be in conflict with other options that affect the file
+             *     mode, like fsGroup, and the result can be other mode bits set.
+             *     +optional
+             */
+            mode?: number;
+            /**
+             * @description path is the relative path of the file to map the key to.
+             *     May not be an absolute path.
+             *     May not contain the path element '..'.
+             *     May not start with the string '..'.
+             */
+            path?: string;
         };
         "v1.LabelSelector": {
-            /** @description matchExpressions is a list of label selector requirements. The requirements are ANDed.
+            /**
+             * @description matchExpressions is a list of label selector requirements. The requirements are ANDed.
              *     +optional
-             *     +listType=atomic */
+             *     +listType=atomic
+             */
             matchExpressions?: components["schemas"]["v1.LabelSelectorRequirement"][];
-            /** @description matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+            /**
+             * @description matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
              *     map is equivalent to an element of matchExpressions, whose key field is "key", the
              *     operator is "In", and the values array contains only "value". The requirements are ANDed.
-             *     +optional */
+             *     +optional
+             */
             matchLabels?: {
                 [key: string]: string;
             };
         };
+        /** @enum {string} */
+        "v1.LabelSelectorOperator": "In" | "NotIn" | "Exists" | "DoesNotExist";
         "v1.LabelSelectorRequirement": {
             /** @description key is the label key that the selector applies to. */
             key?: string;
-            /** @description operator represents a key's relationship to a set of values.
-             *     Valid operators are In, NotIn, Exists and DoesNotExist. */
-            operator?: string;
-            /** @description values is an array of string values. If the operator is In or NotIn,
+            /**
+             * @description operator represents a key's relationship to a set of values.
+             *     Valid operators are In, NotIn, Exists and DoesNotExist.
+             */
+            operator?: components["schemas"]["v1.LabelSelectorOperator"];
+            /**
+             * @description values is an array of string values. If the operator is In or NotIn,
              *     the values array must be non-empty. If the operator is Exists or DoesNotExist,
              *     the values array must be empty. This array is replaced during a strategic
              *     merge patch.
              *     +optional
-             *     +listType=atomic */
+             *     +listType=atomic
+             */
             values?: string[];
         };
         "v1.Lifecycle": {
+            /**
+             * @description PostStart is called immediately after a container is created. If the handler fails,
+             *     the container is terminated and restarted according to its restart policy.
+             *     Other management of the container blocks until the hook completes.
+             *     More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
+             *     +optional
+             */
             postStart?: components["schemas"]["v1.LifecycleHandler"];
+            /**
+             * @description PreStop is called immediately before a container is terminated due to an
+             *     API request or management event such as liveness/startup probe failure,
+             *     preemption, resource contention, etc. The handler is not called if the
+             *     container crashes or exits. The Pod's termination grace period countdown begins before the
+             *     PreStop hook is executed. Regardless of the outcome of the handler, the
+             *     container will eventually terminate within the Pod's termination grace
+             *     period (unless delayed by finalizers). Other management of the container blocks until the hook completes
+             *     or until the termination grace period is reached.
+             *     More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
+             *     +optional
+             */
             preStop?: components["schemas"]["v1.LifecycleHandler"];
+            /**
+             * @description StopSignal defines which signal will be sent to a container when it is being stopped.
+             *     If not specified, the default is defined by the container runtime in use.
+             *     StopSignal can only be set for Pods with a non-empty .spec.os.name
+             *     +optional
+             */
+            stopSignal?: components["schemas"]["v1.Signal"];
         };
         "v1.LifecycleHandler": {
+            /**
+             * @description Exec specifies a command to execute in the container.
+             *     +optional
+             */
             exec?: components["schemas"]["v1.ExecAction"];
+            /**
+             * @description HTTPGet specifies an HTTP GET request to perform.
+             *     +optional
+             */
             httpGet?: components["schemas"]["v1.HTTPGetAction"];
+            /**
+             * @description Sleep represents a duration that the container should sleep.
+             *     +optional
+             */
             sleep?: components["schemas"]["v1.SleepAction"];
+            /**
+             * @description Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
+             *     for backward compatibility. There is no validation of this field and
+             *     lifecycle hooks will fail at runtime when it is specified.
+             *     +optional
+             */
             tcpSocket?: components["schemas"]["v1.TCPSocketAction"];
         };
-        "v1.LoadBalancerIngress": {
-            /** @description Hostname is set for load-balancer ingress points that are DNS based
-             *     (typically AWS load-balancers)
-             *     +optional */
-            hostname?: string;
-            /** @description IP is set for load-balancer ingress points that are IP based
-             *     (typically GCE or OpenStack load-balancers)
-             *     +optional */
-            ip?: string;
-            /** @description IPMode specifies how the load-balancer IP behaves, and may only be specified when the ip field is specified.
-             *     Setting this to "VIP" indicates that traffic is delivered to the node with
-             *     the destination set to the load-balancer's IP and port.
-             *     Setting this to "Proxy" indicates that traffic is delivered to the node or pod with
-             *     the destination set to the node's IP and node port or the pod's IP and port.
-             *     Service implementations may use this information to adjust traffic routing.
-             *     +optional */
-            ipMode?: string;
-            /** @description Ports is a list of records of service ports
-             *     If used, every port defined in the service should have an entry in it
-             *     +listType=atomic
-             *     +optional */
-            ports?: components["schemas"]["v1.PortStatus"][];
-        };
-        "v1.LoadBalancerStatus": {
-            /** @description Ingress is a list containing ingress points for the load-balancer.
-             *     Traffic intended for the service should be sent to these ingress points.
+        "v1.LinuxContainerUser": {
+            /** @description GID is the primary gid initially attached to the first process in the container */
+            gid?: number;
+            /**
+             * @description SupplementalGroups are the supplemental groups initially attached to the first process in the container
              *     +optional
-             *     +listType=atomic */
-            ingress?: components["schemas"]["v1.LoadBalancerIngress"][];
+             *     +listType=atomic
+             */
+            supplementalGroups?: number[];
+            /** @description UID is the primary uid initially attached to the first process in the container */
+            uid?: number;
+        };
+        "v1.ListMeta": {
+            /**
+             * @description continue may be set if the user set a limit on the number of items returned, and indicates that
+             *     the server has more data available. The value is opaque and may be used to issue another request
+             *     to the endpoint that served this list to retrieve the next set of available objects. Continuing a
+             *     consistent list may not be possible if the server configuration has changed or more than a few
+             *     minutes have passed. The resourceVersion field returned when using this continue value will be
+             *     identical to the value in the first response, unless you have received this token from an error
+             *     message.
+             */
+            continue?: string;
+            /**
+             * @description remainingItemCount is the number of subsequent items in the list which are not included in this
+             *     list response. If the list request contained label or field selectors, then the number of
+             *     remaining items is unknown and the field will be left unset and omitted during serialization.
+             *     If the list is complete (either because it is not chunking or because this is the last chunk),
+             *     then there are no more remaining items and this field will be left unset and omitted during
+             *     serialization.
+             *     Servers older than v1.15 do not set this field.
+             *     The intended use of the remainingItemCount is *estimating* the size of a collection. Clients
+             *     should not rely on the remainingItemCount to be set or to be exact.
+             *     +optional
+             */
+            remainingItemCount?: number;
+            /**
+             * @description String that identifies the server's internal version of this object that
+             *     can be used by clients to determine when objects have changed.
+             *     Value must be treated as opaque by clients and passed unmodified back to the server.
+             *     Populated by the system.
+             *     Read-only.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+             *     +optional
+             */
+            resourceVersion?: string;
+            /**
+             * @description Deprecated: selfLink is a legacy read-only field that is no longer populated by the system.
+             *     +optional
+             */
+            selfLink?: string;
         };
         "v1.ManagedFieldsEntry": {
-            /** @description APIVersion defines the version of this resource that this field set
+            /**
+             * @description APIVersion defines the version of this resource that this field set
              *     applies to. The format is "group/version" just like the top-level
              *     APIVersion field. It is necessary to track the version of a field
-             *     set because it cannot be automatically converted. */
+             *     set because it cannot be automatically converted.
+             */
             apiVersion?: string;
-            /** @description FieldsType is the discriminator for the different fields format and version.
-             *     There is currently only one possible value: "FieldsV1" */
+            /**
+             * @description FieldsType is the discriminator for the different fields format and version.
+             *     There is currently only one possible value: "FieldsV1"
+             */
             fieldsType?: string;
+            /**
+             * @description FieldsV1 holds the first JSON version format as described in the "FieldsV1" type.
+             *     +optional
+             */
             fieldsV1?: components["schemas"]["v1.FieldsV1"];
             /** @description Manager is an identifier of the workflow managing these fields. */
             manager?: string;
-            /** @description Operation is the type of operation which lead to this ManagedFieldsEntry being created.
-             *     The only valid values for this field are 'Apply' and 'Update'. */
-            operation?: string;
-            /** @description Subresource is the name of the subresource used to update that object, or
+            /**
+             * @description Operation is the type of operation which lead to this ManagedFieldsEntry being created.
+             *     The only valid values for this field are 'Apply' and 'Update'.
+             */
+            operation?: components["schemas"]["v1.ManagedFieldsOperationType"];
+            /**
+             * @description Subresource is the name of the subresource used to update that object, or
              *     empty string if the object was updated through the main resource. The
              *     value of this field is used to distinguish between managers, even if they
              *     share the same name. For example, a status update will be distinct from a
              *     regular update using the same manager name.
              *     Note that the APIVersion field is not related to the Subresource field and
-             *     it always corresponds to the version of the main resource. */
+             *     it always corresponds to the version of the main resource.
+             */
             subresource?: string;
-            /** @description Time is the timestamp of when the ManagedFields entry was added. The
+            /**
+             * @description Time is the timestamp of when the ManagedFields entry was added. The
              *     timestamp will also be updated if a field is added, the manager
              *     changes any of the owned fields value or removes a field. The
              *     timestamp does not update when a field is removed from the entry
              *     because another manager took it over.
-             *     +optional */
+             *     +optional
+             */
             time?: string;
         };
+        /** @enum {string} */
+        "v1.ManagedFieldsOperationType": "Apply" | "Update";
+        /** @enum {string} */
+        "v1.MountPropagationMode": "None" | "HostToContainer" | "Bidirectional";
+        "v1.NFSVolumeSource": {
+            /**
+             * @description path that is exported by the NFS server.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs
+             */
+            path?: string;
+            /**
+             * @description readOnly here will force the NFS export to be mounted with read-only permissions.
+             *     Defaults to false.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description server is the hostname or IP address of the NFS server.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs
+             */
+            server?: string;
+        };
         "v1.NamespaceCondition": {
-            /** @description Last time the condition transitioned from one status to another.
-             *     +optional */
+            /**
+             * @description Last time the condition transitioned from one status to another.
+             *     +optional
+             */
             lastTransitionTime?: string;
-            /** @description Human-readable message indicating details about last transition.
-             *     +optional */
+            /**
+             * @description Human-readable message indicating details about last transition.
+             *     +optional
+             */
             message?: string;
-            /** @description Unique, one-word, CamelCase reason for the condition's last transition.
-             *     +optional */
+            /**
+             * @description Unique, one-word, CamelCase reason for the condition's last transition.
+             *     +optional
+             */
             reason?: string;
             /** @description Status of the condition, one of True, False, Unknown. */
-            status?: string;
+            status?: components["schemas"]["k8s_io_api_core_v1.ConditionStatus"];
             /** @description Type of namespace controller condition. */
-            type?: string;
+            type?: components["schemas"]["v1.NamespaceConditionType"];
+        };
+        /** @enum {string} */
+        "v1.NamespaceConditionType": "NamespaceDeletionDiscoveryFailure" | "NamespaceDeletionContentFailure" | "NamespaceDeletionGroupVersionParsingFailure" | "NamespaceContentRemaining" | "NamespaceFinalizersRemaining";
+        /** @enum {string} */
+        "v1.NamespacePhase": "Active" | "Terminating";
+        "v1.NamespaceSpec": {
+            /**
+             * @description Finalizers is an opaque list of values that must be empty to permanently remove object from storage.
+             *     More info: https://kubernetes.io/docs/tasks/administer-cluster/namespaces/
+             *     +optional
+             *     +listType=atomic
+             */
+            finalizers?: components["schemas"]["v1.FinalizerName"][];
         };
         "v1.NamespaceStatus": {
-            /** @description Represents the latest available observations of a namespace's current state.
+            /**
+             * @description Represents the latest available observations of a namespace's current state.
              *     +optional
              *     +patchMergeKey=type
              *     +patchStrategy=merge
              *     +listType=map
-             *     +listMapKey=type */
+             *     +listMapKey=type
+             */
             conditions?: components["schemas"]["v1.NamespaceCondition"][];
-            /** @description Phase is the current lifecycle phase of the namespace.
+            /**
+             * @description Phase is the current lifecycle phase of the namespace.
              *     More info: https://kubernetes.io/docs/tasks/administer-cluster/namespaces/
-             *     +optional */
-            phase?: string;
+             *     +optional
+             */
+            phase?: components["schemas"]["v1.NamespacePhase"];
         };
+        "v1.NodeAddress": {
+            /** @description The node address. */
+            address?: string;
+            /** @description Node address type, one of Hostname, ExternalIP or InternalIP. */
+            type?: components["schemas"]["v1.NodeAddressType"];
+        };
+        /** @enum {string} */
+        "v1.NodeAddressType": "Hostname" | "InternalIP" | "ExternalIP" | "InternalDNS" | "ExternalDNS";
+        "v1.NodeAffinity": {
+            /**
+             * @description The scheduler will prefer to schedule pods to nodes that satisfy
+             *     the affinity expressions specified by this field, but it may choose
+             *     a node that violates one or more of the expressions. The node that is
+             *     most preferred is the one with the greatest sum of weights, i.e.
+             *     for each node that meets all of the scheduling requirements (resource
+             *     request, requiredDuringScheduling affinity expressions, etc.),
+             *     compute a sum by iterating through the elements of this field and adding
+             *     "weight" to the sum if the node matches the corresponding matchExpressions; the
+             *     node(s) with the highest sum are the most preferred.
+             *     +optional
+             *     +listType=atomic
+             */
+            preferredDuringSchedulingIgnoredDuringExecution?: components["schemas"]["v1.PreferredSchedulingTerm"][];
+            /**
+             * @description If the affinity requirements specified by this field are not met at
+             *     scheduling time, the pod will not be scheduled onto the node.
+             *     If the affinity requirements specified by this field cease to be met
+             *     at some point during pod execution (e.g. due to an update), the system
+             *     may or may not try to eventually evict the pod from its node.
+             *     +optional
+             */
+            requiredDuringSchedulingIgnoredDuringExecution?: components["schemas"]["v1.NodeSelector"];
+        };
+        "v1.NodeCondition": {
+            /**
+             * @description Last time we got an update on a given condition.
+             *     +optional
+             */
+            lastHeartbeatTime?: string;
+            /**
+             * @description Last time the condition transit from one status to another.
+             *     +optional
+             */
+            lastTransitionTime?: string;
+            /**
+             * @description Human readable message indicating details about last transition.
+             *     +optional
+             */
+            message?: string;
+            /**
+             * @description (brief) reason for the condition's last transition.
+             *     +optional
+             */
+            reason?: string;
+            /** @description Status of the condition, one of True, False, Unknown. */
+            status?: components["schemas"]["k8s_io_api_core_v1.ConditionStatus"];
+            /** @description Type of node condition. */
+            type?: components["schemas"]["v1.NodeConditionType"];
+        };
+        /** @enum {string} */
+        "v1.NodeConditionType": "Ready" | "MemoryPressure" | "DiskPressure" | "PIDPressure" | "NetworkUnavailable";
+        "v1.NodeConfigSource": {
+            /** @description ConfigMap is a reference to a Node's ConfigMap */
+            configMap?: components["schemas"]["v1.ConfigMapNodeConfigSource"];
+        };
+        "v1.NodeConfigStatus": {
+            /**
+             * @description Active reports the checkpointed config the node is actively using.
+             *     Active will represent either the current version of the Assigned config,
+             *     or the current LastKnownGood config, depending on whether attempting to use the
+             *     Assigned config results in an error.
+             *     +optional
+             */
+            active?: components["schemas"]["v1.NodeConfigSource"];
+            /**
+             * @description Assigned reports the checkpointed config the node will try to use.
+             *     When Node.Spec.ConfigSource is updated, the node checkpoints the associated
+             *     config payload to local disk, along with a record indicating intended
+             *     config. The node refers to this record to choose its config checkpoint, and
+             *     reports this record in Assigned. Assigned only updates in the status after
+             *     the record has been checkpointed to disk. When the Kubelet is restarted,
+             *     it tries to make the Assigned config the Active config by loading and
+             *     validating the checkpointed payload identified by Assigned.
+             *     +optional
+             */
+            assigned?: components["schemas"]["v1.NodeConfigSource"];
+            /**
+             * @description Error describes any problems reconciling the Spec.ConfigSource to the Active config.
+             *     Errors may occur, for example, attempting to checkpoint Spec.ConfigSource to the local Assigned
+             *     record, attempting to checkpoint the payload associated with Spec.ConfigSource, attempting
+             *     to load or validate the Assigned config, etc.
+             *     Errors may occur at different points while syncing config. Earlier errors (e.g. download or
+             *     checkpointing errors) will not result in a rollback to LastKnownGood, and may resolve across
+             *     Kubelet retries. Later errors (e.g. loading or validating a checkpointed config) will result in
+             *     a rollback to LastKnownGood. In the latter case, it is usually possible to resolve the error
+             *     by fixing the config assigned in Spec.ConfigSource.
+             *     You can find additional information for debugging by searching the error message in the Kubelet log.
+             *     Error is a human-readable description of the error state; machines can check whether or not Error
+             *     is empty, but should not rely on the stability of the Error text across Kubelet versions.
+             *     +optional
+             */
+            error?: string;
+            /**
+             * @description LastKnownGood reports the checkpointed config the node will fall back to
+             *     when it encounters an error attempting to use the Assigned config.
+             *     The Assigned config becomes the LastKnownGood config when the node determines
+             *     that the Assigned config is stable and correct.
+             *     This is currently implemented as a 10-minute soak period starting when the local
+             *     record of Assigned config is updated. If the Assigned config is Active at the end
+             *     of this period, it becomes the LastKnownGood. Note that if Spec.ConfigSource is
+             *     reset to nil (use local defaults), the LastKnownGood is also immediately reset to nil,
+             *     because the local default config is always assumed good.
+             *     You should not make assumptions about the node's method of determining config stability
+             *     and correctness, as this may change or become configurable in the future.
+             *     +optional
+             */
+            lastKnownGood?: components["schemas"]["v1.NodeConfigSource"];
+        };
+        "v1.NodeDaemonEndpoints": {
+            /**
+             * @description Endpoint on which Kubelet is listening.
+             *     +optional
+             */
+            kubeletEndpoint?: components["schemas"]["v1.DaemonEndpoint"];
+        };
+        "v1.NodeFeatures": {
+            /**
+             * @description SupplementalGroupsPolicy is set to true if the runtime supports SupplementalGroupsPolicy and ContainerUser.
+             *     +optional
+             */
+            supplementalGroupsPolicy?: boolean;
+        };
+        /** @enum {string} */
+        "v1.NodeInclusionPolicy": "Ignore" | "Honor";
+        /** @enum {string} */
+        "v1.NodePhase": "Pending" | "Running" | "Terminated";
+        "v1.NodeRuntimeHandler": {
+            /**
+             * @description Supported features.
+             *     +optional
+             */
+            features?: components["schemas"]["v1.NodeRuntimeHandlerFeatures"];
+            /**
+             * @description Runtime handler name.
+             *     Empty for the default runtime handler.
+             *     +optional
+             */
+            name?: string;
+        };
+        "v1.NodeRuntimeHandlerFeatures": {
+            /**
+             * @description RecursiveReadOnlyMounts is set to true if the runtime handler supports RecursiveReadOnlyMounts.
+             *     +optional
+             */
+            recursiveReadOnlyMounts?: boolean;
+            /**
+             * @description UserNamespaces is set to true if the runtime handler supports UserNamespaces, including for volumes.
+             *     +featureGate=UserNamespacesSupport
+             *     +optional
+             */
+            userNamespaces?: boolean;
+        };
+        "v1.NodeSelector": {
+            /**
+             * @description Required. A list of node selector terms. The terms are ORed.
+             *     +listType=atomic
+             */
+            nodeSelectorTerms?: components["schemas"]["v1.NodeSelectorTerm"][];
+        };
+        /** @enum {string} */
+        "v1.NodeSelectorOperator": "In" | "NotIn" | "Exists" | "DoesNotExist" | "Gt" | "Lt";
+        "v1.NodeSelectorRequirement": {
+            /** @description The label key that the selector applies to. */
+            key?: string;
+            /**
+             * @description Represents a key's relationship to a set of values.
+             *     Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+             */
+            operator?: components["schemas"]["v1.NodeSelectorOperator"];
+            /**
+             * @description An array of string values. If the operator is In or NotIn,
+             *     the values array must be non-empty. If the operator is Exists or DoesNotExist,
+             *     the values array must be empty. If the operator is Gt or Lt, the values
+             *     array must have a single element, which will be interpreted as an integer.
+             *     This array is replaced during a strategic merge patch.
+             *     +optional
+             *     +listType=atomic
+             */
+            values?: string[];
+        };
+        "v1.NodeSelectorTerm": {
+            /**
+             * @description A list of node selector requirements by node's labels.
+             *     +optional
+             *     +listType=atomic
+             */
+            matchExpressions?: components["schemas"]["v1.NodeSelectorRequirement"][];
+            /**
+             * @description A list of node selector requirements by node's fields.
+             *     +optional
+             *     +listType=atomic
+             */
+            matchFields?: components["schemas"]["v1.NodeSelectorRequirement"][];
+        };
+        "v1.NodeSpec": {
+            /**
+             * @description Deprecated: Previously used to specify the source of the node's configuration for the DynamicKubeletConfig feature. This feature is removed.
+             *     +optional
+             */
+            configSource?: components["schemas"]["v1.NodeConfigSource"];
+            /**
+             * @description Deprecated. Not all kubelets will set this field. Remove field after 1.13.
+             *     see: https://issues.k8s.io/61966
+             *     +optional
+             */
+            externalID?: string;
+            /**
+             * @description PodCIDR represents the pod IP range assigned to the node.
+             *     +optional
+             */
+            podCIDR?: string;
+            /**
+             * @description podCIDRs represents the IP ranges assigned to the node for usage by Pods on that node. If this
+             *     field is specified, the 0th entry must match the podCIDR field. It may contain at most 1 value for
+             *     each of IPv4 and IPv6.
+             *     +optional
+             *     +patchStrategy=merge
+             *     +listType=set
+             */
+            podCIDRs?: string[];
+            /**
+             * @description ID of the node assigned by the cloud provider in the format: <ProviderName>://<ProviderSpecificNodeID>
+             *     +optional
+             */
+            providerID?: string;
+            /**
+             * @description If specified, the node's taints.
+             *     +optional
+             *     +listType=atomic
+             */
+            taints?: components["schemas"]["v1.Taint"][];
+            /**
+             * @description Unschedulable controls node schedulability of new pods. By default, node is schedulable.
+             *     More info: https://kubernetes.io/docs/concepts/nodes/node/#manual-node-administration
+             *     +optional
+             */
+            unschedulable?: boolean;
+        };
+        "v1.NodeStatus": {
+            /**
+             * @description List of addresses reachable to the node.
+             *     Queried from cloud provider, if available.
+             *     More info: https://kubernetes.io/docs/reference/node/node-status/#addresses
+             *     Note: This field is declared as mergeable, but the merge key is not sufficiently
+             *     unique, which can cause data corruption when it is merged. Callers should instead
+             *     use a full-replacement patch. See https://pr.k8s.io/79391 for an example.
+             *     Consumers should assume that addresses can change during the
+             *     lifetime of a Node. However, there are some exceptions where this may not
+             *     be possible, such as Pods that inherit a Node's address in its own status or
+             *     consumers of the downward API (status.hostIP).
+             *     +optional
+             *     +patchMergeKey=type
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=type
+             */
+            addresses?: components["schemas"]["v1.NodeAddress"][];
+            /**
+             * @description Allocatable represents the resources of a node that are available for scheduling.
+             *     Defaults to Capacity.
+             *     +optional
+             */
+            allocatable?: components["schemas"]["v1.ResourceList"];
+            /**
+             * @description Capacity represents the total resources of a node.
+             *     More info: https://kubernetes.io/docs/reference/node/node-status/#capacity
+             *     +optional
+             */
+            capacity?: components["schemas"]["v1.ResourceList"];
+            /**
+             * @description Conditions is an array of current observed node conditions.
+             *     More info: https://kubernetes.io/docs/reference/node/node-status/#condition
+             *     +optional
+             *     +patchMergeKey=type
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=type
+             */
+            conditions?: components["schemas"]["v1.NodeCondition"][];
+            /**
+             * @description Status of the config assigned to the node via the dynamic Kubelet config feature.
+             *     +optional
+             */
+            config?: components["schemas"]["v1.NodeConfigStatus"];
+            /**
+             * @description Endpoints of daemons running on the Node.
+             *     +optional
+             */
+            daemonEndpoints?: components["schemas"]["v1.NodeDaemonEndpoints"];
+            /**
+             * @description DeclaredFeatures represents the features related to feature gates that are declared by the node.
+             *     +featureGate=NodeDeclaredFeatures
+             *     +optional
+             *     +listType=atomic
+             */
+            declaredFeatures?: string[];
+            /**
+             * @description Features describes the set of features implemented by the CRI implementation.
+             *     +featureGate=SupplementalGroupsPolicy
+             *     +optional
+             */
+            features?: components["schemas"]["v1.NodeFeatures"];
+            /**
+             * @description List of container images on this node
+             *     +optional
+             *     +listType=atomic
+             */
+            images?: components["schemas"]["v1.ContainerImage"][];
+            /**
+             * @description Set of ids/uuids to uniquely identify the node.
+             *     More info: https://kubernetes.io/docs/reference/node/node-status/#info
+             *     +optional
+             */
+            nodeInfo?: components["schemas"]["v1.NodeSystemInfo"];
+            /**
+             * @description NodePhase is the recently observed lifecycle phase of the node.
+             *     More info: https://kubernetes.io/docs/concepts/nodes/node/#phase
+             *     The field is never populated, and now is deprecated.
+             *     +optional
+             */
+            phase?: components["schemas"]["v1.NodePhase"];
+            /**
+             * @description The available runtime handlers.
+             *     +featureGate=UserNamespacesSupport
+             *     +optional
+             *     +listType=atomic
+             */
+            runtimeHandlers?: components["schemas"]["v1.NodeRuntimeHandler"][];
+            /**
+             * @description List of volumes that are attached to the node.
+             *     +optional
+             *     +listType=atomic
+             */
+            volumesAttached?: components["schemas"]["v1.AttachedVolume"][];
+            /**
+             * @description List of attachable volumes in use (mounted) by the node.
+             *     +optional
+             *     +listType=atomic
+             */
+            volumesInUse?: string[];
+        };
+        "v1.NodeSwapStatus": {
+            /**
+             * @description Total amount of swap memory in bytes.
+             *     +optional
+             */
+            capacity?: number;
+        };
+        "v1.NodeSystemInfo": {
+            /** @description The Architecture reported by the node */
+            architecture?: string;
+            /** @description Boot ID reported by the node. */
+            bootID?: string;
+            /** @description ContainerRuntime Version reported by the node through runtime remote API (e.g. containerd://1.4.2). */
+            containerRuntimeVersion?: string;
+            /** @description Kernel Version reported by the node from 'uname -r' (e.g. 3.16.0-0.bpo.4-amd64). */
+            kernelVersion?: string;
+            /** @description Deprecated: KubeProxy Version reported by the node. */
+            kubeProxyVersion?: string;
+            /** @description Kubelet Version reported by the node. */
+            kubeletVersion?: string;
+            /**
+             * @description MachineID reported by the node. For unique machine identification
+             *     in the cluster this field is preferred. Learn more from man(5)
+             *     machine-id: http://man7.org/linux/man-pages/man5/machine-id.5.html
+             */
+            machineID?: string;
+            /** @description The Operating System reported by the node */
+            operatingSystem?: string;
+            /** @description OS Image reported by the node from /etc/os-release (e.g. Debian GNU/Linux 7 (wheezy)). */
+            osImage?: string;
+            /** @description Swap Info reported by the node. */
+            swap?: components["schemas"]["v1.NodeSwapStatus"];
+            /**
+             * @description SystemUUID reported by the node. For unique machine identification
+             *     MachineID is preferred. This field is specific to Red Hat hosts
+             *     https://access.redhat.com/documentation/en-us/red_hat_subscription_management/1/html/rhsm/uuid
+             */
+            systemUUID?: string;
+        };
+        /** @enum {string} */
+        "v1.OSName": "linux" | "windows";
         "v1.ObjectFieldSelector": {
-            /** @description Version of the schema the FieldPath is written in terms of, defaults to "v1".
-             *     +optional */
+            /**
+             * @description Version of the schema the FieldPath is written in terms of, defaults to "v1".
+             *     +optional
+             */
             apiVersion?: string;
             /** @description Path of the field to select in the specified API version. */
             fieldPath?: string;
         };
-        "v1.ObjectReference": {
-            /** @description API version of the referent.
-             *     +optional */
-            apiVersion?: string;
-            /** @description If referring to a piece of an object instead of an entire object, this string
-             *     should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-             *     For example, if the object reference is to a container within a pod, this would take on a value like:
-             *     "spec.containers{name}" (where "name" refers to the name of the container that triggered
-             *     the event) or if no container name is specified "spec.containers[2]" (container with
-             *     index 2 in this pod). This syntax is chosen only to have some well-defined way of
-             *     referencing a part of an object.
-             *     TODO: this design is not final and this field is subject to change in the future.
-             *     +optional */
-            fieldPath?: string;
-            /** @description Kind of the referent.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-             *     +optional */
-            kind?: string;
-            /** @description Name of the referent.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-             *     +optional */
+        "v1.ObjectMeta": {
+            /**
+             * @description Annotations is an unstructured key value map stored with a resource that may be
+             *     set by external tools to store and retrieve arbitrary metadata. They are not
+             *     queryable and should be preserved when modifying objects.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
+             *     +optional
+             */
+            annotations?: {
+                [key: string]: string;
+            };
+            /**
+             * @description CreationTimestamp is a timestamp representing the server time when this object was
+             *     created. It is not guaranteed to be set in happens-before order across separate operations.
+             *     Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+             *
+             *     Populated by the system.
+             *     Read-only.
+             *     Null for lists.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+             *     +optional
+             */
+            creationTimestamp?: string;
+            /**
+             * @description Number of seconds allowed for this object to gracefully terminate before
+             *     it will be removed from the system. Only set when deletionTimestamp is also set.
+             *     May only be shortened.
+             *     Read-only.
+             *     +optional
+             */
+            deletionGracePeriodSeconds?: number;
+            /**
+             * @description DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This
+             *     field is set by the server when a graceful deletion is requested by the user, and is not
+             *     directly settable by a client. The resource is expected to be deleted (no longer visible
+             *     from resource lists, and not reachable by name) after the time in this field, once the
+             *     finalizers list is empty. As long as the finalizers list contains items, deletion is blocked.
+             *     Once the deletionTimestamp is set, this value may not be unset or be set further into the
+             *     future, although it may be shortened or the resource may be deleted prior to this time.
+             *     For example, a user may request that a pod is deleted in 30 seconds. The Kubelet will react
+             *     by sending a graceful termination signal to the containers in the pod. After that 30 seconds,
+             *     the Kubelet will send a hard termination signal (SIGKILL) to the container and after cleanup,
+             *     remove the pod from the API. In the presence of network partitions, this object may still
+             *     exist after this timestamp, until an administrator or automated process can determine the
+             *     resource is fully terminated.
+             *     If not set, graceful deletion of the object has not been requested.
+             *
+             *     Populated by the system when a graceful deletion is requested.
+             *     Read-only.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+             *     +optional
+             */
+            deletionTimestamp?: string;
+            /**
+             * @description Must be empty before the object is deleted from the registry. Each entry
+             *     is an identifier for the responsible component that will remove the entry
+             *     from the list. If the deletionTimestamp of the object is non-nil, entries
+             *     in this list can only be removed.
+             *     Finalizers may be processed and removed in any order.  Order is NOT enforced
+             *     because it introduces significant risk of stuck finalizers.
+             *     finalizers is a shared field, any actor with permission can reorder it.
+             *     If the finalizer list is processed in order, then this can lead to a situation
+             *     in which the component responsible for the first finalizer in the list is
+             *     waiting for a signal (field value, external system, or other) produced by a
+             *     component responsible for a finalizer later in the list, resulting in a deadlock.
+             *     Without enforced ordering finalizers are free to order amongst themselves and
+             *     are not vulnerable to ordering changes in the list.
+             *     +optional
+             *     +patchStrategy=merge
+             *     +listType=set
+             */
+            finalizers?: string[];
+            /**
+             * @description GenerateName is an optional prefix, used by the server, to generate a unique
+             *     name ONLY IF the Name field has not been provided.
+             *     If this field is used, the name returned to the client will be different
+             *     than the name passed. This value will also be combined with a unique suffix.
+             *     The provided value has the same validation rules as the Name field,
+             *     and may be truncated by the length of the suffix required to make the value
+             *     unique on the server.
+             *
+             *     If this field is specified and the generated name exists, the server will return a 409.
+             *
+             *     Applied only if Name is not specified.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
+             *     +optional
+             */
+            generateName?: string;
+            /**
+             * @description A sequence number representing a specific generation of the desired state.
+             *     Populated by the system. Read-only.
+             *     +optional
+             */
+            generation?: number;
+            /**
+             * @description Map of string keys and values that can be used to organize and categorize
+             *     (scope and select) objects. May match selectors of replication controllers
+             *     and services.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+             *     +optional
+             */
+            labels?: {
+                [key: string]: string;
+            };
+            /**
+             * @description ManagedFields maps workflow-id and version to the set of fields
+             *     that are managed by that workflow. This is mostly for internal
+             *     housekeeping, and users typically shouldn't need to set or
+             *     understand this field. A workflow can be the user's name, a
+             *     controller's name, or the name of a specific apply path like
+             *     "ci-cd". The set of fields is always in the version that the
+             *     workflow used when modifying the object.
+             *
+             *     +optional
+             *     +listType=atomic
+             */
+            managedFields?: components["schemas"]["v1.ManagedFieldsEntry"][];
+            /**
+             * @description Name must be unique within a namespace. Is required when creating resources, although
+             *     some resources may allow a client to request the generation of an appropriate name
+             *     automatically. Name is primarily intended for creation idempotence and configuration
+             *     definition.
+             *     Cannot be updated.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
+             *     +optional
+             */
             name?: string;
-            /** @description Namespace of the referent.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-             *     +optional */
+            /**
+             * @description Namespace defines the space within which each name must be unique. An empty namespace is
+             *     equivalent to the "default" namespace, but "default" is the canonical representation.
+             *     Not all objects are required to be scoped to a namespace - the value of this field for
+             *     those objects will be empty.
+             *
+             *     Must be a DNS_LABEL.
+             *     Cannot be updated.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
+             *     +optional
+             */
             namespace?: string;
-            /** @description Specific resourceVersion to which this reference is made, if any.
+            /**
+             * @description List of objects depended by this object. If ALL objects in the list have
+             *     been deleted, this object will be garbage collected. If this object is managed by a controller,
+             *     then an entry in this list will point to this controller, with the controller field set to true.
+             *     There cannot be more than one managing controller.
+             *     +optional
+             *     +patchMergeKey=uid
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=uid
+             */
+            ownerReferences?: components["schemas"]["v1.OwnerReference"][];
+            /**
+             * @description An opaque value that represents the internal version of this object that can
+             *     be used by clients to determine when objects have changed. May be used for optimistic
+             *     concurrency, change detection, and the watch operation on a resource or set of resources.
+             *     Clients must treat these values as opaque and passed unmodified back to the server.
+             *     They may only be valid for a particular resource or set of resources.
+             *
+             *     Populated by the system.
+             *     Read-only.
+             *     Value must be treated as opaque by clients and .
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-             *     +optional */
+             *     +optional
+             */
             resourceVersion?: string;
-            /** @description UID of the referent.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
-             *     +optional */
+            /**
+             * @description Deprecated: selfLink is a legacy read-only field that is no longer populated by the system.
+             *     +optional
+             */
+            selfLink?: string;
+            /**
+             * @description UID is the unique in time and space value for this object. It is typically generated by
+             *     the server on successful creation of a resource and is not allowed to change on PUT
+             *     operations.
+             *
+             *     Populated by the system.
+             *     Read-only.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids
+             *     +optional
+             */
             uid?: string;
         };
         "v1.OwnerReference": {
             /** @description API version of the referent. */
             apiVersion?: string;
-            /** @description If true, AND if the owner has the "foregroundDeletion" finalizer, then
+            /**
+             * @description If true, AND if the owner has the "foregroundDeletion" finalizer, then
              *     the owner cannot be deleted from the key-value store until this
              *     reference is removed.
              *     See https://kubernetes.io/docs/concepts/architecture/garbage-collection/#foreground-deletion
@@ -9249,63 +13570,1472 @@ export interface components {
              *     Defaults to false.
              *     To set this field, a user needs "delete" permission of the owner,
              *     otherwise 422 (Unprocessable Entity) will be returned.
-             *     +optional */
+             *     +optional
+             */
             blockOwnerDeletion?: boolean;
-            /** @description If true, this reference points to the managing controller.
-             *     +optional */
+            /**
+             * @description If true, this reference points to the managing controller.
+             *     +optional
+             */
             controller?: boolean;
-            /** @description Kind of the referent.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds */
+            /**
+             * @description Kind of the referent.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             */
             kind?: string;
-            /** @description Name of the referent.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names */
+            /**
+             * @description Name of the referent.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
+             */
             name?: string;
-            /** @description UID of the referent.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids */
+            /**
+             * @description UID of the referent.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids
+             */
             uid?: string;
         };
-        "v1.PortStatus": {
-            /** @description Error is to record the problem with the service port
-             *     The format of the error shall comply with the following rules:
-             *     - built-in error values shall be specified in this file and those shall use
-             *       CamelCase names
-             *     - cloud provider specific error values must have names that comply with the
-             *       format foo.example.com/CamelCase.
-             *     ---
-             *     The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+        /** @enum {string} */
+        "v1.PersistentVolumeAccessMode": "ReadWriteOnce" | "ReadOnlyMany" | "ReadWriteMany" | "ReadWriteOncePod";
+        /** @enum {string} */
+        "v1.PersistentVolumeClaimPhase": "Pending" | "Bound" | "Lost";
+        "v1.PersistentVolumeClaimSpec": {
+            /**
+             * @description accessModes contains the desired access modes the volume should have.
+             *     More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1
              *     +optional
-             *     +kubebuilder:validation:Required
-             *     +kubebuilder:validation:Pattern=`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$`
-             *     +kubebuilder:validation:MaxLength=316 */
-            error?: string;
-            /** @description Port is the port number of the service port of which status is recorded here */
-            port?: number;
-            /** @description Protocol is the protocol of the service port of which status is recorded here
-             *     The supported values are: "TCP", "UDP", "SCTP" */
-            protocol?: string;
+             *     +listType=atomic
+             */
+            accessModes?: components["schemas"]["v1.PersistentVolumeAccessMode"][];
+            /**
+             * @description dataSource field can be used to specify either:
+             *     * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+             *     * An existing PVC (PersistentVolumeClaim)
+             *     If the provisioner or an external controller can support the specified data source,
+             *     it will create a new volume based on the contents of the specified data source.
+             *     When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+             *     and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+             *     If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+             *     +optional
+             */
+            dataSource?: components["schemas"]["v1.TypedLocalObjectReference"];
+            /**
+             * @description dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+             *     volume is desired. This may be any object from a non-empty API group (non
+             *     core object) or a PersistentVolumeClaim object.
+             *     When this field is specified, volume binding will only succeed if the type of
+             *     the specified object matches some installed volume populator or dynamic
+             *     provisioner.
+             *     This field will replace the functionality of the dataSource field and as such
+             *     if both fields are non-empty, they must have the same value. For backwards
+             *     compatibility, when namespace isn't specified in dataSourceRef,
+             *     both fields (dataSource and dataSourceRef) will be set to the same
+             *     value automatically if one of them is empty and the other is non-empty.
+             *     When namespace is specified in dataSourceRef,
+             *     dataSource isn't set to the same value and must be empty.
+             *     There are three important differences between dataSource and dataSourceRef:
+             *     * While dataSource only allows two specific types of objects, dataSourceRef
+             *       allows any non-core object, as well as PersistentVolumeClaim objects.
+             *     * While dataSource ignores disallowed values (dropping them), dataSourceRef
+             *       preserves all values, and generates an error if a disallowed value is
+             *       specified.
+             *     * While dataSource only allows local objects, dataSourceRef allows objects
+             *       in any namespaces.
+             *     (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
+             *     (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
+             *     +optional
+             */
+            dataSourceRef?: components["schemas"]["v1.TypedObjectReference"];
+            /**
+             * @description resources represents the minimum resources the volume should have.
+             *     Users are allowed to specify resource requirements
+             *     that are lower than previous value but must still be higher than capacity recorded in the
+             *     status field of the claim.
+             *     More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+             *     +optional
+             */
+            resources?: components["schemas"]["v1.VolumeResourceRequirements"];
+            /**
+             * @description selector is a label query over volumes to consider for binding.
+             *     +optional
+             */
+            selector?: components["schemas"]["v1.LabelSelector"];
+            /**
+             * @description storageClassName is the name of the StorageClass required by the claim.
+             *     More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1
+             *     +optional
+             */
+            storageClassName?: string;
+            /**
+             * @description volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+             *     If specified, the CSI driver will create or update the volume with the attributes defined
+             *     in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+             *     it can be changed after the claim is created. An empty string or nil value indicates that no
+             *     VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+             *     this field can be reset to its previous value (including nil) to cancel the modification.
+             *     If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+             *     set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+             *     exists.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
+             *     +featureGate=VolumeAttributesClass
+             *     +optional
+             */
+            volumeAttributesClassName?: string;
+            /**
+             * @description volumeMode defines what type of volume is required by the claim.
+             *     Value of Filesystem is implied when not included in claim spec.
+             *     +optional
+             */
+            volumeMode?: components["schemas"]["v1.PersistentVolumeMode"];
+            /**
+             * @description volumeName is the binding reference to the PersistentVolume backing this claim.
+             *     +optional
+             */
+            volumeName?: string;
+        };
+        "v1.PersistentVolumeClaimTemplate": {
+            /**
+             * @description May contain labels and annotations that will be copied into the PVC
+             *     when creating it. No other fields are allowed and will be rejected during
+             *     validation.
+             *
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ObjectMeta"];
+            /**
+             * @description The specification for the PersistentVolumeClaim. The entire content is
+             *     copied unchanged into the PVC that gets created from this
+             *     template. The same fields as in a PersistentVolumeClaim
+             *     are also valid here.
+             */
+            spec?: components["schemas"]["v1.PersistentVolumeClaimSpec"];
+        };
+        "v1.PersistentVolumeClaimVolumeSource": {
+            /**
+             * @description claimName is the name of a PersistentVolumeClaim in the same namespace as the pod using this volume.
+             *     More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims
+             */
+            claimName?: string;
+            /**
+             * @description readOnly Will force the ReadOnly setting in VolumeMounts.
+             *     Default false.
+             *     +optional
+             */
+            readOnly?: boolean;
+        };
+        /** @enum {string} */
+        "v1.PersistentVolumeMode": "Block" | "Filesystem";
+        /** @enum {string} */
+        "v1.PersistentVolumePhase": "Pending" | "Available" | "Bound" | "Released" | "Failed";
+        /** @enum {string} */
+        "v1.PersistentVolumeReclaimPolicy": "Recycle" | "Delete" | "Retain";
+        "v1.PhotonPersistentDiskVolumeSource": {
+            /**
+             * @description fsType is the filesystem type to mount.
+             *     Must be a filesystem type supported by the host operating system.
+             *     Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+             */
+            fsType?: string;
+            /** @description pdID is the ID that identifies Photon Controller persistent disk */
+            pdID?: string;
+        };
+        "v1.Pod": {
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
+             *     Servers should convert recognized schemas to the latest internal value, and
+             *     may reject unrecognized values.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+             *     +optional
+             */
+            apiVersion?: string;
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
+             *     Servers may infer this from the endpoint the client submits requests to.
+             *     Cannot be updated.
+             *     In CamelCase.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            kind?: string;
+            /**
+             * @description Standard object's metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ObjectMeta"];
+            /**
+             * @description Specification of the desired behavior of the pod.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+             *     +optional
+             */
+            spec?: components["schemas"]["v1.PodSpec"];
+            /**
+             * @description Most recently observed status of the pod.
+             *     This data may not be up to date.
+             *     Populated by the system.
+             *     Read-only.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+             *     +optional
+             */
+            status?: components["schemas"]["v1.PodStatus"];
+        };
+        "v1.PodAffinity": {
+            /**
+             * @description The scheduler will prefer to schedule pods to nodes that satisfy
+             *     the affinity expressions specified by this field, but it may choose
+             *     a node that violates one or more of the expressions. The node that is
+             *     most preferred is the one with the greatest sum of weights, i.e.
+             *     for each node that meets all of the scheduling requirements (resource
+             *     request, requiredDuringScheduling affinity expressions, etc.),
+             *     compute a sum by iterating through the elements of this field and adding
+             *     "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+             *     node(s) with the highest sum are the most preferred.
+             *     +optional
+             *     +listType=atomic
+             */
+            preferredDuringSchedulingIgnoredDuringExecution?: components["schemas"]["v1.WeightedPodAffinityTerm"][];
+            /**
+             * @description If the affinity requirements specified by this field are not met at
+             *     scheduling time, the pod will not be scheduled onto the node.
+             *     If the affinity requirements specified by this field cease to be met
+             *     at some point during pod execution (e.g. due to a pod label update), the
+             *     system may or may not try to eventually evict the pod from its node.
+             *     When there are multiple elements, the lists of nodes corresponding to each
+             *     podAffinityTerm are intersected, i.e. all terms must be satisfied.
+             *     +optional
+             *     +listType=atomic
+             */
+            requiredDuringSchedulingIgnoredDuringExecution?: components["schemas"]["v1.PodAffinityTerm"][];
+        };
+        "v1.PodAffinityTerm": {
+            /**
+             * @description A label query over a set of resources, in this case pods.
+             *     If it's null, this PodAffinityTerm matches with no Pods.
+             *     +optional
+             */
+            labelSelector?: components["schemas"]["v1.LabelSelector"];
+            /**
+             * @description MatchLabelKeys is a set of pod label keys to select which pods will
+             *     be taken into consideration. The keys are used to lookup values from the
+             *     incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
+             *     to select the group of existing pods which pods will be taken into consideration
+             *     for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+             *     pod labels will be ignored. The default value is empty.
+             *     The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+             *     Also, matchLabelKeys cannot be set when labelSelector isn't set.
+             *
+             *     +listType=atomic
+             *     +optional
+             */
+            matchLabelKeys?: string[];
+            /**
+             * @description MismatchLabelKeys is a set of pod label keys to select which pods will
+             *     be taken into consideration. The keys are used to lookup values from the
+             *     incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
+             *     to select the group of existing pods which pods will be taken into consideration
+             *     for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+             *     pod labels will be ignored. The default value is empty.
+             *     The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+             *     Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
+             *
+             *     +listType=atomic
+             *     +optional
+             */
+            mismatchLabelKeys?: string[];
+            /**
+             * @description A label query over the set of namespaces that the term applies to.
+             *     The term is applied to the union of the namespaces selected by this field
+             *     and the ones listed in the namespaces field.
+             *     null selector and null or empty namespaces list means "this pod's namespace".
+             *     An empty selector ({}) matches all namespaces.
+             *     +optional
+             */
+            namespaceSelector?: components["schemas"]["v1.LabelSelector"];
+            /**
+             * @description namespaces specifies a static list of namespace names that the term applies to.
+             *     The term is applied to the union of the namespaces listed in this field
+             *     and the ones selected by namespaceSelector.
+             *     null or empty namespaces list and null namespaceSelector means "this pod's namespace".
+             *     +optional
+             *     +listType=atomic
+             */
+            namespaces?: string[];
+            /**
+             * @description This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
+             *     the labelSelector in the specified namespaces, where co-located is defined as running on a node
+             *     whose value of the label with key topologyKey matches that of any node on which any of the
+             *     selected pods is running.
+             *     Empty topologyKey is not allowed.
+             */
+            topologyKey?: string;
+        };
+        "v1.PodAntiAffinity": {
+            /**
+             * @description The scheduler will prefer to schedule pods to nodes that satisfy
+             *     the anti-affinity expressions specified by this field, but it may choose
+             *     a node that violates one or more of the expressions. The node that is
+             *     most preferred is the one with the greatest sum of weights, i.e.
+             *     for each node that meets all of the scheduling requirements (resource
+             *     request, requiredDuringScheduling anti-affinity expressions, etc.),
+             *     compute a sum by iterating through the elements of this field and subtracting
+             *     "weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
+             *     node(s) with the highest sum are the most preferred.
+             *     +optional
+             *     +listType=atomic
+             */
+            preferredDuringSchedulingIgnoredDuringExecution?: components["schemas"]["v1.WeightedPodAffinityTerm"][];
+            /**
+             * @description If the anti-affinity requirements specified by this field are not met at
+             *     scheduling time, the pod will not be scheduled onto the node.
+             *     If the anti-affinity requirements specified by this field cease to be met
+             *     at some point during pod execution (e.g. due to a pod label update), the
+             *     system may or may not try to eventually evict the pod from its node.
+             *     When there are multiple elements, the lists of nodes corresponding to each
+             *     podAffinityTerm are intersected, i.e. all terms must be satisfied.
+             *     +optional
+             *     +listType=atomic
+             */
+            requiredDuringSchedulingIgnoredDuringExecution?: components["schemas"]["v1.PodAffinityTerm"][];
+        };
+        "v1.PodCertificateProjection": {
+            /**
+             * @description Write the certificate chain at this path in the projected volume.
+             *
+             *     Most applications should use credentialBundlePath.  When using keyPath
+             *     and certificateChainPath, your application needs to check that the key
+             *     and leaf certificate are consistent, because it is possible to read the
+             *     files mid-rotation.
+             *
+             *     +optional
+             */
+            certificateChainPath?: string;
+            /**
+             * @description Write the credential bundle at this path in the projected volume.
+             *
+             *     The credential bundle is a single file that contains multiple PEM blocks.
+             *     The first PEM block is a PRIVATE KEY block, containing a PKCS#8 private
+             *     key.
+             *
+             *     The remaining blocks are CERTIFICATE blocks, containing the issued
+             *     certificate chain from the signer (leaf and any intermediates).
+             *
+             *     Using credentialBundlePath lets your Pod's application code make a single
+             *     atomic read that retrieves a consistent key and certificate chain.  If you
+             *     project them to separate files, your application code will need to
+             *     additionally check that the leaf certificate was issued to the key.
+             *
+             *     +optional
+             */
+            credentialBundlePath?: string;
+            /**
+             * @description Write the key at this path in the projected volume.
+             *
+             *     Most applications should use credentialBundlePath.  When using keyPath
+             *     and certificateChainPath, your application needs to check that the key
+             *     and leaf certificate are consistent, because it is possible to read the
+             *     files mid-rotation.
+             *
+             *     +optional
+             */
+            keyPath?: string;
+            /**
+             * @description The type of keypair Kubelet will generate for the pod.
+             *
+             *     Valid values are "RSA3072", "RSA4096", "ECDSAP256", "ECDSAP384",
+             *     "ECDSAP521", and "ED25519".
+             *
+             *     +required
+             */
+            keyType?: string;
+            /**
+             * @description maxExpirationSeconds is the maximum lifetime permitted for the
+             *     certificate.
+             *
+             *     Kubelet copies this value verbatim into the PodCertificateRequests it
+             *     generates for this projection.
+             *
+             *     If omitted, kube-apiserver will set it to 86400(24 hours). kube-apiserver
+             *     will reject values shorter than 3600 (1 hour).  The maximum allowable
+             *     value is 7862400 (91 days).
+             *
+             *     The signer implementation is then free to issue a certificate with any
+             *     lifetime *shorter* than MaxExpirationSeconds, but no shorter than 3600
+             *     seconds (1 hour).  This constraint is enforced by kube-apiserver.
+             *     `kubernetes.io` signers will never issue certificates with a lifetime
+             *     longer than 24 hours.
+             *
+             *     +optional
+             */
+            maxExpirationSeconds?: number;
+            /**
+             * @description Kubelet's generated CSRs will be addressed to this signer.
+             *
+             *     +required
+             */
+            signerName?: string;
+            /**
+             * @description userAnnotations allow pod authors to pass additional information to
+             *     the signer implementation.  Kubernetes does not restrict or validate this
+             *     metadata in any way.
+             *
+             *     These values are copied verbatim into the `spec.unverifiedUserAnnotations` field of
+             *     the PodCertificateRequest objects that Kubelet creates.
+             *
+             *     Entries are subject to the same validation as object metadata annotations,
+             *     with the addition that all keys must be domain-prefixed. No restrictions
+             *     are placed on values, except an overall size limitation on the entire field.
+             *
+             *     Signers should document the keys and values they support. Signers should
+             *     deny requests that contain keys they do not recognize.
+             */
+            userAnnotations?: {
+                [key: string]: string;
+            };
+        };
+        "v1.PodCondition": {
+            /**
+             * @description Last time we probed the condition.
+             *     +optional
+             */
+            lastProbeTime?: string;
+            /**
+             * @description Last time the condition transitioned from one status to another.
+             *     +optional
+             */
+            lastTransitionTime?: string;
+            /**
+             * @description Human-readable message indicating details about last transition.
+             *     +optional
+             */
+            message?: string;
+            /**
+             * @description If set, this represents the .metadata.generation that the pod condition was set based upon.
+             *     The PodObservedGenerationTracking feature gate must be enabled to use this field.
+             *     +featureGate=PodObservedGenerationTracking
+             *     +optional
+             */
+            observedGeneration?: number;
+            /**
+             * @description Unique, one-word, CamelCase reason for the condition's last transition.
+             *     +optional
+             */
+            reason?: string;
+            /**
+             * @description Status is the status of the condition.
+             *     Can be True, False, Unknown.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-conditions
+             */
+            status?: components["schemas"]["k8s_io_api_core_v1.ConditionStatus"];
+            /**
+             * @description Type is the type of the condition.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-conditions
+             */
+            type?: components["schemas"]["v1.PodConditionType"];
+        };
+        /** @enum {string} */
+        "v1.PodConditionType": "ContainersReady" | "Initialized" | "Ready" | "PodScheduled" | "DisruptionTarget" | "PodReadyToStartContainers" | "PodResizePending" | "PodResizeInProgress" | "AllContainersRestarting";
+        "v1.PodDNSConfig": {
+            /**
+             * @description A list of DNS name server IP addresses.
+             *     This will be appended to the base nameservers generated from DNSPolicy.
+             *     Duplicated nameservers will be removed.
+             *     +optional
+             *     +listType=atomic
+             */
+            nameservers?: string[];
+            /**
+             * @description A list of DNS resolver options.
+             *     This will be merged with the base options generated from DNSPolicy.
+             *     Duplicated entries will be removed. Resolution options given in Options
+             *     will override those that appear in the base DNSPolicy.
+             *     +optional
+             *     +listType=atomic
+             */
+            options?: components["schemas"]["v1.PodDNSConfigOption"][];
+            /**
+             * @description A list of DNS search domains for host-name lookup.
+             *     This will be appended to the base search paths generated from DNSPolicy.
+             *     Duplicated search paths will be removed.
+             *     +optional
+             *     +listType=atomic
+             */
+            searches?: string[];
+        };
+        "v1.PodDNSConfigOption": {
+            /**
+             * @description Name is this DNS resolver option's name.
+             *     Required.
+             */
+            name?: string;
+            /**
+             * @description Value is this DNS resolver option's value.
+             *     +optional
+             */
+            value?: string;
+        };
+        "v1.PodExtendedResourceClaimStatus": {
+            /**
+             * @description RequestMappings identifies the mapping of <container, extended resource backed by DRA> to  device request
+             *     in the generated ResourceClaim.
+             *     +listType=atomic
+             */
+            requestMappings?: components["schemas"]["v1.ContainerExtendedResourceRequest"][];
+            /**
+             * @description ResourceClaimName is the name of the ResourceClaim that was
+             *     generated for the Pod in the namespace of the Pod.
+             */
+            resourceClaimName?: string;
+        };
+        /** @enum {string} */
+        "v1.PodFSGroupChangePolicy": "OnRootMismatch" | "Always";
+        "v1.PodIP": {
+            /**
+             * @description IP is the IP address assigned to the pod
+             *     +required
+             */
+            ip?: string;
+        };
+        "v1.PodOS": {
+            /**
+             * @description Name is the name of the operating system. The currently supported values are linux and windows.
+             *     Additional value may be defined in future and can be one of:
+             *     https://github.com/opencontainers/runtime-spec/blob/master/config.md#platform-specific-configuration
+             *     Clients should expect to handle additional values and treat unrecognized values in this field as os: null
+             */
+            name?: components["schemas"]["v1.OSName"];
+        };
+        /** @enum {string} */
+        "v1.PodPhase": "Pending" | "Running" | "Succeeded" | "Failed" | "Unknown";
+        /** @enum {string} */
+        "v1.PodQOSClass": "Guaranteed" | "Burstable" | "BestEffort";
+        "v1.PodReadinessGate": {
+            /** @description ConditionType refers to a condition in the pod's condition list with matching type. */
+            conditionType?: components["schemas"]["v1.PodConditionType"];
+        };
+        /** @enum {string} */
+        "v1.PodResizeStatus": "InProgress" | "Deferred" | "Infeasible";
+        "v1.PodResourceClaim": {
+            /**
+             * @description Name uniquely identifies this resource claim inside the pod.
+             *     This must be a DNS_LABEL.
+             */
+            name?: string;
+            /**
+             * @description ResourceClaimName is the name of a ResourceClaim object in the same
+             *     namespace as this pod.
+             *
+             *     Exactly one of ResourceClaimName and ResourceClaimTemplateName must
+             *     be set.
+             */
+            resourceClaimName?: string;
+            /**
+             * @description ResourceClaimTemplateName is the name of a ResourceClaimTemplate
+             *     object in the same namespace as this pod.
+             *
+             *     The template will be used to create a new ResourceClaim, which will
+             *     be bound to this pod. When this pod is deleted, the ResourceClaim
+             *     will also be deleted. The pod name and resource name, along with a
+             *     generated component, will be used to form a unique name for the
+             *     ResourceClaim, which will be recorded in pod.status.resourceClaimStatuses.
+             *
+             *     This field is immutable and no changes will be made to the
+             *     corresponding ResourceClaim by the control plane after creating the
+             *     ResourceClaim.
+             *
+             *     Exactly one of ResourceClaimName and ResourceClaimTemplateName must
+             *     be set.
+             */
+            resourceClaimTemplateName?: string;
+        };
+        "v1.PodResourceClaimStatus": {
+            /**
+             * @description Name uniquely identifies this resource claim inside the pod.
+             *     This must match the name of an entry in pod.spec.resourceClaims,
+             *     which implies that the string must be a DNS_LABEL.
+             */
+            name?: string;
+            /**
+             * @description ResourceClaimName is the name of the ResourceClaim that was
+             *     generated for the Pod in the namespace of the Pod. If this is
+             *     unset, then generating a ResourceClaim was not necessary. The
+             *     pod.spec.resourceClaims entry can be ignored in this case.
+             *
+             *     +optional
+             */
+            resourceClaimName?: string;
+        };
+        /** @enum {string} */
+        "v1.PodSELinuxChangePolicy": "Recursive" | "MountOption";
+        "v1.PodSchedulingGate": {
+            /**
+             * @description Name of the scheduling gate.
+             *     Each scheduling gate must have a unique name field.
+             */
+            name?: string;
+        };
+        "v1.PodSecurityContext": {
+            /**
+             * @description appArmorProfile is the AppArmor options to use by the containers in this pod.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             */
+            appArmorProfile?: components["schemas"]["v1.AppArmorProfile"];
+            /**
+             * @description A special supplemental group that applies to all containers in a pod.
+             *     Some volume types allow the Kubelet to change the ownership of that volume
+             *     to be owned by the pod:
+             *
+             *     1. The owning GID will be the FSGroup
+             *     2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
+             *     3. The permission bits are OR'd with rw-rw----
+             *
+             *     If unset, the Kubelet will not modify the ownership and permissions of any volume.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             */
+            fsGroup?: number;
+            /**
+             * @description fsGroupChangePolicy defines behavior of changing ownership and permission of the volume
+             *     before being exposed inside Pod. This field will only apply to
+             *     volume types which support fsGroup based ownership(and permissions).
+             *     It will have no effect on ephemeral volume types such as: secret, configmaps
+             *     and emptydir.
+             *     Valid values are "OnRootMismatch" and "Always". If not specified, "Always" is used.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             */
+            fsGroupChangePolicy?: components["schemas"]["v1.PodFSGroupChangePolicy"];
+            /**
+             * @description The GID to run the entrypoint of the container process.
+             *     Uses runtime default if unset.
+             *     May also be set in SecurityContext.  If set in both SecurityContext and
+             *     PodSecurityContext, the value specified in SecurityContext takes precedence
+             *     for that container.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             */
+            runAsGroup?: number;
+            /**
+             * @description Indicates that the container must run as a non-root user.
+             *     If true, the Kubelet will validate the image at runtime to ensure that it
+             *     does not run as UID 0 (root) and fail to start the container if it does.
+             *     If unset or false, no such validation will be performed.
+             *     May also be set in SecurityContext.  If set in both SecurityContext and
+             *     PodSecurityContext, the value specified in SecurityContext takes precedence.
+             *     +optional
+             */
+            runAsNonRoot?: boolean;
+            /**
+             * @description The UID to run the entrypoint of the container process.
+             *     Defaults to user specified in image metadata if unspecified.
+             *     May also be set in SecurityContext.  If set in both SecurityContext and
+             *     PodSecurityContext, the value specified in SecurityContext takes precedence
+             *     for that container.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             */
+            runAsUser?: number;
+            /**
+             * @description seLinuxChangePolicy defines how the container's SELinux label is applied to all volumes used by the Pod.
+             *     It has no effect on nodes that do not support SELinux or to volumes does not support SELinux.
+             *     Valid values are "MountOption" and "Recursive".
+             *
+             *     "Recursive" means relabeling of all files on all Pod volumes by the container runtime.
+             *     This may be slow for large volumes, but allows mixing privileged and unprivileged Pods sharing the same volume on the same node.
+             *
+             *     "MountOption" mounts all eligible Pod volumes with `-o context` mount option.
+             *     This requires all Pods that share the same volume to use the same SELinux label.
+             *     It is not possible to share the same volume among privileged and unprivileged Pods.
+             *     Eligible volumes are in-tree FibreChannel and iSCSI volumes, and all CSI volumes
+             *     whose CSI driver announces SELinux support by setting spec.seLinuxMount: true in their
+             *     CSIDriver instance. Other volumes are always re-labelled recursively.
+             *     "MountOption" value is allowed only when SELinuxMount feature gate is enabled.
+             *
+             *     If not specified and SELinuxMount feature gate is enabled, "MountOption" is used.
+             *     If not specified and SELinuxMount feature gate is disabled, "MountOption" is used for ReadWriteOncePod volumes
+             *     and "Recursive" for all other volumes.
+             *
+             *     This field affects only Pods that have SELinux label set, either in PodSecurityContext or in SecurityContext of all containers.
+             *
+             *     All Pods that use the same volume should use the same seLinuxChangePolicy, otherwise some pods can get stuck in ContainerCreating state.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +featureGate=SELinuxChangePolicy
+             *     +optional
+             */
+            seLinuxChangePolicy?: components["schemas"]["v1.PodSELinuxChangePolicy"];
+            /**
+             * @description The SELinux context to be applied to all containers.
+             *     If unspecified, the container runtime will allocate a random SELinux context for each
+             *     container.  May also be set in SecurityContext.  If set in
+             *     both SecurityContext and PodSecurityContext, the value specified in SecurityContext
+             *     takes precedence for that container.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             */
+            seLinuxOptions?: components["schemas"]["v1.SELinuxOptions"];
+            /**
+             * @description The seccomp options to use by the containers in this pod.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             */
+            seccompProfile?: components["schemas"]["v1.SeccompProfile"];
+            /**
+             * @description A list of groups applied to the first process run in each container, in
+             *     addition to the container's primary GID and fsGroup (if specified).  If
+             *     the SupplementalGroupsPolicy feature is enabled, the
+             *     supplementalGroupsPolicy field determines whether these are in addition
+             *     to or instead of any group memberships defined in the container image.
+             *     If unspecified, no additional groups are added, though group memberships
+             *     defined in the container image may still be used, depending on the
+             *     supplementalGroupsPolicy field.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             *     +listType=atomic
+             */
+            supplementalGroups?: number[];
+            /**
+             * @description Defines how supplemental groups of the first container processes are calculated.
+             *     Valid values are "Merge" and "Strict". If not specified, "Merge" is used.
+             *     (Alpha) Using the field requires the SupplementalGroupsPolicy feature gate to be enabled
+             *     and the container runtime must implement support for this feature.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     TODO: update the default value to "Merge" when spec.os.name is not windows in v1.34
+             *     +featureGate=SupplementalGroupsPolicy
+             *     +optional
+             */
+            supplementalGroupsPolicy?: components["schemas"]["v1.SupplementalGroupsPolicy"];
+            /**
+             * @description Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported
+             *     sysctls (by the container runtime) might fail to launch.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             *     +listType=atomic
+             */
+            sysctls?: components["schemas"]["v1.Sysctl"][];
+            /**
+             * @description The Windows specific settings applied to all containers.
+             *     If unspecified, the options within a container's SecurityContext will be used.
+             *     If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+             *     Note that this field cannot be set when spec.os.name is linux.
+             *     +optional
+             */
+            windowsOptions?: components["schemas"]["v1.WindowsSecurityContextOptions"];
+        };
+        "v1.PodSpec": {
+            /**
+             * @description Optional duration in seconds the pod may be active on the node relative to
+             *     StartTime before the system will actively try to mark it failed and kill associated containers.
+             *     Value must be a positive integer.
+             *     +optional
+             */
+            activeDeadlineSeconds?: number;
+            /**
+             * @description If specified, the pod's scheduling constraints
+             *     +optional
+             */
+            affinity?: components["schemas"]["v1.Affinity"];
+            /**
+             * @description AutomountServiceAccountToken indicates whether a service account token should be automatically mounted.
+             *     +optional
+             */
+            automountServiceAccountToken?: boolean;
+            /**
+             * @description List of containers belonging to the pod.
+             *     Containers cannot currently be added or removed.
+             *     There must be at least one container in a Pod.
+             *     Cannot be updated.
+             *     +patchMergeKey=name
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=name
+             */
+            containers?: components["schemas"]["v1.Container"][];
+            /**
+             * @description Specifies the DNS parameters of a pod.
+             *     Parameters specified here will be merged to the generated DNS
+             *     configuration based on DNSPolicy.
+             *     +optional
+             */
+            dnsConfig?: components["schemas"]["v1.PodDNSConfig"];
+            /**
+             * @description Set DNS policy for the pod.
+             *     Defaults to "ClusterFirst".
+             *     Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'.
+             *     DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy.
+             *     To have DNS options set along with hostNetwork, you have to specify DNS policy
+             *     explicitly to 'ClusterFirstWithHostNet'.
+             *     +optional
+             */
+            dnsPolicy?: components["schemas"]["v1.DNSPolicy"];
+            /**
+             * @description EnableServiceLinks indicates whether information about services should be injected into pod's
+             *     environment variables, matching the syntax of Docker links.
+             *     Optional: Defaults to true.
+             *     +optional
+             */
+            enableServiceLinks?: boolean;
+            /**
+             * @description List of ephemeral containers run in this pod. Ephemeral containers may be run in an existing
+             *     pod to perform user-initiated actions such as debugging. This list cannot be specified when
+             *     creating a pod, and it cannot be modified by updating the pod spec. In order to add an
+             *     ephemeral container to an existing pod, use the pod's ephemeralcontainers subresource.
+             *     +optional
+             *     +patchMergeKey=name
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=name
+             */
+            ephemeralContainers?: components["schemas"]["v1.EphemeralContainer"][];
+            /**
+             * @description HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts
+             *     file if specified.
+             *     +optional
+             *     +patchMergeKey=ip
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=ip
+             */
+            hostAliases?: components["schemas"]["v1.HostAlias"][];
+            /**
+             * @description Use the host's ipc namespace.
+             *     Optional: Default to false.
+             *     +k8s:conversion-gen=false
+             *     +optional
+             */
+            hostIPC?: boolean;
+            /**
+             * @description Host networking requested for this pod. Use the host's network namespace.
+             *     When using HostNetwork you should specify ports so the scheduler is aware.
+             *     When `hostNetwork` is true, specified `hostPort` fields in port definitions must match `containerPort`,
+             *     and unspecified `hostPort` fields in port definitions are defaulted to match `containerPort`.
+             *     Default to false.
+             *     +k8s:conversion-gen=false
+             *     +optional
+             */
+            hostNetwork?: boolean;
+            /**
+             * @description Use the host's pid namespace.
+             *     Optional: Default to false.
+             *     +k8s:conversion-gen=false
+             *     +optional
+             */
+            hostPID?: boolean;
+            /**
+             * @description Use the host's user namespace.
+             *     Optional: Default to true.
+             *     If set to true or not present, the pod will be run in the host user namespace, useful
+             *     for when the pod needs a feature only available to the host user namespace, such as
+             *     loading a kernel module with CAP_SYS_MODULE.
+             *     When set to false, a new userns is created for the pod. Setting false is useful for
+             *     mitigating container breakout vulnerabilities even allowing users to run their
+             *     containers as root without actually having root privileges on the host.
+             *     This field is alpha-level and is only honored by servers that enable the UserNamespacesSupport feature.
+             *     +k8s:conversion-gen=false
+             *     +optional
+             */
+            hostUsers?: boolean;
+            /**
+             * @description Specifies the hostname of the Pod
+             *     If not specified, the pod's hostname will be set to a system-defined value.
+             *     +optional
+             */
+            hostname?: string;
+            /**
+             * @description HostnameOverride specifies an explicit override for the pod's hostname as perceived by the pod.
+             *     This field only specifies the pod's hostname and does not affect its DNS records.
+             *     When this field is set to a non-empty string:
+             *     - It takes precedence over the values set in `hostname` and `subdomain`.
+             *     - The Pod's hostname will be set to this value.
+             *     - `setHostnameAsFQDN` must be nil or set to false.
+             *     - `hostNetwork` must be set to false.
+             *
+             *     This field must be a valid DNS subdomain as defined in RFC 1123 and contain at most 64 characters.
+             *     Requires the HostnameOverride feature gate to be enabled.
+             *
+             *     +featureGate=HostnameOverride
+             *     +optional
+             */
+            hostnameOverride?: string;
+            /**
+             * @description ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+             *     If specified, these secrets will be passed to individual puller implementations for them to use.
+             *     More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod
+             *     +optional
+             *     +patchMergeKey=name
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=name
+             */
+            imagePullSecrets?: components["schemas"]["k8s_io_api_core_v1.LocalObjectReference"][];
+            /**
+             * @description List of initialization containers belonging to the pod.
+             *     Init containers are executed in order prior to containers being started. If any
+             *     init container fails, the pod is considered to have failed and is handled according
+             *     to its restartPolicy. The name for an init container or normal container must be
+             *     unique among all containers.
+             *     Init containers may not have Lifecycle actions, Readiness probes, Liveness probes, or Startup probes.
+             *     The resourceRequirements of an init container are taken into account during scheduling
+             *     by finding the highest request/limit for each resource type, and then using the max of
+             *     that value or the sum of the normal containers. Limits are applied to init containers
+             *     in a similar fashion.
+             *     Init containers cannot currently be added or removed.
+             *     Cannot be updated.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+             *     +patchMergeKey=name
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=name
+             */
+            initContainers?: components["schemas"]["v1.Container"][];
+            /**
+             * @description NodeName indicates in which node this pod is scheduled.
+             *     If empty, this pod is a candidate for scheduling by the scheduler defined in schedulerName.
+             *     Once this field is set, the kubelet for this node becomes responsible for the lifecycle of this pod.
+             *     This field should not be used to express a desire for the pod to be scheduled on a specific node.
+             *     https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodename
+             *     +optional
+             */
+            nodeName?: string;
+            /**
+             * @description NodeSelector is a selector which must be true for the pod to fit on a node.
+             *     Selector which must match a node's labels for the pod to be scheduled on that node.
+             *     More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+             *     +optional
+             *     +mapType=atomic
+             */
+            nodeSelector?: {
+                [key: string]: string;
+            };
+            /**
+             * @description Specifies the OS of the containers in the pod.
+             *     Some pod and container fields are restricted if this is set.
+             *
+             *     If the OS field is set to linux, the following fields must be unset:
+             *     -securityContext.windowsOptions
+             *
+             *     If the OS field is set to windows, following fields must be unset:
+             *     - spec.hostPID
+             *     - spec.hostIPC
+             *     - spec.hostUsers
+             *     - spec.resources
+             *     - spec.securityContext.appArmorProfile
+             *     - spec.securityContext.seLinuxOptions
+             *     - spec.securityContext.seccompProfile
+             *     - spec.securityContext.fsGroup
+             *     - spec.securityContext.fsGroupChangePolicy
+             *     - spec.securityContext.sysctls
+             *     - spec.shareProcessNamespace
+             *     - spec.securityContext.runAsUser
+             *     - spec.securityContext.runAsGroup
+             *     - spec.securityContext.supplementalGroups
+             *     - spec.securityContext.supplementalGroupsPolicy
+             *     - spec.containers[*].securityContext.appArmorProfile
+             *     - spec.containers[*].securityContext.seLinuxOptions
+             *     - spec.containers[*].securityContext.seccompProfile
+             *     - spec.containers[*].securityContext.capabilities
+             *     - spec.containers[*].securityContext.readOnlyRootFilesystem
+             *     - spec.containers[*].securityContext.privileged
+             *     - spec.containers[*].securityContext.allowPrivilegeEscalation
+             *     - spec.containers[*].securityContext.procMount
+             *     - spec.containers[*].securityContext.runAsUser
+             *     - spec.containers[*].securityContext.runAsGroup
+             *     +optional
+             */
+            os?: components["schemas"]["v1.PodOS"];
+            /**
+             * @description Overhead represents the resource overhead associated with running a pod for a given RuntimeClass.
+             *     This field will be autopopulated at admission time by the RuntimeClass admission controller. If
+             *     the RuntimeClass admission controller is enabled, overhead must not be set in Pod create requests.
+             *     The RuntimeClass admission controller will reject Pod create requests which have the overhead already
+             *     set. If RuntimeClass is configured and selected in the PodSpec, Overhead will be set to the value
+             *     defined in the corresponding RuntimeClass, otherwise it will remain unset and treated as zero.
+             *     More info: https://git.k8s.io/enhancements/keps/sig-node/688-pod-overhead/README.md
+             *     +optional
+             */
+            overhead?: components["schemas"]["v1.ResourceList"];
+            /**
+             * @description PreemptionPolicy is the Policy for preempting pods with lower priority.
+             *     One of Never, PreemptLowerPriority.
+             *     Defaults to PreemptLowerPriority if unset.
+             *     +optional
+             */
+            preemptionPolicy?: components["schemas"]["v1.PreemptionPolicy"];
+            /**
+             * @description The priority value. Various system components use this field to find the
+             *     priority of the pod. When Priority Admission Controller is enabled, it
+             *     prevents users from setting this field. The admission controller populates
+             *     this field from PriorityClassName.
+             *     The higher the value, the higher the priority.
+             *     +optional
+             */
+            priority?: number;
+            /**
+             * @description If specified, indicates the pod's priority. "system-node-critical" and
+             *     "system-cluster-critical" are two special keywords which indicate the
+             *     highest priorities with the former being the highest priority. Any other
+             *     name must be defined by creating a PriorityClass object with that name.
+             *     If not specified, the pod priority will be default or zero if there is no
+             *     default.
+             *     +optional
+             */
+            priorityClassName?: string;
+            /**
+             * @description If specified, all readiness gates will be evaluated for pod readiness.
+             *     A pod is ready when all its containers are ready AND
+             *     all conditions specified in the readiness gates have status equal to "True"
+             *     More info: https://git.k8s.io/enhancements/keps/sig-network/580-pod-readiness-gates
+             *     +optional
+             *     +listType=atomic
+             */
+            readinessGates?: components["schemas"]["v1.PodReadinessGate"][];
+            /**
+             * @description ResourceClaims defines which ResourceClaims must be allocated
+             *     and reserved before the Pod is allowed to start. The resources
+             *     will be made available to those containers which consume them
+             *     by name.
+             *
+             *     This is a stable field but requires that the
+             *     DynamicResourceAllocation feature gate is enabled.
+             *
+             *     This field is immutable.
+             *
+             *     +patchMergeKey=name
+             *     +patchStrategy=merge,retainKeys
+             *     +listType=map
+             *     +listMapKey=name
+             *     +featureGate=DynamicResourceAllocation
+             *     +optional
+             */
+            resourceClaims?: components["schemas"]["v1.PodResourceClaim"][];
+            /**
+             * @description Resources is the total amount of CPU and Memory resources required by all
+             *     containers in the pod. It supports specifying Requests and Limits for
+             *     "cpu", "memory" and "hugepages-" resource names only. ResourceClaims are not supported.
+             *
+             *     This field enables fine-grained control over resource allocation for the
+             *     entire pod, allowing resource sharing among containers in a pod.
+             *     TODO: For beta graduation, expand this comment with a detailed explanation.
+             *
+             *     This is an alpha field and requires enabling the PodLevelResources feature
+             *     gate.
+             *
+             *     +featureGate=PodLevelResources
+             *     +optional
+             */
+            resources?: components["schemas"]["v1.ResourceRequirements"];
+            /**
+             * @description Restart policy for all containers within the pod.
+             *     One of Always, OnFailure, Never. In some contexts, only a subset of those values may be permitted.
+             *     Default to Always.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy
+             *     +optional
+             */
+            restartPolicy?: components["schemas"]["v1.RestartPolicy"];
+            /**
+             * @description RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used
+             *     to run this pod.  If no RuntimeClass resource matches the named class, the pod will not be run.
+             *     If unset or empty, the "legacy" RuntimeClass will be used, which is an implicit class with an
+             *     empty definition that uses the default runtime handler.
+             *     More info: https://git.k8s.io/enhancements/keps/sig-node/585-runtime-class
+             *     +optional
+             */
+            runtimeClassName?: string;
+            /**
+             * @description If specified, the pod will be dispatched by specified scheduler.
+             *     If not specified, the pod will be dispatched by default scheduler.
+             *     +optional
+             */
+            schedulerName?: string;
+            /**
+             * @description SchedulingGates is an opaque list of values that if specified will block scheduling the pod.
+             *     If schedulingGates is not empty, the pod will stay in the SchedulingGated state and the
+             *     scheduler will not attempt to schedule the pod.
+             *
+             *     SchedulingGates can only be set at pod creation time, and be removed only afterwards.
+             *
+             *     +patchMergeKey=name
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=name
+             *     +optional
+             */
+            schedulingGates?: components["schemas"]["v1.PodSchedulingGate"][];
+            /**
+             * @description SecurityContext holds pod-level security attributes and common container settings.
+             *     Optional: Defaults to empty.  See type description for default values of each field.
+             *     +optional
+             */
+            securityContext?: components["schemas"]["v1.PodSecurityContext"];
+            /**
+             * @description DeprecatedServiceAccount is a deprecated alias for ServiceAccountName.
+             *     Deprecated: Use serviceAccountName instead.
+             *     +k8s:conversion-gen=false
+             *     +optional
+             */
+            serviceAccount?: string;
+            /**
+             * @description ServiceAccountName is the name of the ServiceAccount to use to run this pod.
+             *     More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+             *     +optional
+             */
+            serviceAccountName?: string;
+            /**
+             * @description If true the pod's hostname will be configured as the pod's FQDN, rather than the leaf name (the default).
+             *     In Linux containers, this means setting the FQDN in the hostname field of the kernel (the nodename field of struct utsname).
+             *     In Windows containers, this means setting the registry value of hostname for the registry key HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters to FQDN.
+             *     If a pod does not have FQDN, this has no effect.
+             *     Default to false.
+             *     +optional
+             */
+            setHostnameAsFQDN?: boolean;
+            /**
+             * @description Share a single process namespace between all of the containers in a pod.
+             *     When this is set containers will be able to view and signal processes from other containers
+             *     in the same pod, and the first process in each container will not be assigned PID 1.
+             *     HostPID and ShareProcessNamespace cannot both be set.
+             *     Optional: Default to false.
+             *     +k8s:conversion-gen=false
+             *     +optional
+             */
+            shareProcessNamespace?: boolean;
+            /**
+             * @description If specified, the fully qualified Pod hostname will be "<hostname>.<subdomain>.<pod namespace>.svc.<cluster domain>".
+             *     If not specified, the pod will not have a domainname at all.
+             *     +optional
+             */
+            subdomain?: string;
+            /**
+             * @description Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request.
+             *     Value must be non-negative integer. The value zero indicates stop immediately via
+             *     the kill signal (no opportunity to shut down).
+             *     If this value is nil, the default grace period will be used instead.
+             *     The grace period is the duration in seconds after the processes running in the pod are sent
+             *     a termination signal and the time when the processes are forcibly halted with a kill signal.
+             *     Set this value longer than the expected cleanup time for your process.
+             *     Defaults to 30 seconds.
+             *     +optional
+             */
+            terminationGracePeriodSeconds?: number;
+            /**
+             * @description If specified, the pod's tolerations.
+             *     +optional
+             *     +listType=atomic
+             */
+            tolerations?: components["schemas"]["v1.Toleration"][];
+            /**
+             * @description TopologySpreadConstraints describes how a group of pods ought to spread across topology
+             *     domains. Scheduler will schedule pods in a way which abides by the constraints.
+             *     All topologySpreadConstraints are ANDed.
+             *     +optional
+             *     +patchMergeKey=topologyKey
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=topologyKey
+             *     +listMapKey=whenUnsatisfiable
+             */
+            topologySpreadConstraints?: components["schemas"]["v1.TopologySpreadConstraint"][];
+            /**
+             * @description List of volumes that can be mounted by containers belonging to the pod.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes
+             *     +optional
+             *     +patchMergeKey=name
+             *     +patchStrategy=merge,retainKeys
+             *     +listType=map
+             *     +listMapKey=name
+             */
+            volumes?: components["schemas"]["v1.Volume"][];
+            /**
+             * @description WorkloadRef provides a reference to the Workload object that this Pod belongs to.
+             *     This field is used by the scheduler to identify the PodGroup and apply the
+             *     correct group scheduling policies. The Workload object referenced
+             *     by this field may not exist at the time the Pod is created.
+             *     This field is immutable, but a Workload object with the same name
+             *     may be recreated with different policies. Doing this during pod scheduling
+             *     may result in the placement not conforming to the expected policies.
+             *
+             *     +featureGate=GenericWorkload
+             *     +optional
+             */
+            workloadRef?: components["schemas"]["v1.WorkloadReference"];
+        };
+        "v1.PodStatus": {
+            /**
+             * @description AllocatedResources is the total requests allocated for this pod by the node.
+             *     If pod-level requests are not set, this will be the total requests aggregated
+             *     across containers in the pod.
+             *     +featureGate=InPlacePodLevelResourcesVerticalScaling
+             *     +optional
+             */
+            allocatedResources?: components["schemas"]["v1.ResourceList"];
+            /**
+             * @description Current service state of pod.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-conditions
+             *     +optional
+             *     +patchMergeKey=type
+             *     +patchStrategy=merge
+             *     +listType=map
+             *     +listMapKey=type
+             */
+            conditions?: components["schemas"]["v1.PodCondition"][];
+            /**
+             * @description Statuses of containers in this pod.
+             *     Each container in the pod should have at most one status in this list,
+             *     and all statuses should be for containers in the pod.
+             *     However this is not enforced.
+             *     If a status for a non-existent container is present in the list, or the list has duplicate names,
+             *     the behavior of various Kubernetes components is not defined and those statuses might be
+             *     ignored.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-and-container-status
+             *     +optional
+             *     +listType=atomic
+             */
+            containerStatuses?: components["schemas"]["v1.ContainerStatus"][];
+            /**
+             * @description Statuses for any ephemeral containers that have run in this pod.
+             *     Each ephemeral container in the pod should have at most one status in this list,
+             *     and all statuses should be for containers in the pod.
+             *     However this is not enforced.
+             *     If a status for a non-existent container is present in the list, or the list has duplicate names,
+             *     the behavior of various Kubernetes components is not defined and those statuses might be
+             *     ignored.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-and-container-status
+             *     +optional
+             *     +listType=atomic
+             */
+            ephemeralContainerStatuses?: components["schemas"]["v1.ContainerStatus"][];
+            /**
+             * @description Status of extended resource claim backed by DRA.
+             *     +featureGate=DRAExtendedResource
+             *     +optional
+             */
+            extendedResourceClaimStatus?: components["schemas"]["v1.PodExtendedResourceClaimStatus"];
+            /**
+             * @description hostIP holds the IP address of the host to which the pod is assigned. Empty if the pod has not started yet.
+             *     A pod can be assigned to a node that has a problem in kubelet which in turns mean that HostIP will
+             *     not be updated even if there is a node is assigned to pod
+             *     +optional
+             */
+            hostIP?: string;
+            /**
+             * @description hostIPs holds the IP addresses allocated to the host. If this field is specified, the first entry must
+             *     match the hostIP field. This list is empty if the pod has not started yet.
+             *     A pod can be assigned to a node that has a problem in kubelet which in turns means that HostIPs will
+             *     not be updated even if there is a node is assigned to this pod.
+             *     +optional
+             *     +patchStrategy=merge
+             *     +patchMergeKey=ip
+             *     +listType=atomic
+             */
+            hostIPs?: components["schemas"]["v1.HostIP"][];
+            /**
+             * @description Statuses of init containers in this pod. The most recent successful non-restartable
+             *     init container will have ready = true, the most recently started container will have
+             *     startTime set.
+             *     Each init container in the pod should have at most one status in this list,
+             *     and all statuses should be for containers in the pod.
+             *     However this is not enforced.
+             *     If a status for a non-existent container is present in the list, or the list has duplicate names,
+             *     the behavior of various Kubernetes components is not defined and those statuses might be
+             *     ignored.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-and-container-status
+             *     +listType=atomic
+             */
+            initContainerStatuses?: components["schemas"]["v1.ContainerStatus"][];
+            /**
+             * @description A human readable message indicating details about why the pod is in this condition.
+             *     +optional
+             */
+            message?: string;
+            /**
+             * @description nominatedNodeName is set only when this pod preempts other pods on the node, but it cannot be
+             *     scheduled right away as preemption victims receive their graceful termination periods.
+             *     This field does not guarantee that the pod will be scheduled on this node. Scheduler may decide
+             *     to place the pod elsewhere if other nodes become available sooner. Scheduler may also decide to
+             *     give the resources on this node to a higher priority pod that is created after preemption.
+             *     As a result, this field may be different than PodSpec.nodeName when the pod is
+             *     scheduled.
+             *     +optional
+             */
+            nominatedNodeName?: string;
+            /**
+             * @description If set, this represents the .metadata.generation that the pod status was set based upon.
+             *     The PodObservedGenerationTracking feature gate must be enabled to use this field.
+             *     +featureGate=PodObservedGenerationTracking
+             *     +optional
+             */
+            observedGeneration?: number;
+            /**
+             * @description The phase of a Pod is a simple, high-level summary of where the Pod is in its lifecycle.
+             *     The conditions array, the reason and message fields, and the individual container status
+             *     arrays contain more detail about the pod's status.
+             *     There are five possible phase values:
+             *
+             *     Pending: The pod has been accepted by the Kubernetes system, but one or more of the
+             *     container images has not been created. This includes time before being scheduled as
+             *     well as time spent downloading images over the network, which could take a while.
+             *     Running: The pod has been bound to a node, and all of the containers have been created.
+             *     At least one container is still running, or is in the process of starting or restarting.
+             *     Succeeded: All containers in the pod have terminated in success, and will not be restarted.
+             *     Failed: All containers in the pod have terminated, and at least one container has
+             *     terminated in failure. The container either exited with non-zero status or was terminated
+             *     by the system.
+             *     Unknown: For some reason the state of the pod could not be obtained, typically due to an
+             *     error in communicating with the host of the pod.
+             *
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-phase
+             *     +optional
+             */
+            phase?: components["schemas"]["v1.PodPhase"];
+            /**
+             * @description podIP address allocated to the pod. Routable at least within the cluster.
+             *     Empty if not yet allocated.
+             *     +optional
+             */
+            podIP?: string;
+            /**
+             * @description podIPs holds the IP addresses allocated to the pod. If this field is specified, the 0th entry must
+             *     match the podIP field. Pods may be allocated at most 1 value for each of IPv4 and IPv6. This list
+             *     is empty if no IPs have been allocated yet.
+             *     +optional
+             *     +patchStrategy=merge
+             *     +patchMergeKey=ip
+             *     +listType=map
+             *     +listMapKey=ip
+             */
+            podIPs?: components["schemas"]["v1.PodIP"][];
+            /**
+             * @description The Quality of Service (QOS) classification assigned to the pod based on resource requirements
+             *     See PodQOSClass type for available QOS classes
+             *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/#quality-of-service-classes
+             *     +optional
+             */
+            qosClass?: components["schemas"]["v1.PodQOSClass"];
+            /**
+             * @description A brief CamelCase message indicating details about why the pod is in this state.
+             *     e.g. 'Evicted'
+             *     +optional
+             */
+            reason?: string;
+            /**
+             * @description Status of resources resize desired for pod's containers.
+             *     It is empty if no resources resize is pending.
+             *     Any changes to container resources will automatically set this to "Proposed"
+             *     Deprecated: Resize status is moved to two pod conditions PodResizePending and PodResizeInProgress.
+             *     PodResizePending will track states where the spec has been resized, but the Kubelet has not yet allocated the resources.
+             *     PodResizeInProgress will track in-progress resizes, and should be present whenever allocated resources != acknowledged resources.
+             *     +featureGate=InPlacePodVerticalScaling
+             *     +optional
+             */
+            resize?: components["schemas"]["v1.PodResizeStatus"];
+            /**
+             * @description Status of resource claims.
+             *     +patchMergeKey=name
+             *     +patchStrategy=merge,retainKeys
+             *     +listType=map
+             *     +listMapKey=name
+             *     +featureGate=DynamicResourceAllocation
+             *     +optional
+             */
+            resourceClaimStatuses?: components["schemas"]["v1.PodResourceClaimStatus"][];
+            /**
+             * @description Resources represents the compute resource requests and limits that have been
+             *     applied at the pod level if pod-level requests or limits are set in
+             *     PodSpec.Resources
+             *     +featureGate=InPlacePodLevelResourcesVerticalScaling
+             *     +optional
+             */
+            resources?: components["schemas"]["v1.ResourceRequirements"];
+            /**
+             * @description RFC 3339 date and time at which the object was acknowledged by the Kubelet.
+             *     This is before the Kubelet pulled the container image(s) for the pod.
+             *     +optional
+             */
+            startTime?: string;
+        };
+        "v1.PodTemplateSpec": {
+            /**
+             * @description Standard object's metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ObjectMeta"];
+            /**
+             * @description Specification of the desired behavior of the pod.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+             *     +optional
+             */
+            spec?: components["schemas"]["v1.PodSpec"];
+        };
+        "v1.PortworxVolumeSource": {
+            /**
+             * @description fSType represents the filesystem type to mount
+             *     Must be a filesystem type supported by the host operating system.
+             *     Ex. "ext4", "xfs". Implicitly inferred to be "ext4" if unspecified.
+             */
+            fsType?: string;
+            /**
+             * @description readOnly defaults to false (read/write). ReadOnly here will force
+             *     the ReadOnly setting in VolumeMounts.
+             *     +optional
+             */
+            readOnly?: boolean;
+            /** @description volumeID uniquely identifies a Portworx volume */
+            volumeID?: string;
+        };
+        /** @enum {string} */
+        "v1.PreemptionPolicy": "PreemptLowerPriority" | "Never";
+        "v1.PreferredSchedulingTerm": {
+            /** @description A node selector term, associated with the corresponding weight. */
+            preference?: components["schemas"]["v1.NodeSelectorTerm"];
+            /** @description Weight associated with matching the corresponding nodeSelectorTerm, in the range 1-100. */
+            weight?: number;
         };
         "v1.Probe": {
+            /**
+             * @description Exec specifies a command to execute in the container.
+             *     +optional
+             */
             exec?: components["schemas"]["v1.ExecAction"];
-            /** @description Minimum consecutive failures for the probe to be considered failed after having succeeded.
+            /**
+             * @description Minimum consecutive failures for the probe to be considered failed after having succeeded.
              *     Defaults to 3. Minimum value is 1.
-             *     +optional */
+             *     +optional
+             */
             failureThreshold?: number;
+            /**
+             * @description GRPC specifies a GRPC HealthCheckRequest.
+             *     +optional
+             */
             grpc?: components["schemas"]["v1.GRPCAction"];
+            /**
+             * @description HTTPGet specifies an HTTP GET request to perform.
+             *     +optional
+             */
             httpGet?: components["schemas"]["v1.HTTPGetAction"];
-            /** @description Number of seconds after the container has started before liveness probes are initiated.
+            /**
+             * @description Number of seconds after the container has started before liveness probes are initiated.
              *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-             *     +optional */
+             *     +optional
+             */
             initialDelaySeconds?: number;
-            /** @description How often (in seconds) to perform the probe.
+            /**
+             * @description How often (in seconds) to perform the probe.
              *     Default to 10 seconds. Minimum value is 1.
-             *     +optional */
+             *     +optional
+             */
             periodSeconds?: number;
-            /** @description Minimum consecutive successes for the probe to be considered successful after having failed.
+            /**
+             * @description Minimum consecutive successes for the probe to be considered successful after having failed.
              *     Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
-             *     +optional */
+             *     +optional
+             */
             successThreshold?: number;
+            /**
+             * @description TCPSocket specifies a connection to a TCP port.
+             *     +optional
+             */
             tcpSocket?: components["schemas"]["v1.TCPSocketAction"];
-            /** @description Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+            /**
+             * @description Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
              *     The grace period is the duration in seconds after the processes running in the pod are sent
              *     a termination signal and the time when the processes are forcibly halted with a kill signal.
              *     Set this value longer than the expected cleanup time for your process.
@@ -9315,222 +15045,397 @@ export interface components {
              *     the kill signal (no opportunity to shut down).
              *     This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
              *     Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.
-             *     +optional */
+             *     +optional
+             */
             terminationGracePeriodSeconds?: number;
-            /** @description Number of seconds after which the probe times out.
+            /**
+             * @description Number of seconds after which the probe times out.
              *     Defaults to 1 second. Minimum value is 1.
              *     More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-             *     +optional */
+             *     +optional
+             */
             timeoutSeconds?: number;
         };
-        "v1.ResourceClaim": {
-            /** @description Name must match the name of one entry in pod.spec.resourceClaims of
-             *     the Pod where this field is used. It makes that resource available
-             *     inside a container. */
-            name?: string;
-            /** @description Request is the name chosen for a request in the referenced claim.
-             *     If empty, everything from the claim is made available, otherwise
-             *     only the result of this request.
-             *
-             *     +optional */
-            request?: string;
+        /** @enum {string} */
+        "v1.ProcMountType": "Default" | "Unmasked";
+        "v1.ProjectedVolumeSource": {
+            /**
+             * @description defaultMode are the mode bits used to set permissions on created files by default.
+             *     Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+             *     YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+             *     Directories within the path are not affected by this setting.
+             *     This might be in conflict with other options that affect the file
+             *     mode, like fsGroup, and the result can be other mode bits set.
+             *     +optional
+             */
+            defaultMode?: number;
+            /**
+             * @description sources is the list of volume projections. Each entry in this list
+             *     handles one source.
+             *     +optional
+             *     +listType=atomic
+             */
+            sources?: components["schemas"]["v1.VolumeProjection"][];
         };
-        "v1.ResourceFieldSelector": {
-            /** @description Container name: required for volumes, optional for env vars
-             *     +optional */
-            containerName?: string;
-            divisor?: components["schemas"]["resource.Quantity"];
-            /** @description Required: resource to select */
-            resource?: string;
+        /** @enum {string} */
+        "v1.Protocol": "TCP" | "UDP" | "SCTP";
+        /** @enum {string} */
+        "v1.PullPolicy": "Always" | "Never" | "IfNotPresent";
+        "v1.QuobyteVolumeSource": {
+            /**
+             * @description group to map volume access to
+             *     Default is no group
+             *     +optional
+             */
+            group?: string;
+            /**
+             * @description readOnly here will force the Quobyte volume to be mounted with read-only permissions.
+             *     Defaults to false.
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description registry represents a single or multiple Quobyte Registry services
+             *     specified as a string as host:port pair (multiple entries are separated with commas)
+             *     which acts as the central registry for volumes
+             */
+            registry?: string;
+            /**
+             * @description tenant owning the given Quobyte volume in the Backend
+             *     Used with dynamically provisioned Quobyte volumes, value is set by the plugin
+             *     +optional
+             */
+            tenant?: string;
+            /**
+             * @description user to map volume access to
+             *     Defaults to serivceaccount user
+             *     +optional
+             */
+            user?: string;
+            /** @description volume is a string that references an already created Quobyte volume by name. */
+            volume?: string;
         };
-        "v1.ResourceList": {
-            [key: string]: components["schemas"]["resource.Quantity"];
+        "v1.RBDVolumeSource": {
+            /**
+             * @description fsType is the filesystem type of the volume that you want to mount.
+             *     Tip: Ensure that the filesystem type is supported by the host operating system.
+             *     Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd
+             *     TODO: how do we prevent errors in the filesystem from compromising the machine
+             *     +optional
+             */
+            fsType?: string;
+            /**
+             * @description image is the rados image name.
+             *     More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
+             */
+            image?: string;
+            /**
+             * @description keyring is the path to key ring for RBDUser.
+             *     Default is /etc/ceph/keyring.
+             *     More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
+             *     +optional
+             *     +default="/etc/ceph/keyring"
+             */
+            keyring?: string;
+            /**
+             * @description monitors is a collection of Ceph monitors.
+             *     More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
+             *     +listType=atomic
+             */
+            monitors?: string[];
+            /**
+             * @description pool is the rados pool name.
+             *     Default is rbd.
+             *     More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
+             *     +optional
+             *     +default="rbd"
+             */
+            pool?: string;
+            /**
+             * @description readOnly here will force the ReadOnly setting in VolumeMounts.
+             *     Defaults to false.
+             *     More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description secretRef is name of the authentication secret for RBDUser. If provided
+             *     overrides keyring.
+             *     Default is nil.
+             *     More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
+             *     +optional
+             */
+            secretRef?: components["schemas"]["k8s_io_api_core_v1.LocalObjectReference"];
+            /**
+             * @description user is the rados user name.
+             *     Default is admin.
+             *     More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
+             *     +optional
+             *     +default="admin"
+             */
+            user?: string;
         };
-        "v1.ResourceQuota": {
-            /** @description Annotations is an unstructured key value map stored with a resource that may be
-             *     set by external tools to store and retrieve arbitrary metadata. They are not
-             *     queryable and should be preserved when modifying objects.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
-             *     +optional */
-            annotations?: {
-                [key: string]: string;
-            };
-            /** @description APIVersion defines the versioned schema of this representation of an object.
+        /** @enum {string} */
+        "v1.RecursiveReadOnlyMode": "Disabled" | "IfPossible" | "Enabled";
+        "v1.ReplicaSet": {
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
              *     Servers should convert recognized schemas to the latest internal value, and
              *     may reject unrecognized values.
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-             *     +optional */
-            apiVersion?: string;
-            /** @description CreationTimestamp is a timestamp representing the server time when this object was
-             *     created. It is not guaranteed to be set in happens-before order across separate operations.
-             *     Clients may not set this value. It is represented in RFC3339 form and is in UTC.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     Null for lists.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-             *     +optional */
-            creationTimestamp?: string;
-            /** @description Number of seconds allowed for this object to gracefully terminate before
-             *     it will be removed from the system. Only set when deletionTimestamp is also set.
-             *     May only be shortened.
-             *     Read-only.
-             *     +optional */
-            deletionGracePeriodSeconds?: number;
-            /** @description DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This
-             *     field is set by the server when a graceful deletion is requested by the user, and is not
-             *     directly settable by a client. The resource is expected to be deleted (no longer visible
-             *     from resource lists, and not reachable by name) after the time in this field, once the
-             *     finalizers list is empty. As long as the finalizers list contains items, deletion is blocked.
-             *     Once the deletionTimestamp is set, this value may not be unset or be set further into the
-             *     future, although it may be shortened or the resource may be deleted prior to this time.
-             *     For example, a user may request that a pod is deleted in 30 seconds. The Kubelet will react
-             *     by sending a graceful termination signal to the containers in the pod. After that 30 seconds,
-             *     the Kubelet will send a hard termination signal (SIGKILL) to the container and after cleanup,
-             *     remove the pod from the API. In the presence of network partitions, this object may still
-             *     exist after this timestamp, until an administrator or automated process can determine the
-             *     resource is fully terminated.
-             *     If not set, graceful deletion of the object has not been requested.
-             *
-             *     Populated by the system when a graceful deletion is requested.
-             *     Read-only.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-             *     +optional */
-            deletionTimestamp?: string;
-            /** @description Must be empty before the object is deleted from the registry. Each entry
-             *     is an identifier for the responsible component that will remove the entry
-             *     from the list. If the deletionTimestamp of the object is non-nil, entries
-             *     in this list can only be removed.
-             *     Finalizers may be processed and removed in any order.  Order is NOT enforced
-             *     because it introduces significant risk of stuck finalizers.
-             *     finalizers is a shared field, any actor with permission can reorder it.
-             *     If the finalizer list is processed in order, then this can lead to a situation
-             *     in which the component responsible for the first finalizer in the list is
-             *     waiting for a signal (field value, external system, or other) produced by a
-             *     component responsible for a finalizer later in the list, resulting in a deadlock.
-             *     Without enforced ordering finalizers are free to order amongst themselves and
-             *     are not vulnerable to ordering changes in the list.
              *     +optional
-             *     +patchStrategy=merge
-             *     +listType=set */
-            finalizers?: string[];
-            /** @description GenerateName is an optional prefix, used by the server, to generate a unique
-             *     name ONLY IF the Name field has not been provided.
-             *     If this field is used, the name returned to the client will be different
-             *     than the name passed. This value will also be combined with a unique suffix.
-             *     The provided value has the same validation rules as the Name field,
-             *     and may be truncated by the length of the suffix required to make the value
-             *     unique on the server.
-             *
-             *     If this field is specified and the generated name exists, the server will return a 409.
-             *
-             *     Applied only if Name is not specified.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
-             *     +optional */
-            generateName?: string;
-            /** @description A sequence number representing a specific generation of the desired state.
-             *     Populated by the system. Read-only.
-             *     +optional */
-            generation?: number;
-            /** @description Kind is a string value representing the REST resource this object represents.
+             */
+            apiVersion?: string;
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
              *     Servers may infer this from the endpoint the client submits requests to.
              *     Cannot be updated.
              *     In CamelCase.
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-             *     +optional */
+             *     +optional
+             */
             kind?: string;
-            /** @description Map of string keys and values that can be used to organize and categorize
-             *     (scope and select) objects. May match selectors of replication controllers
-             *     and services.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-             *     +optional */
-            labels?: {
-                [key: string]: string;
-            };
-            /** @description ManagedFields maps workflow-id and version to the set of fields
-             *     that are managed by that workflow. This is mostly for internal
-             *     housekeeping, and users typically shouldn't need to set or
-             *     understand this field. A workflow can be the user's name, a
-             *     controller's name, or the name of a specific apply path like
-             *     "ci-cd". The set of fields is always in the version that the
-             *     workflow used when modifying the object.
-             *
+            /**
+             * @description If the Labels of a ReplicaSet are empty, they are defaulted to
+             *     be the same as the Pod(s) that the ReplicaSet manages.
+             *     Standard object's metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
              *     +optional
-             *     +listType=atomic */
-            managedFields?: components["schemas"]["v1.ManagedFieldsEntry"][];
-            /** @description Name must be unique within a namespace. Is required when creating resources, although
-             *     some resources may allow a client to request the generation of an appropriate name
-             *     automatically. Name is primarily intended for creation idempotence and configuration
-             *     definition.
-             *     Cannot be updated.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
-             *     +optional */
-            name?: string;
-            /** @description Namespace defines the space within which each name must be unique. An empty namespace is
-             *     equivalent to the "default" namespace, but "default" is the canonical representation.
-             *     Not all objects are required to be scoped to a namespace - the value of this field for
-             *     those objects will be empty.
-             *
-             *     Must be a DNS_LABEL.
-             *     Cannot be updated.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
-             *     +optional */
-            namespace?: string;
-            /** @description List of objects depended by this object. If ALL objects in the list have
-             *     been deleted, this object will be garbage collected. If this object is managed by a controller,
-             *     then an entry in this list will point to this controller, with the controller field set to true.
-             *     There cannot be more than one managing controller.
+             */
+            metadata?: components["schemas"]["v1.ObjectMeta"];
+            /**
+             * @description Spec defines the specification of the desired behavior of the ReplicaSet.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
              *     +optional
-             *     +patchMergeKey=uid
+             */
+            spec?: components["schemas"]["v1.ReplicaSetSpec"];
+            /**
+             * @description Status is the most recently observed status of the ReplicaSet.
+             *     This data may be out of date by some window of time.
+             *     Populated by the system.
+             *     Read-only.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+             *     +optional
+             */
+            status?: components["schemas"]["v1.ReplicaSetStatus"];
+        };
+        "v1.ReplicaSetCondition": {
+            /**
+             * @description The last time the condition transitioned from one status to another.
+             *     +optional
+             */
+            lastTransitionTime?: string;
+            /**
+             * @description A human readable message indicating details about the transition.
+             *     +optional
+             */
+            message?: string;
+            /**
+             * @description The reason for the condition's last transition.
+             *     +optional
+             */
+            reason?: string;
+            /** @description Status of the condition, one of True, False, Unknown. */
+            status?: components["schemas"]["k8s_io_api_core_v1.ConditionStatus"];
+            /** @description Type of replica set condition. */
+            type?: components["schemas"]["v1.ReplicaSetConditionType"];
+        };
+        /** @enum {string} */
+        "v1.ReplicaSetConditionType": "ReplicaFailure";
+        "v1.ReplicaSetSpec": {
+            /**
+             * @description Minimum number of seconds for which a newly created pod should be ready
+             *     without any of its container crashing, for it to be considered available.
+             *     Defaults to 0 (pod will be considered available as soon as it is ready)
+             *     +optional
+             */
+            minReadySeconds?: number;
+            /**
+             * @description Replicas is the number of desired pods.
+             *     This is a pointer to distinguish between explicit zero and unspecified.
+             *     Defaults to 1.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset
+             *     +optional
+             */
+            replicas?: number;
+            /**
+             * @description Selector is a label query over pods that should match the replica count.
+             *     Label keys and values that must match in order to be controlled by this replica set.
+             *     It must match the pod template's labels.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
+             */
+            selector?: components["schemas"]["v1.LabelSelector"];
+            /**
+             * @description Template is the object that describes the pod that will be created if
+             *     insufficient replicas are detected.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/#pod-template
+             *     +optional
+             */
+            template?: components["schemas"]["v1.PodTemplateSpec"];
+        };
+        "v1.ReplicaSetStatus": {
+            /**
+             * @description The number of available non-terminating pods (ready for at least minReadySeconds) for this replica set.
+             *     +optional
+             */
+            availableReplicas?: number;
+            /**
+             * @description Represents the latest available observations of a replica set's current state.
+             *     +optional
+             *     +patchMergeKey=type
              *     +patchStrategy=merge
              *     +listType=map
-             *     +listMapKey=uid */
-            ownerReferences?: components["schemas"]["v1.OwnerReference"][];
-            /** @description An opaque value that represents the internal version of this object that can
-             *     be used by clients to determine when objects have changed. May be used for optimistic
-             *     concurrency, change detection, and the watch operation on a resource or set of resources.
-             *     Clients must treat these values as opaque and passed unmodified back to the server.
-             *     They may only be valid for a particular resource or set of resources.
+             *     +listMapKey=type
+             */
+            conditions?: components["schemas"]["v1.ReplicaSetCondition"][];
+            /**
+             * @description The number of non-terminating pods that have labels matching the labels of the pod template of the replicaset.
+             *     +optional
+             */
+            fullyLabeledReplicas?: number;
+            /**
+             * @description ObservedGeneration reflects the generation of the most recently observed ReplicaSet.
+             *     +optional
+             */
+            observedGeneration?: number;
+            /**
+             * @description The number of non-terminating pods targeted by this ReplicaSet with a Ready Condition.
+             *     +optional
+             */
+            readyReplicas?: number;
+            /**
+             * @description Replicas is the most recently observed number of non-terminating pods.
+             *     More info: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset
+             */
+            replicas?: number;
+            /**
+             * @description The number of terminating pods for this replica set. Terminating pods have a non-null .metadata.deletionTimestamp
+             *     and have not yet reached the Failed or Succeeded .status.phase.
              *
-             *     Populated by the system.
-             *     Read-only.
-             *     Value must be treated as opaque by clients and .
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-             *     +optional */
-            resourceVersion?: string;
-            /** @description Deprecated: selfLink is a legacy read-only field that is no longer populated by the system.
-             *     +optional */
-            selfLink?: string;
-            spec?: components["schemas"]["v1.ResourceQuotaSpec"];
-            status?: components["schemas"]["v1.ResourceQuotaStatus"];
-            /** @description UID is the unique in time and space value for this object. It is typically generated by
-             *     the server on successful creation of a resource and is not allowed to change on PUT
-             *     operations.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids
-             *     +optional */
-            uid?: string;
+             *     This is a beta field and requires enabling DeploymentReplicaSetTerminatingReplicas feature (enabled by default).
+             *     +optional
+             */
+            terminatingReplicas?: number;
         };
+        "v1.ResourceFieldSelector": {
+            /**
+             * @description Container name: required for volumes, optional for env vars
+             *     +optional
+             */
+            containerName?: string;
+            /**
+             * @description Specifies the output format of the exposed resources, defaults to "1"
+             *     +optional
+             */
+            divisor?: components["schemas"]["resource.Quantity"];
+            /** @description Required: resource to select */
+            resource?: string;
+        };
+        "v1.ResourceHealth": {
+            /**
+             * @description Health of the resource.
+             *     can be one of:
+             *      - Healthy: operates as normal
+             *      - Unhealthy: reported unhealthy. We consider this a temporary health issue
+             *                   since we do not have a mechanism today to distinguish
+             *                   temporary and permanent issues.
+             *      - Unknown: The status cannot be determined.
+             *                 For example, Device Plugin got unregistered and hasn't been re-registered since.
+             *
+             *     In future we may want to introduce the PermanentlyUnhealthy Status.
+             */
+            health?: components["schemas"]["v1.ResourceHealthStatus"];
+            /** @description ResourceID is the unique identifier of the resource. See the ResourceID type for more information. */
+            resourceID?: string;
+        };
+        /** @enum {string} */
+        "v1.ResourceHealthStatus": "Healthy" | "Unhealthy" | "Unknown";
+        "v1.ResourceList": {
+            [key: string]: components["schemas"]["resource.Quantity"];
+        };
+        /** @enum {string} */
+        "v1.ResourceName": "cpu" | "memory" | "storage" | "ephemeral-storage" | "pods" | "services" | "replicationcontrollers" | "resourcequotas" | "secrets" | "configmaps" | "persistentvolumeclaims" | "services.nodeports" | "services.loadbalancers" | "requests.cpu" | "requests.memory" | "requests.storage" | "requests.ephemeral-storage" | "limits.cpu" | "limits.memory" | "limits.ephemeral-storage";
+        "v1.ResourceQuota": {
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
+             *     Servers should convert recognized schemas to the latest internal value, and
+             *     may reject unrecognized values.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+             *     +optional
+             */
+            apiVersion?: string;
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
+             *     Servers may infer this from the endpoint the client submits requests to.
+             *     Cannot be updated.
+             *     In CamelCase.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             *     +optional
+             */
+            kind?: string;
+            /**
+             * @description Standard object's metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+             *     +optional
+             */
+            metadata?: components["schemas"]["v1.ObjectMeta"];
+            /**
+             * @description Spec defines the desired quota.
+             *     https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+             *     +optional
+             */
+            spec?: components["schemas"]["v1.ResourceQuotaSpec"];
+            /**
+             * @description Status defines the actual enforced quota and its current usage.
+             *     https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+             *     +optional
+             */
+            status?: components["schemas"]["v1.ResourceQuotaStatus"];
+        };
+        /** @enum {string} */
+        "v1.ResourceQuotaScope": "Terminating" | "NotTerminating" | "BestEffort" | "NotBestEffort" | "PriorityClass" | "CrossNamespacePodAffinity" | "VolumeAttributesClass";
         "v1.ResourceQuotaSpec": {
+            /**
+             * @description hard is the set of desired hard limits for each named resource.
+             *     More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/
+             *     +optional
+             */
             hard?: components["schemas"]["v1.ResourceList"];
+            /**
+             * @description scopeSelector is also a collection of filters like scopes that must match each object tracked by a quota
+             *     but expressed using ScopeSelectorOperator in combination with possible values.
+             *     For a resource to match, both scopes AND scopeSelector (if specified in spec), must be matched.
+             *     +optional
+             */
             scopeSelector?: components["schemas"]["v1.ScopeSelector"];
-            /** @description A collection of filters that must match each object tracked by a quota.
+            /**
+             * @description A collection of filters that must match each object tracked by a quota.
              *     If not specified, the quota matches all objects.
              *     +optional
-             *     +listType=atomic */
-            scopes?: string[];
+             *     +listType=atomic
+             */
+            scopes?: components["schemas"]["v1.ResourceQuotaScope"][];
         };
         "v1.ResourceQuotaStatus": {
+            /**
+             * @description Hard is the set of enforced hard limits for each named resource.
+             *     More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/
+             *     +optional
+             */
             hard?: components["schemas"]["v1.ResourceList"];
+            /**
+             * @description Used is the current observed total usage of the resource in the namespace.
+             *     +optional
+             */
             used?: components["schemas"]["v1.ResourceList"];
         };
         "v1.ResourceRequirements": {
-            /** @description Claims lists the names of resources, defined in spec.resourceClaims,
+            /**
+             * @description Claims lists the names of resources, defined in spec.resourceClaims,
              *     that are used by this container.
              *
-             *     This is an alpha field and requires enabling the
+             *     This field depends on the
              *     DynamicResourceAllocation feature gate.
              *
              *     This field is immutable. It can only be set for containers.
@@ -9538,71 +15443,217 @@ export interface components {
              *     +listType=map
              *     +listMapKey=name
              *     +featureGate=DynamicResourceAllocation
-             *     +optional */
-            claims?: components["schemas"]["v1.ResourceClaim"][];
+             *     +optional
+             */
+            claims?: components["schemas"]["k8s_io_api_core_v1.ResourceClaim"][];
+            /**
+             * @description Limits describes the maximum amount of compute resources allowed.
+             *     More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+             *     +optional
+             */
             limits?: components["schemas"]["v1.ResourceList"];
+            /**
+             * @description Requests describes the minimum amount of compute resources required.
+             *     If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+             *     otherwise to an implementation-defined value. Requests cannot exceed Limits.
+             *     More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+             *     +optional
+             */
             requests?: components["schemas"]["v1.ResourceList"];
         };
+        /** @enum {string} */
+        "v1.ResourceResizeRestartPolicy": "NotRequired" | "RestartContainer";
+        "v1.ResourceStatus": {
+            /**
+             * @description Name of the resource. Must be unique within the pod and in case of non-DRA resource, match one of the resources from the pod spec.
+             *     For DRA resources, the value must be "claim:<claim_name>/<request>".
+             *     When this status is reported about a container, the "claim_name" and "request" must match one of the claims of this container.
+             *     +required
+             */
+            name?: components["schemas"]["v1.ResourceName"];
+            /**
+             * @description List of unique resources health. Each element in the list contains an unique resource ID and its health.
+             *     At a minimum, for the lifetime of a Pod, resource ID must uniquely identify the resource allocated to the Pod on the Node.
+             *     If other Pod on the same Node reports the status with the same resource ID, it must be the same resource they share.
+             *     See ResourceID type definition for a specific format it has in various use cases.
+             *     +listType=map
+             *     +listMapKey=resourceID
+             */
+            resources?: components["schemas"]["v1.ResourceHealth"][];
+        };
+        /** @enum {string} */
+        "v1.RestartPolicy": "Always" | "OnFailure" | "Never";
         "v1.RoleRef": {
             /** @description APIGroup is the group for the resource being referenced */
             apiGroup?: string;
             /** @description Kind is the type of resource being referenced */
             kind?: string;
-            /** @description Name is the name of resource being referenced */
+            /**
+             * @description Name is the name of resource being referenced
+             *     +required
+             *     +k8s:required
+             */
             name?: string;
         };
+        "v1.RollingUpdateDeployment": {
+            /**
+             * @description The maximum number of pods that can be scheduled above the desired number of
+             *     pods.
+             *     Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).
+             *     This can not be 0 if MaxUnavailable is 0.
+             *     Absolute number is calculated from percentage by rounding up.
+             *     Defaults to 25%.
+             *     Example: when this is set to 30%, the new ReplicaSet can be scaled up immediately when
+             *     the rolling update starts, such that the total number of old and new pods do not exceed
+             *     130% of desired pods. Once old pods have been killed,
+             *     new ReplicaSet can be scaled up further, ensuring that total number of pods running
+             *     at any time during the update is at most 130% of desired pods.
+             *     +optional
+             */
+            maxSurge?: components["schemas"]["intstr.IntOrString"];
+            /**
+             * @description The maximum number of pods that can be unavailable during the update.
+             *     Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).
+             *     Absolute number is calculated from percentage by rounding down.
+             *     This can not be 0 if MaxSurge is 0.
+             *     Defaults to 25%.
+             *     Example: when this is set to 30%, the old ReplicaSet can be scaled down to 70% of desired pods
+             *     immediately when the rolling update starts. Once new pods are ready, old ReplicaSet
+             *     can be scaled down further, followed by scaling up the new ReplicaSet, ensuring
+             *     that the total number of pods available at all times during the update is at
+             *     least 70% of desired pods.
+             *     +optional
+             */
+            maxUnavailable?: components["schemas"]["intstr.IntOrString"];
+        };
         "v1.SELinuxOptions": {
-            /** @description Level is SELinux level label that applies to the container.
-             *     +optional */
+            /**
+             * @description Level is SELinux level label that applies to the container.
+             *     +optional
+             */
             level?: string;
-            /** @description Role is a SELinux role label that applies to the container.
-             *     +optional */
+            /**
+             * @description Role is a SELinux role label that applies to the container.
+             *     +optional
+             */
             role?: string;
-            /** @description Type is a SELinux type label that applies to the container.
-             *     +optional */
+            /**
+             * @description Type is a SELinux type label that applies to the container.
+             *     +optional
+             */
             type?: string;
-            /** @description User is a SELinux user label that applies to the container.
-             *     +optional */
+            /**
+             * @description User is a SELinux user label that applies to the container.
+             *     +optional
+             */
             user?: string;
         };
-        "v1.ScopeSelector": {
-            /** @description A list of scope selector requirements by scope of the resources.
+        "v1.ScaleIOVolumeSource": {
+            /**
+             * @description fsType is the filesystem type to mount.
+             *     Must be a filesystem type supported by the host operating system.
+             *     Ex. "ext4", "xfs", "ntfs".
+             *     Default is "xfs".
              *     +optional
-             *     +listType=atomic */
+             *     +default="xfs"
+             */
+            fsType?: string;
+            /** @description gateway is the host address of the ScaleIO API Gateway. */
+            gateway?: string;
+            /**
+             * @description protectionDomain is the name of the ScaleIO Protection Domain for the configured storage.
+             *     +optional
+             */
+            protectionDomain?: string;
+            /**
+             * @description readOnly Defaults to false (read/write). ReadOnly here will force
+             *     the ReadOnly setting in VolumeMounts.
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description secretRef references to the secret for ScaleIO user and other
+             *     sensitive information. If this is not provided, Login operation will fail.
+             */
+            secretRef?: components["schemas"]["k8s_io_api_core_v1.LocalObjectReference"];
+            /**
+             * @description sslEnabled Flag enable/disable SSL communication with Gateway, default false
+             *     +optional
+             */
+            sslEnabled?: boolean;
+            /**
+             * @description storageMode indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
+             *     Default is ThinProvisioned.
+             *     +optional
+             *     +default="ThinProvisioned"
+             */
+            storageMode?: string;
+            /**
+             * @description storagePool is the ScaleIO Storage Pool associated with the protection domain.
+             *     +optional
+             */
+            storagePool?: string;
+            /** @description system is the name of the storage system as configured in ScaleIO. */
+            system?: string;
+            /**
+             * @description volumeName is the name of a volume already created in the ScaleIO system
+             *     that is associated with this volume source.
+             */
+            volumeName?: string;
+        };
+        "v1.ScopeSelector": {
+            /**
+             * @description A list of scope selector requirements by scope of the resources.
+             *     +optional
+             *     +listType=atomic
+             */
             matchExpressions?: components["schemas"]["v1.ScopedResourceSelectorRequirement"][];
         };
+        /** @enum {string} */
+        "v1.ScopeSelectorOperator": "In" | "NotIn" | "Exists" | "DoesNotExist";
         "v1.ScopedResourceSelectorRequirement": {
-            /** @description Represents a scope's relationship to a set of values.
-             *     Valid operators are In, NotIn, Exists, DoesNotExist. */
-            operator?: string;
+            /**
+             * @description Represents a scope's relationship to a set of values.
+             *     Valid operators are In, NotIn, Exists, DoesNotExist.
+             */
+            operator?: components["schemas"]["v1.ScopeSelectorOperator"];
             /** @description The name of the scope that the selector applies to. */
-            scopeName?: string;
-            /** @description An array of string values. If the operator is In or NotIn,
+            scopeName?: components["schemas"]["v1.ResourceQuotaScope"];
+            /**
+             * @description An array of string values. If the operator is In or NotIn,
              *     the values array must be non-empty. If the operator is Exists or DoesNotExist,
              *     the values array must be empty.
              *     This array is replaced during a strategic merge patch.
              *     +optional
-             *     +listType=atomic */
+             *     +listType=atomic
+             */
             values?: string[];
         };
         "v1.SeccompProfile": {
-            /** @description localhostProfile indicates a profile defined in a file on the node should be used.
+            /**
+             * @description localhostProfile indicates a profile defined in a file on the node should be used.
              *     The profile must be preconfigured on the node to work.
              *     Must be a descending path, relative to the kubelet's configured seccomp profile location.
              *     Must be set if type is "Localhost". Must NOT be set for any other type.
-             *     +optional */
+             *     +optional
+             */
             localhostProfile?: string;
-            /** @description type indicates which kind of seccomp profile will be applied.
+            /**
+             * @description type indicates which kind of seccomp profile will be applied.
              *     Valid options are:
              *
              *     Localhost - a profile defined in a file on the node should be used.
              *     RuntimeDefault - the container runtime default profile should be used.
              *     Unconfined - no profile should be applied.
-             *     +unionDiscriminator */
-            type?: string;
+             *     +unionDiscriminator
+             */
+            type?: components["schemas"]["v1.SeccompProfileType"];
         };
+        /** @enum {string} */
+        "v1.SeccompProfileType": "Unconfined" | "RuntimeDefault" | "Localhost";
         "v1.SecretEnvSource": {
-            /** @description Name of the referent.
+            /**
+             * @description Name of the referent.
              *     This field is effectively required, but due to backwards compatibility is
              *     allowed to be empty. Instances of this type with an empty value here are
              *     almost certainly wrong.
@@ -9610,16 +15661,20 @@ export interface components {
              *     +optional
              *     +default=""
              *     +kubebuilder:default=""
-             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896. */
+             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+             */
             name?: string;
-            /** @description Specify whether the Secret must be defined
-             *     +optional */
+            /**
+             * @description Specify whether the Secret must be defined
+             *     +optional
+             */
             optional?: boolean;
         };
         "v1.SecretKeySelector": {
             /** @description The key of the secret to select from.  Must be a valid secret key. */
             key?: string;
-            /** @description Name of the referent.
+            /**
+             * @description Name of the referent.
              *     This field is effectively required, but due to backwards compatibility is
              *     allowed to be empty. Instances of this type with an empty value here are
              *     almost certainly wrong.
@@ -9627,551 +15682,758 @@ export interface components {
              *     +optional
              *     +default=""
              *     +kubebuilder:default=""
-             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896. */
+             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+             */
             name?: string;
-            /** @description Specify whether the Secret or its key must be defined
-             *     +optional */
+            /**
+             * @description Specify whether the Secret or its key must be defined
+             *     +optional
+             */
+            optional?: boolean;
+        };
+        "v1.SecretProjection": {
+            /**
+             * @description items if unspecified, each key-value pair in the Data field of the referenced
+             *     Secret will be projected into the volume as a file whose name is the
+             *     key and content is the value. If specified, the listed keys will be
+             *     projected into the specified paths, and unlisted keys will not be
+             *     present. If a key is specified which is not present in the Secret,
+             *     the volume setup will error unless it is marked optional. Paths must be
+             *     relative and may not contain the '..' path or start with '..'.
+             *     +optional
+             *     +listType=atomic
+             */
+            items?: components["schemas"]["v1.KeyToPath"][];
+            /**
+             * @description Name of the referent.
+             *     This field is effectively required, but due to backwards compatibility is
+             *     allowed to be empty. Instances of this type with an empty value here are
+             *     almost certainly wrong.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             *     +optional
+             *     +default=""
+             *     +kubebuilder:default=""
+             *     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+             */
+            name?: string;
+            /**
+             * @description optional field specify whether the Secret or its key must be defined
+             *     +optional
+             */
             optional?: boolean;
         };
         "v1.SecretReference": {
-            /** @description name is unique within a namespace to reference a secret resource.
-             *     +optional */
+            /**
+             * @description name is unique within a namespace to reference a secret resource.
+             *     +optional
+             */
             name?: string;
-            /** @description namespace defines the space within which the secret name must be unique.
-             *     +optional */
+            /**
+             * @description namespace defines the space within which the secret name must be unique.
+             *     +optional
+             */
             namespace?: string;
         };
+        "v1.SecretVolumeSource": {
+            /**
+             * @description defaultMode is Optional: mode bits used to set permissions on created files by default.
+             *     Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+             *     YAML accepts both octal and decimal values, JSON requires decimal values
+             *     for mode bits. Defaults to 0644.
+             *     Directories within the path are not affected by this setting.
+             *     This might be in conflict with other options that affect the file
+             *     mode, like fsGroup, and the result can be other mode bits set.
+             *     +optional
+             */
+            defaultMode?: number;
+            /**
+             * @description items If unspecified, each key-value pair in the Data field of the referenced
+             *     Secret will be projected into the volume as a file whose name is the
+             *     key and content is the value. If specified, the listed keys will be
+             *     projected into the specified paths, and unlisted keys will not be
+             *     present. If a key is specified which is not present in the Secret,
+             *     the volume setup will error unless it is marked optional. Paths must be
+             *     relative and may not contain the '..' path or start with '..'.
+             *     +optional
+             *     +listType=atomic
+             */
+            items?: components["schemas"]["v1.KeyToPath"][];
+            /**
+             * @description optional field specify whether the Secret or its keys must be defined
+             *     +optional
+             */
+            optional?: boolean;
+            /**
+             * @description secretName is the name of the secret in the pod's namespace to use.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#secret
+             *     +optional
+             */
+            secretName?: string;
+        };
         "v1.SecurityContext": {
-            /** @description AllowPrivilegeEscalation controls whether a process can gain more
+            /**
+             * @description AllowPrivilegeEscalation controls whether a process can gain more
              *     privileges than its parent process. This bool directly controls if
              *     the no_new_privs flag will be set on the container process.
              *     AllowPrivilegeEscalation is true always when the container is:
              *     1) run as Privileged
              *     2) has CAP_SYS_ADMIN
              *     Note that this field cannot be set when spec.os.name is windows.
-             *     +optional */
+             *     +optional
+             */
             allowPrivilegeEscalation?: boolean;
+            /**
+             * @description appArmorProfile is the AppArmor options to use by this container. If set, this profile
+             *     overrides the pod's appArmorProfile.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             */
             appArmorProfile?: components["schemas"]["v1.AppArmorProfile"];
+            /**
+             * @description The capabilities to add/drop when running containers.
+             *     Defaults to the default set of capabilities granted by the container runtime.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             */
             capabilities?: components["schemas"]["v1.Capabilities"];
-            /** @description Run container in privileged mode.
+            /**
+             * @description Run container in privileged mode.
              *     Processes in privileged containers are essentially equivalent to root on the host.
              *     Defaults to false.
              *     Note that this field cannot be set when spec.os.name is windows.
-             *     +optional */
+             *     +optional
+             */
             privileged?: boolean;
-            /** @description procMount denotes the type of proc mount to use for the containers.
+            /**
+             * @description procMount denotes the type of proc mount to use for the containers.
              *     The default value is Default which uses the container runtime defaults for
              *     readonly paths and masked paths.
              *     This requires the ProcMountType feature flag to be enabled.
              *     Note that this field cannot be set when spec.os.name is windows.
-             *     +optional */
-            procMount?: string;
-            /** @description Whether this container has a read-only root filesystem.
+             *     +optional
+             */
+            procMount?: components["schemas"]["v1.ProcMountType"];
+            /**
+             * @description Whether this container has a read-only root filesystem.
              *     Default is false.
              *     Note that this field cannot be set when spec.os.name is windows.
-             *     +optional */
+             *     +optional
+             */
             readOnlyRootFilesystem?: boolean;
-            /** @description The GID to run the entrypoint of the container process.
+            /**
+             * @description The GID to run the entrypoint of the container process.
              *     Uses runtime default if unset.
              *     May also be set in PodSecurityContext.  If set in both SecurityContext and
              *     PodSecurityContext, the value specified in SecurityContext takes precedence.
              *     Note that this field cannot be set when spec.os.name is windows.
-             *     +optional */
+             *     +optional
+             */
             runAsGroup?: number;
-            /** @description Indicates that the container must run as a non-root user.
+            /**
+             * @description Indicates that the container must run as a non-root user.
              *     If true, the Kubelet will validate the image at runtime to ensure that it
              *     does not run as UID 0 (root) and fail to start the container if it does.
              *     If unset or false, no such validation will be performed.
              *     May also be set in PodSecurityContext.  If set in both SecurityContext and
              *     PodSecurityContext, the value specified in SecurityContext takes precedence.
-             *     +optional */
+             *     +optional
+             */
             runAsNonRoot?: boolean;
-            /** @description The UID to run the entrypoint of the container process.
+            /**
+             * @description The UID to run the entrypoint of the container process.
              *     Defaults to user specified in image metadata if unspecified.
              *     May also be set in PodSecurityContext.  If set in both SecurityContext and
              *     PodSecurityContext, the value specified in SecurityContext takes precedence.
              *     Note that this field cannot be set when spec.os.name is windows.
-             *     +optional */
+             *     +optional
+             */
             runAsUser?: number;
+            /**
+             * @description The SELinux context to be applied to the container.
+             *     If unspecified, the container runtime will allocate a random SELinux context for each
+             *     container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+             *     PodSecurityContext, the value specified in SecurityContext takes precedence.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             */
             seLinuxOptions?: components["schemas"]["v1.SELinuxOptions"];
+            /**
+             * @description The seccomp options to use by this container. If seccomp options are
+             *     provided at both the pod & container level, the container options
+             *     override the pod options.
+             *     Note that this field cannot be set when spec.os.name is windows.
+             *     +optional
+             */
             seccompProfile?: components["schemas"]["v1.SeccompProfile"];
+            /**
+             * @description The Windows specific settings applied to all containers.
+             *     If unspecified, the options from the PodSecurityContext will be used.
+             *     If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+             *     Note that this field cannot be set when spec.os.name is linux.
+             *     +optional
+             */
             windowsOptions?: components["schemas"]["v1.WindowsSecurityContextOptions"];
         };
-        "v1.Service": {
-            /** @description Annotations is an unstructured key value map stored with a resource that may be
-             *     set by external tools to store and retrieve arbitrary metadata. They are not
-             *     queryable and should be preserved when modifying objects.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
-             *     +optional */
-            annotations?: {
-                [key: string]: string;
-            };
-            /** @description APIVersion defines the versioned schema of this representation of an object.
-             *     Servers should convert recognized schemas to the latest internal value, and
-             *     may reject unrecognized values.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-             *     +optional */
-            apiVersion?: string;
-            /** @description CreationTimestamp is a timestamp representing the server time when this object was
-             *     created. It is not guaranteed to be set in happens-before order across separate operations.
-             *     Clients may not set this value. It is represented in RFC3339 form and is in UTC.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     Null for lists.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-             *     +optional */
-            creationTimestamp?: string;
-            /** @description Number of seconds allowed for this object to gracefully terminate before
-             *     it will be removed from the system. Only set when deletionTimestamp is also set.
-             *     May only be shortened.
-             *     Read-only.
-             *     +optional */
-            deletionGracePeriodSeconds?: number;
-            /** @description DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This
-             *     field is set by the server when a graceful deletion is requested by the user, and is not
-             *     directly settable by a client. The resource is expected to be deleted (no longer visible
-             *     from resource lists, and not reachable by name) after the time in this field, once the
-             *     finalizers list is empty. As long as the finalizers list contains items, deletion is blocked.
-             *     Once the deletionTimestamp is set, this value may not be unset or be set further into the
-             *     future, although it may be shortened or the resource may be deleted prior to this time.
-             *     For example, a user may request that a pod is deleted in 30 seconds. The Kubelet will react
-             *     by sending a graceful termination signal to the containers in the pod. After that 30 seconds,
-             *     the Kubelet will send a hard termination signal (SIGKILL) to the container and after cleanup,
-             *     remove the pod from the API. In the presence of network partitions, this object may still
-             *     exist after this timestamp, until an administrator or automated process can determine the
-             *     resource is fully terminated.
-             *     If not set, graceful deletion of the object has not been requested.
-             *
-             *     Populated by the system when a graceful deletion is requested.
-             *     Read-only.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-             *     +optional */
-            deletionTimestamp?: string;
-            /** @description Must be empty before the object is deleted from the registry. Each entry
-             *     is an identifier for the responsible component that will remove the entry
-             *     from the list. If the deletionTimestamp of the object is non-nil, entries
-             *     in this list can only be removed.
-             *     Finalizers may be processed and removed in any order.  Order is NOT enforced
-             *     because it introduces significant risk of stuck finalizers.
-             *     finalizers is a shared field, any actor with permission can reorder it.
-             *     If the finalizer list is processed in order, then this can lead to a situation
-             *     in which the component responsible for the first finalizer in the list is
-             *     waiting for a signal (field value, external system, or other) produced by a
-             *     component responsible for a finalizer later in the list, resulting in a deadlock.
-             *     Without enforced ordering finalizers are free to order amongst themselves and
-             *     are not vulnerable to ordering changes in the list.
+        "v1.ServiceAccountTokenProjection": {
+            /**
+             * @description audience is the intended audience of the token. A recipient of a token
+             *     must identify itself with an identifier specified in the audience of the
+             *     token, and otherwise should reject the token. The audience defaults to the
+             *     identifier of the apiserver.
              *     +optional
-             *     +patchStrategy=merge
-             *     +listType=set */
-            finalizers?: string[];
-            /** @description GenerateName is an optional prefix, used by the server, to generate a unique
-             *     name ONLY IF the Name field has not been provided.
-             *     If this field is used, the name returned to the client will be different
-             *     than the name passed. This value will also be combined with a unique suffix.
-             *     The provided value has the same validation rules as the Name field,
-             *     and may be truncated by the length of the suffix required to make the value
-             *     unique on the server.
-             *
-             *     If this field is specified and the generated name exists, the server will return a 409.
-             *
-             *     Applied only if Name is not specified.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
-             *     +optional */
-            generateName?: string;
-            /** @description A sequence number representing a specific generation of the desired state.
-             *     Populated by the system. Read-only.
-             *     +optional */
-            generation?: number;
-            /** @description Kind is a string value representing the REST resource this object represents.
-             *     Servers may infer this from the endpoint the client submits requests to.
-             *     Cannot be updated.
-             *     In CamelCase.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-             *     +optional */
-            kind?: string;
-            /** @description Map of string keys and values that can be used to organize and categorize
-             *     (scope and select) objects. May match selectors of replication controllers
-             *     and services.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-             *     +optional */
-            labels?: {
-                [key: string]: string;
-            };
-            /** @description ManagedFields maps workflow-id and version to the set of fields
-             *     that are managed by that workflow. This is mostly for internal
-             *     housekeeping, and users typically shouldn't need to set or
-             *     understand this field. A workflow can be the user's name, a
-             *     controller's name, or the name of a specific apply path like
-             *     "ci-cd". The set of fields is always in the version that the
-             *     workflow used when modifying the object.
-             *
+             */
+            audience?: string;
+            /**
+             * @description expirationSeconds is the requested duration of validity of the service
+             *     account token. As the token approaches expiration, the kubelet volume
+             *     plugin will proactively rotate the service account token. The kubelet will
+             *     start trying to rotate the token if the token is older than 80 percent of
+             *     its time to live or if the token is older than 24 hours.Defaults to 1 hour
+             *     and must be at least 10 minutes.
              *     +optional
-             *     +listType=atomic */
-            managedFields?: components["schemas"]["v1.ManagedFieldsEntry"][];
-            /** @description Name must be unique within a namespace. Is required when creating resources, although
-             *     some resources may allow a client to request the generation of an appropriate name
-             *     automatically. Name is primarily intended for creation idempotence and configuration
-             *     definition.
-             *     Cannot be updated.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
-             *     +optional */
-            name?: string;
-            /** @description Namespace defines the space within which each name must be unique. An empty namespace is
-             *     equivalent to the "default" namespace, but "default" is the canonical representation.
-             *     Not all objects are required to be scoped to a namespace - the value of this field for
-             *     those objects will be empty.
-             *
-             *     Must be a DNS_LABEL.
-             *     Cannot be updated.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
-             *     +optional */
-            namespace?: string;
-            /** @description List of objects depended by this object. If ALL objects in the list have
-             *     been deleted, this object will be garbage collected. If this object is managed by a controller,
-             *     then an entry in this list will point to this controller, with the controller field set to true.
-             *     There cannot be more than one managing controller.
-             *     +optional
-             *     +patchMergeKey=uid
-             *     +patchStrategy=merge
-             *     +listType=map
-             *     +listMapKey=uid */
-            ownerReferences?: components["schemas"]["v1.OwnerReference"][];
-            /** @description An opaque value that represents the internal version of this object that can
-             *     be used by clients to determine when objects have changed. May be used for optimistic
-             *     concurrency, change detection, and the watch operation on a resource or set of resources.
-             *     Clients must treat these values as opaque and passed unmodified back to the server.
-             *     They may only be valid for a particular resource or set of resources.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     Value must be treated as opaque by clients and .
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-             *     +optional */
-            resourceVersion?: string;
-            /** @description Deprecated: selfLink is a legacy read-only field that is no longer populated by the system.
-             *     +optional */
-            selfLink?: string;
-            spec?: components["schemas"]["v1.ServiceSpec"];
-            status?: components["schemas"]["v1.ServiceStatus"];
-            /** @description UID is the unique in time and space value for this object. It is typically generated by
-             *     the server on successful creation of a resource and is not allowed to change on PUT
-             *     operations.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids
-             *     +optional */
-            uid?: string;
+             */
+            expirationSeconds?: number;
+            /**
+             * @description path is the path relative to the mount point of the file to project the
+             *     token into.
+             */
+            path?: string;
         };
-        "v1.ServicePort": {
-            /** @description The application protocol for this port.
-             *     This is used as a hint for implementations to offer richer behavior for protocols that they understand.
-             *     This field follows standard Kubernetes label syntax.
-             *     Valid values are either:
-             *
-             *     * Un-prefixed protocol names - reserved for IANA standard service names (as per
-             *     RFC-6335 and https://www.iana.org/assignments/service-names).
-             *
-             *     * Kubernetes-defined prefixed names:
-             *       * 'kubernetes.io/h2c' - HTTP/2 prior knowledge over cleartext as described in https://www.rfc-editor.org/rfc/rfc9113.html#name-starting-http-2-with-prior-
-             *       * 'kubernetes.io/ws'  - WebSocket over cleartext as described in https://www.rfc-editor.org/rfc/rfc6455
-             *       * 'kubernetes.io/wss' - WebSocket over TLS as described in https://www.rfc-editor.org/rfc/rfc6455
-             *
-             *     * Other protocols should use implementation-defined prefixed names such as
-             *     mycompany.com/my-custom-protocol.
-             *     +optional */
-            appProtocol?: string;
-            /** @description The name of this port within the service. This must be a DNS_LABEL.
-             *     All ports within a ServiceSpec must have unique names. When considering
-             *     the endpoints for a Service, this must match the 'name' field in the
-             *     EndpointPort.
-             *     Optional if only one ServicePort is defined on this service.
-             *     +optional */
-            name?: string;
-            /** @description The port on each node on which this service is exposed when type is
-             *     NodePort or LoadBalancer.  Usually assigned by the system. If a value is
-             *     specified, in-range, and not in use it will be used, otherwise the
-             *     operation will fail.  If not specified, a port will be allocated if this
-             *     Service requires one.  If this field is specified when creating a
-             *     Service which does not need it, creation will fail. This field will be
-             *     wiped when updating a Service to no longer need it (e.g. changing type
-             *     from NodePort to ClusterIP).
-             *     More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
-             *     +optional */
-            nodePort?: number;
-            /** @description The port that will be exposed by this service. */
-            port?: number;
-            /** @description The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
-             *     Default is TCP.
-             *     +default="TCP"
-             *     +optional */
-            protocol?: string;
-            targetPort?: components["schemas"]["intstr.IntOrString"];
-        };
-        "v1.ServiceSpec": {
-            /** @description allocateLoadBalancerNodePorts defines if NodePorts will be automatically
-             *     allocated for services with type LoadBalancer.  Default is "true". It
-             *     may be set to "false" if the cluster load-balancer does not rely on
-             *     NodePorts.  If the caller requests specific NodePorts (by specifying a
-             *     value), those requests will be respected, regardless of this field.
-             *     This field may only be set for services with type LoadBalancer and will
-             *     be cleared if the type is changed to any other type.
-             *     +optional */
-            allocateLoadBalancerNodePorts?: boolean;
-            /** @description clusterIP is the IP address of the service and is usually assigned
-             *     randomly. If an address is specified manually, is in-range (as per
-             *     system configuration), and is not in use, it will be allocated to the
-             *     service; otherwise creation of the service will fail. This field may not
-             *     be changed through updates unless the type field is also being changed
-             *     to ExternalName (which requires this field to be blank) or the type
-             *     field is being changed from ExternalName (in which case this field may
-             *     optionally be specified, as describe above).  Valid values are "None",
-             *     empty string (""), or a valid IP address. Setting this to "None" makes a
-             *     "headless service" (no virtual IP), which is useful when direct endpoint
-             *     connections are preferred and proxying is not required.  Only applies to
-             *     types ClusterIP, NodePort, and LoadBalancer. If this field is specified
-             *     when creating a Service of type ExternalName, creation will fail. This
-             *     field will be wiped when updating a Service to type ExternalName.
-             *     More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
-             *     +optional */
-            clusterIP?: string;
-            /** @description ClusterIPs is a list of IP addresses assigned to this service, and are
-             *     usually assigned randomly.  If an address is specified manually, is
-             *     in-range (as per system configuration), and is not in use, it will be
-             *     allocated to the service; otherwise creation of the service will fail.
-             *     This field may not be changed through updates unless the type field is
-             *     also being changed to ExternalName (which requires this field to be
-             *     empty) or the type field is being changed from ExternalName (in which
-             *     case this field may optionally be specified, as describe above).  Valid
-             *     values are "None", empty string (""), or a valid IP address.  Setting
-             *     this to "None" makes a "headless service" (no virtual IP), which is
-             *     useful when direct endpoint connections are preferred and proxying is
-             *     not required.  Only applies to types ClusterIP, NodePort, and
-             *     LoadBalancer. If this field is specified when creating a Service of type
-             *     ExternalName, creation will fail. This field will be wiped when updating
-             *     a Service to type ExternalName.  If this field is not specified, it will
-             *     be initialized from the clusterIP field.  If this field is specified,
-             *     clients must ensure that clusterIPs[0] and clusterIP have the same
-             *     value.
-             *
-             *     This field may hold a maximum of two entries (dual-stack IPs, in either order).
-             *     These IPs must correspond to the values of the ipFamilies field. Both
-             *     clusterIPs and ipFamilies are governed by the ipFamilyPolicy field.
-             *     More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
-             *     +listType=atomic
-             *     +optional */
-            clusterIPs?: string[];
-            /** @description externalIPs is a list of IP addresses for which nodes in the cluster
-             *     will also accept traffic for this service.  These IPs are not managed by
-             *     Kubernetes.  The user is responsible for ensuring that traffic arrives
-             *     at a node with this IP.  A common example is external load-balancers
-             *     that are not part of the Kubernetes system.
-             *     +optional
-             *     +listType=atomic */
-            externalIPs?: string[];
-            /** @description externalName is the external reference that discovery mechanisms will
-             *     return as an alias for this service (e.g. a DNS CNAME record). No
-             *     proxying will be involved.  Must be a lowercase RFC-1123 hostname
-             *     (https://tools.ietf.org/html/rfc1123) and requires `type` to be "ExternalName".
-             *     +optional */
-            externalName?: string;
-            /** @description externalTrafficPolicy describes how nodes distribute service traffic they
-             *     receive on one of the Service's "externally-facing" addresses (NodePorts,
-             *     ExternalIPs, and LoadBalancer IPs). If set to "Local", the proxy will configure
-             *     the service in a way that assumes that external load balancers will take care
-             *     of balancing the service traffic between nodes, and so each node will deliver
-             *     traffic only to the node-local endpoints of the service, without masquerading
-             *     the client source IP. (Traffic mistakenly sent to a node with no endpoints will
-             *     be dropped.) The default value, "Cluster", uses the standard behavior of
-             *     routing to all endpoints evenly (possibly modified by topology and other
-             *     features). Note that traffic sent to an External IP or LoadBalancer IP from
-             *     within the cluster will always get "Cluster" semantics, but clients sending to
-             *     a NodePort from within the cluster may need to take traffic policy into account
-             *     when picking a node.
-             *     +optional */
-            externalTrafficPolicy?: string;
-            /** @description healthCheckNodePort specifies the healthcheck nodePort for the service.
-             *     This only applies when type is set to LoadBalancer and
-             *     externalTrafficPolicy is set to Local. If a value is specified, is
-             *     in-range, and is not in use, it will be used.  If not specified, a value
-             *     will be automatically allocated.  External systems (e.g. load-balancers)
-             *     can use this port to determine if a given node holds endpoints for this
-             *     service or not.  If this field is specified when creating a Service
-             *     which does not need it, creation will fail. This field will be wiped
-             *     when updating a Service to no longer need it (e.g. changing type).
-             *     This field cannot be updated once set.
-             *     +optional */
-            healthCheckNodePort?: number;
-            /** @description InternalTrafficPolicy describes how nodes distribute service traffic they
-             *     receive on the ClusterIP. If set to "Local", the proxy will assume that pods
-             *     only want to talk to endpoints of the service on the same node as the pod,
-             *     dropping the traffic if there are no local endpoints. The default value,
-             *     "Cluster", uses the standard behavior of routing to all endpoints evenly
-             *     (possibly modified by topology and other features).
-             *     +optional */
-            internalTrafficPolicy?: string;
-            /** @description IPFamilies is a list of IP families (e.g. IPv4, IPv6) assigned to this
-             *     service. This field is usually assigned automatically based on cluster
-             *     configuration and the ipFamilyPolicy field. If this field is specified
-             *     manually, the requested family is available in the cluster,
-             *     and ipFamilyPolicy allows it, it will be used; otherwise creation of
-             *     the service will fail. This field is conditionally mutable: it allows
-             *     for adding or removing a secondary IP family, but it does not allow
-             *     changing the primary IP family of the Service. Valid values are "IPv4"
-             *     and "IPv6".  This field only applies to Services of types ClusterIP,
-             *     NodePort, and LoadBalancer, and does apply to "headless" services.
-             *     This field will be wiped when updating a Service to type ExternalName.
-             *
-             *     This field may hold a maximum of two entries (dual-stack families, in
-             *     either order).  These families must correspond to the values of the
-             *     clusterIPs field, if specified. Both clusterIPs and ipFamilies are
-             *     governed by the ipFamilyPolicy field.
-             *     +listType=atomic
-             *     +optional */
-            ipFamilies?: string[];
-            /** @description IPFamilyPolicy represents the dual-stack-ness requested or required by
-             *     this Service. If there is no value provided, then this field will be set
-             *     to SingleStack. Services can be "SingleStack" (a single IP family),
-             *     "PreferDualStack" (two IP families on dual-stack configured clusters or
-             *     a single IP family on single-stack clusters), or "RequireDualStack"
-             *     (two IP families on dual-stack configured clusters, otherwise fail). The
-             *     ipFamilies and clusterIPs fields depend on the value of this field. This
-             *     field will be wiped when updating a service to type ExternalName.
-             *     +optional */
-            ipFamilyPolicy?: string;
-            /** @description loadBalancerClass is the class of the load balancer implementation this Service belongs to.
-             *     If specified, the value of this field must be a label-style identifier, with an optional prefix,
-             *     e.g. "internal-vip" or "example.com/internal-vip". Unprefixed names are reserved for end-users.
-             *     This field can only be set when the Service type is 'LoadBalancer'. If not set, the default load
-             *     balancer implementation is used, today this is typically done through the cloud provider integration,
-             *     but should apply for any default implementation. If set, it is assumed that a load balancer
-             *     implementation is watching for Services with a matching class. Any default load balancer
-             *     implementation (e.g. cloud providers) should ignore Services that set this field.
-             *     This field can only be set when creating or updating a Service to type 'LoadBalancer'.
-             *     Once set, it can not be changed. This field will be wiped when a service is updated to a non 'LoadBalancer' type.
-             *     +optional */
-            loadBalancerClass?: string;
-            /** @description Only applies to Service Type: LoadBalancer.
-             *     This feature depends on whether the underlying cloud-provider supports specifying
-             *     the loadBalancerIP when a load balancer is created.
-             *     This field will be ignored if the cloud-provider does not support the feature.
-             *     Deprecated: This field was under-specified and its meaning varies across implementations.
-             *     Using it is non-portable and it may not support dual-stack.
-             *     Users are encouraged to use implementation-specific annotations when available.
-             *     +optional */
-            loadBalancerIP?: string;
-            /** @description If specified and supported by the platform, this will restrict traffic through the cloud-provider
-             *     load-balancer will be restricted to the specified client IPs. This field will be ignored if the
-             *     cloud-provider does not support the feature."
-             *     More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
-             *     +optional
-             *     +listType=atomic */
-            loadBalancerSourceRanges?: string[];
-            /** @description The list of ports that are exposed by this service.
-             *     More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
-             *     +patchMergeKey=port
-             *     +patchStrategy=merge
-             *     +listType=map
-             *     +listMapKey=port
-             *     +listMapKey=protocol */
-            ports?: components["schemas"]["v1.ServicePort"][];
-            /** @description publishNotReadyAddresses indicates that any agent which deals with endpoints for this
-             *     Service should disregard any indications of ready/not-ready.
-             *     The primary use case for setting this field is for a StatefulSet's Headless Service to
-             *     propagate SRV DNS records for its Pods for the purpose of peer discovery.
-             *     The Kubernetes controllers that generate Endpoints and EndpointSlice resources for
-             *     Services interpret this to mean that all endpoints are considered "ready" even if the
-             *     Pods themselves are not. Agents which consume only Kubernetes generated endpoints
-             *     through the Endpoints or EndpointSlice resources can safely assume this behavior.
-             *     +optional */
-            publishNotReadyAddresses?: boolean;
-            /** @description Route service traffic to pods with label keys and values matching this
-             *     selector. If empty or not present, the service is assumed to have an
-             *     external process managing its endpoints, which Kubernetes will not
-             *     modify. Only applies to types ClusterIP, NodePort, and LoadBalancer.
-             *     Ignored if type is ExternalName.
-             *     More info: https://kubernetes.io/docs/concepts/services-networking/service/
-             *     +optional
-             *     +mapType=atomic */
-            selector?: {
-                [key: string]: string;
-            };
-            /** @description Supports "ClientIP" and "None". Used to maintain session affinity.
-             *     Enable client IP based session affinity.
-             *     Must be ClientIP or None.
-             *     Defaults to None.
-             *     More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
-             *     +optional */
-            sessionAffinity?: string;
-            sessionAffinityConfig?: components["schemas"]["v1.SessionAffinityConfig"];
-            /** @description TrafficDistribution offers a way to express preferences for how traffic is
-             *     distributed to Service endpoints. Implementations can use this field as a
-             *     hint, but are not required to guarantee strict adherence. If the field is
-             *     not set, the implementation will apply its default routing strategy. If set
-             *     to "PreferClose", implementations should prioritize endpoints that are
-             *     topologically close (e.g., same zone).
-             *     This is a beta field and requires enabling ServiceTrafficDistribution feature.
-             *     +featureGate=ServiceTrafficDistribution
-             *     +optional */
-            trafficDistribution?: string;
-            /** @description type determines how the Service is exposed. Defaults to ClusterIP. Valid
-             *     options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
-             *     "ClusterIP" allocates a cluster-internal IP address for load-balancing
-             *     to endpoints. Endpoints are determined by the selector or if that is not
-             *     specified, by manual construction of an Endpoints object or
-             *     EndpointSlice objects. If clusterIP is "None", no virtual IP is
-             *     allocated and the endpoints are published as a set of endpoints rather
-             *     than a virtual IP.
-             *     "NodePort" builds on ClusterIP and allocates a port on every node which
-             *     routes to the same endpoints as the clusterIP.
-             *     "LoadBalancer" builds on NodePort and creates an external load-balancer
-             *     (if supported in the current cloud) which routes to the same endpoints
-             *     as the clusterIP.
-             *     "ExternalName" aliases this service to the specified externalName.
-             *     Several other fields do not apply to ExternalName services.
-             *     More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-             *     +optional */
-            type?: string;
-        };
-        "v1.ServiceStatus": {
-            /** @description Current service state
-             *     +optional
-             *     +patchMergeKey=type
-             *     +patchStrategy=merge
-             *     +listType=map
-             *     +listMapKey=type */
-            conditions?: components["schemas"]["v1.Condition"][];
-            loadBalancer?: components["schemas"]["v1.LoadBalancerStatus"];
-        };
-        "v1.SessionAffinityConfig": {
-            clientIP?: components["schemas"]["v1.ClientIPConfig"];
-        };
+        /** @enum {string} */
+        "v1.Signal": "SIGABRT" | "SIGALRM" | "SIGBUS" | "SIGCHLD" | "SIGCLD" | "SIGCONT" | "SIGFPE" | "SIGHUP" | "SIGILL" | "SIGINT" | "SIGIO" | "SIGIOT" | "SIGKILL" | "SIGPIPE" | "SIGPOLL" | "SIGPROF" | "SIGPWR" | "SIGQUIT" | "SIGSEGV" | "SIGSTKFLT" | "SIGSTOP" | "SIGSYS" | "SIGTERM" | "SIGTRAP" | "SIGTSTP" | "SIGTTIN" | "SIGTTOU" | "SIGURG" | "SIGUSR1" | "SIGUSR2" | "SIGVTALRM" | "SIGWINCH" | "SIGXCPU" | "SIGXFSZ" | "SIGRTMIN" | "SIGRTMIN+1" | "SIGRTMIN+2" | "SIGRTMIN+3" | "SIGRTMIN+4" | "SIGRTMIN+5" | "SIGRTMIN+6" | "SIGRTMIN+7" | "SIGRTMIN+8" | "SIGRTMIN+9" | "SIGRTMIN+10" | "SIGRTMIN+11" | "SIGRTMIN+12" | "SIGRTMIN+13" | "SIGRTMIN+14" | "SIGRTMIN+15" | "SIGRTMAX-14" | "SIGRTMAX-13" | "SIGRTMAX-12" | "SIGRTMAX-11" | "SIGRTMAX-10" | "SIGRTMAX-9" | "SIGRTMAX-8" | "SIGRTMAX-7" | "SIGRTMAX-6" | "SIGRTMAX-5" | "SIGRTMAX-4" | "SIGRTMAX-3" | "SIGRTMAX-2" | "SIGRTMAX-1" | "SIGRTMAX";
         "v1.SleepAction": {
             /** @description Seconds is the number of seconds to sleep. */
             seconds?: number;
         };
-        "v1.Subject": {
-            /** @description APIGroup holds the API group of the referenced subject.
-             *     Defaults to "" for ServiceAccount subjects.
-             *     Defaults to "rbac.authorization.k8s.io" for User and Group subjects.
-             *     +optional */
-            apiGroup?: string;
-            /** @description Kind of object being referenced. Values defined by this API group are "User", "Group", and "ServiceAccount".
-             *     If the Authorizer does not recognized the kind value, the Authorizer should report an error. */
-            kind?: string;
-            /** @description Name of the object being referenced. */
+        /** @enum {string} */
+        "v1.StorageMedium": "" | "Memory" | "HugePages" | "HugePages-";
+        "v1.StorageOSVolumeSource": {
+            /**
+             * @description fsType is the filesystem type to mount.
+             *     Must be a filesystem type supported by the host operating system.
+             *     Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+             *     +optional
+             */
+            fsType?: string;
+            /**
+             * @description readOnly defaults to false (read/write). ReadOnly here will force
+             *     the ReadOnly setting in VolumeMounts.
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description secretRef specifies the secret to use for obtaining the StorageOS API
+             *     credentials.  If not specified, default values will be attempted.
+             *     +optional
+             */
+            secretRef?: components["schemas"]["k8s_io_api_core_v1.LocalObjectReference"];
+            /**
+             * @description volumeName is the human-readable name of the StorageOS volume.  Volume
+             *     names are only unique within a namespace.
+             */
+            volumeName?: string;
+            /**
+             * @description volumeNamespace specifies the scope of the volume within StorageOS.  If no
+             *     namespace is specified then the Pod's namespace will be used.  This allows the
+             *     Kubernetes name scoping to be mirrored within StorageOS for tighter integration.
+             *     Set VolumeName to any name to override the default behaviour.
+             *     Set to "default" if you are not using namespaces within StorageOS.
+             *     Namespaces that do not pre-exist within StorageOS will be created.
+             *     +optional
+             */
+            volumeNamespace?: string;
+        };
+        /** @enum {string} */
+        "v1.SupplementalGroupsPolicy": "Merge" | "Strict";
+        "v1.Sysctl": {
+            /** @description Name of a property to set */
             name?: string;
-            /** @description Namespace of the referenced object.  If the object kind is non-namespace, such as "User" or "Group", and this value is not empty
-             *     the Authorizer should report an error.
-             *     +optional */
-            namespace?: string;
+            /** @description Value of a property to set */
+            value?: string;
         };
         "v1.TCPSocketAction": {
-            /** @description Optional: Host name to connect to, defaults to the pod IP.
-             *     +optional */
+            /**
+             * @description Optional: Host name to connect to, defaults to the pod IP.
+             *     +optional
+             */
             host?: string;
+            /**
+             * @description Number or name of the port to access on the container.
+             *     Number must be in the range 1 to 65535.
+             *     Name must be an IANA_SVC_NAME.
+             */
             port?: components["schemas"]["intstr.IntOrString"];
+        };
+        "v1.Taint": {
+            /**
+             * @description Required. The effect of the taint on pods
+             *     that do not tolerate the taint.
+             *     Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
+             */
+            effect?: components["schemas"]["v1.TaintEffect"];
+            /** @description Required. The taint key to be applied to a node. */
+            key?: string;
+            /**
+             * @description TimeAdded represents the time at which the taint was added.
+             *     +optional
+             */
+            timeAdded?: string;
+            /**
+             * @description The taint value corresponding to the taint key.
+             *     +optional
+             */
+            value?: string;
+        };
+        /** @enum {string} */
+        "v1.TaintEffect": "NoSchedule" | "PreferNoSchedule" | "NoExecute";
+        /** @enum {string} */
+        "v1.TerminationMessagePolicy": "File" | "FallbackToLogsOnError";
+        "v1.Toleration": {
+            /**
+             * @description Effect indicates the taint effect to match. Empty means match all taint effects.
+             *     When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+             *     +optional
+             */
+            effect?: components["schemas"]["v1.TaintEffect"];
+            /**
+             * @description Key is the taint key that the toleration applies to. Empty means match all taint keys.
+             *     If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+             *     +optional
+             */
+            key?: string;
+            /**
+             * @description Operator represents a key's relationship to the value.
+             *     Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+             *     Exists is equivalent to wildcard for value, so that a pod can
+             *     tolerate all taints of a particular category.
+             *     Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
+             *     +optional
+             */
+            operator?: components["schemas"]["v1.TolerationOperator"];
+            /**
+             * @description TolerationSeconds represents the period of time the toleration (which must be
+             *     of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+             *     it is not set, which means tolerate the taint forever (do not evict). Zero and
+             *     negative values will be treated as 0 (evict immediately) by the system.
+             *     +optional
+             */
+            tolerationSeconds?: number;
+            /**
+             * @description Value is the taint value the toleration matches to.
+             *     If the operator is Exists, the value should be empty, otherwise just a regular string.
+             *     +optional
+             */
+            value?: string;
+        };
+        /** @enum {string} */
+        "v1.TolerationOperator": "Exists" | "Equal" | "Lt" | "Gt";
+        "v1.TopologySpreadConstraint": {
+            /**
+             * @description LabelSelector is used to find matching pods.
+             *     Pods that match this label selector are counted to determine the number of pods
+             *     in their corresponding topology domain.
+             *     +optional
+             */
+            labelSelector?: components["schemas"]["v1.LabelSelector"];
+            /**
+             * @description MatchLabelKeys is a set of pod label keys to select the pods over which
+             *     spreading will be calculated. The keys are used to lookup values from the
+             *     incoming pod labels, those key-value labels are ANDed with labelSelector
+             *     to select the group of existing pods over which spreading will be calculated
+             *     for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+             *     MatchLabelKeys cannot be set when LabelSelector isn't set.
+             *     Keys that don't exist in the incoming pod labels will
+             *     be ignored. A null or empty list means only match against labelSelector.
+             *
+             *     This is a beta field and requires the MatchLabelKeysInPodTopologySpread feature gate to be enabled (enabled by default).
+             *     +listType=atomic
+             *     +optional
+             */
+            matchLabelKeys?: string[];
+            /**
+             * @description MaxSkew describes the degree to which pods may be unevenly distributed.
+             *     When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
+             *     between the number of matching pods in the target topology and the global minimum.
+             *     The global minimum is the minimum number of matching pods in an eligible domain
+             *     or zero if the number of eligible domains is less than MinDomains.
+             *     For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+             *     labelSelector spread as 2/2/1:
+             *     In this case, the global minimum is 1.
+             *     +-------+-------+-------+
+             *     | zone1 | zone2 | zone3 |
+             *     +-------+-------+-------+
+             *     |  P P  |  P P  |   P   |
+             *     +-------+-------+-------+
+             *     - if MaxSkew is 1, incoming pod can only be scheduled to zone3 to become 2/2/2;
+             *     scheduling it onto zone1(zone2) would make the ActualSkew(3-1) on zone1(zone2)
+             *     violate MaxSkew(1).
+             *     - if MaxSkew is 2, incoming pod can be scheduled onto any zone.
+             *     When `whenUnsatisfiable=ScheduleAnyway`, it is used to give higher precedence
+             *     to topologies that satisfy it.
+             *     It's a required field. Default value is 1 and 0 is not allowed.
+             */
+            maxSkew?: number;
+            /**
+             * @description MinDomains indicates a minimum number of eligible domains.
+             *     When the number of eligible domains with matching topology keys is less than minDomains,
+             *     Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
+             *     And when the number of eligible domains with matching topology keys equals or greater than minDomains,
+             *     this value has no effect on scheduling.
+             *     As a result, when the number of eligible domains is less than minDomains,
+             *     scheduler won't schedule more than maxSkew Pods to those domains.
+             *     If value is nil, the constraint behaves as if MinDomains is equal to 1.
+             *     Valid values are integers greater than 0.
+             *     When value is not nil, WhenUnsatisfiable must be DoNotSchedule.
+             *
+             *     For example, in a 3-zone cluster, MaxSkew is set to 2, MinDomains is set to 5 and pods with the same
+             *     labelSelector spread as 2/2/2:
+             *     +-------+-------+-------+
+             *     | zone1 | zone2 | zone3 |
+             *     +-------+-------+-------+
+             *     |  P P  |  P P  |  P P  |
+             *     +-------+-------+-------+
+             *     The number of domains is less than 5(MinDomains), so "global minimum" is treated as 0.
+             *     In this situation, new pod with the same labelSelector cannot be scheduled,
+             *     because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
+             *     it will violate MaxSkew.
+             *     +optional
+             */
+            minDomains?: number;
+            /**
+             * @description NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
+             *     when calculating pod topology spread skew. Options are:
+             *     - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
+             *     - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+             *
+             *     If this value is nil, the behavior is equivalent to the Honor policy.
+             *     +optional
+             */
+            nodeAffinityPolicy?: components["schemas"]["v1.NodeInclusionPolicy"];
+            /**
+             * @description NodeTaintsPolicy indicates how we will treat node taints when calculating
+             *     pod topology spread skew. Options are:
+             *     - Honor: nodes without taints, along with tainted nodes for which the incoming pod
+             *     has a toleration, are included.
+             *     - Ignore: node taints are ignored. All nodes are included.
+             *
+             *     If this value is nil, the behavior is equivalent to the Ignore policy.
+             *     +optional
+             */
+            nodeTaintsPolicy?: components["schemas"]["v1.NodeInclusionPolicy"];
+            /**
+             * @description TopologyKey is the key of node labels. Nodes that have a label with this key
+             *     and identical values are considered to be in the same topology.
+             *     We consider each <key, value> as a "bucket", and try to put balanced number
+             *     of pods into each bucket.
+             *     We define a domain as a particular instance of a topology.
+             *     Also, we define an eligible domain as a domain whose nodes meet the requirements of
+             *     nodeAffinityPolicy and nodeTaintsPolicy.
+             *     e.g. If TopologyKey is "kubernetes.io/hostname", each Node is a domain of that topology.
+             *     And, if TopologyKey is "topology.kubernetes.io/zone", each zone is a domain of that topology.
+             *     It's a required field.
+             */
+            topologyKey?: string;
+            /**
+             * @description WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
+             *     the spread constraint.
+             *     - DoNotSchedule (default) tells the scheduler not to schedule it.
+             *     - ScheduleAnyway tells the scheduler to schedule the pod in any location,
+             *       but giving higher precedence to topologies that would help reduce the
+             *       skew.
+             *     A constraint is considered "Unsatisfiable" for an incoming pod
+             *     if and only if every possible node assignment for that pod would violate
+             *     "MaxSkew" on some topology.
+             *     For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+             *     labelSelector spread as 3/1/1:
+             *     +-------+-------+-------+
+             *     | zone1 | zone2 | zone3 |
+             *     +-------+-------+-------+
+             *     | P P P |   P   |   P   |
+             *     +-------+-------+-------+
+             *     If WhenUnsatisfiable is set to DoNotSchedule, incoming pod can only be scheduled
+             *     to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1) on zone2(zone3) satisfies
+             *     MaxSkew(1). In other words, the cluster can still be imbalanced, but scheduler
+             *     won't make it *more* imbalanced.
+             *     It's a required field.
+             */
+            whenUnsatisfiable?: components["schemas"]["v1.UnsatisfiableConstraintAction"];
+        };
+        "v1.TypedLocalObjectReference": {
+            /**
+             * @description APIGroup is the group for the resource being referenced.
+             *     If APIGroup is not specified, the specified Kind must be in the core API group.
+             *     For any other third-party types, APIGroup is required.
+             *     +optional
+             */
+            apiGroup?: string;
+            /** @description Kind is the type of resource being referenced */
+            kind?: string;
+            /** @description Name is the name of resource being referenced */
+            name?: string;
+        };
+        "v1.TypedObjectReference": {
+            /**
+             * @description APIGroup is the group for the resource being referenced.
+             *     If APIGroup is not specified, the specified Kind must be in the core API group.
+             *     For any other third-party types, APIGroup is required.
+             *     +optional
+             */
+            apiGroup?: string;
+            /** @description Kind is the type of resource being referenced */
+            kind?: string;
+            /** @description Name is the name of resource being referenced */
+            name?: string;
+            /**
+             * @description Namespace is the namespace of resource being referenced
+             *     Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+             *     (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
+             *     +featureGate=CrossNamespaceVolumeDataSource
+             *     +optional
+             */
+            namespace?: string;
+        };
+        /** @enum {string} */
+        "v1.URIScheme": "HTTP" | "HTTPS";
+        /** @enum {string} */
+        "v1.UnsatisfiableConstraintAction": "DoNotSchedule" | "ScheduleAnyway";
+        "v1.Volume": {
+            /**
+             * @description awsElasticBlockStore represents an AWS Disk resource that is attached to a
+             *     kubelet's host machine and then exposed to the pod.
+             *     Deprecated: AWSElasticBlockStore is deprecated. All operations for the in-tree
+             *     awsElasticBlockStore type are redirected to the ebs.csi.aws.com CSI driver.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
+             *     +optional
+             */
+            awsElasticBlockStore?: components["schemas"]["v1.AWSElasticBlockStoreVolumeSource"];
+            /**
+             * @description azureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.
+             *     Deprecated: AzureDisk is deprecated. All operations for the in-tree azureDisk type
+             *     are redirected to the disk.csi.azure.com CSI driver.
+             *     +optional
+             */
+            azureDisk?: components["schemas"]["v1.AzureDiskVolumeSource"];
+            /**
+             * @description azureFile represents an Azure File Service mount on the host and bind mount to the pod.
+             *     Deprecated: AzureFile is deprecated. All operations for the in-tree azureFile type
+             *     are redirected to the file.csi.azure.com CSI driver.
+             *     +optional
+             */
+            azureFile?: components["schemas"]["v1.AzureFileVolumeSource"];
+            /**
+             * @description cephFS represents a Ceph FS mount on the host that shares a pod's lifetime.
+             *     Deprecated: CephFS is deprecated and the in-tree cephfs type is no longer supported.
+             *     +optional
+             */
+            cephfs?: components["schemas"]["v1.CephFSVolumeSource"];
+            /**
+             * @description cinder represents a cinder volume attached and mounted on kubelets host machine.
+             *     Deprecated: Cinder is deprecated. All operations for the in-tree cinder type
+             *     are redirected to the cinder.csi.openstack.org CSI driver.
+             *     More info: https://examples.k8s.io/mysql-cinder-pd/README.md
+             *     +optional
+             */
+            cinder?: components["schemas"]["v1.CinderVolumeSource"];
+            /**
+             * @description configMap represents a configMap that should populate this volume
+             *     +optional
+             */
+            configMap?: components["schemas"]["v1.ConfigMapVolumeSource"];
+            /**
+             * @description csi (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers.
+             *     +optional
+             */
+            csi?: components["schemas"]["v1.CSIVolumeSource"];
+            /**
+             * @description downwardAPI represents downward API about the pod that should populate this volume
+             *     +optional
+             */
+            downwardAPI?: components["schemas"]["v1.DownwardAPIVolumeSource"];
+            /**
+             * @description emptyDir represents a temporary directory that shares a pod's lifetime.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir
+             *     +optional
+             */
+            emptyDir?: components["schemas"]["v1.EmptyDirVolumeSource"];
+            /**
+             * @description ephemeral represents a volume that is handled by a cluster storage driver.
+             *     The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
+             *     and deleted when the pod is removed.
+             *
+             *     Use this if:
+             *     a) the volume is only needed while the pod runs,
+             *     b) features of normal volumes like restoring from snapshot or capacity
+             *        tracking are needed,
+             *     c) the storage driver is specified through a storage class, and
+             *     d) the storage driver supports dynamic volume provisioning through
+             *        a PersistentVolumeClaim (see EphemeralVolumeSource for more
+             *        information on the connection between this volume type
+             *        and PersistentVolumeClaim).
+             *
+             *     Use PersistentVolumeClaim or one of the vendor-specific
+             *     APIs for volumes that persist for longer than the lifecycle
+             *     of an individual pod.
+             *
+             *     Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
+             *     be used that way - see the documentation of the driver for
+             *     more information.
+             *
+             *     A pod can use both types of ephemeral volumes and
+             *     persistent volumes at the same time.
+             *
+             *     +optional
+             */
+            ephemeral?: components["schemas"]["v1.EphemeralVolumeSource"];
+            /**
+             * @description fc represents a Fibre Channel resource that is attached to a kubelet's host machine and then exposed to the pod.
+             *     +optional
+             */
+            fc?: components["schemas"]["v1.FCVolumeSource"];
+            /**
+             * @description flexVolume represents a generic volume resource that is
+             *     provisioned/attached using an exec based plugin.
+             *     Deprecated: FlexVolume is deprecated. Consider using a CSIDriver instead.
+             *     +optional
+             */
+            flexVolume?: components["schemas"]["v1.FlexVolumeSource"];
+            /**
+             * @description flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running.
+             *     Deprecated: Flocker is deprecated and the in-tree flocker type is no longer supported.
+             *     +optional
+             */
+            flocker?: components["schemas"]["v1.FlockerVolumeSource"];
+            /**
+             * @description gcePersistentDisk represents a GCE Disk resource that is attached to a
+             *     kubelet's host machine and then exposed to the pod.
+             *     Deprecated: GCEPersistentDisk is deprecated. All operations for the in-tree
+             *     gcePersistentDisk type are redirected to the pd.csi.storage.gke.io CSI driver.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
+             *     +optional
+             */
+            gcePersistentDisk?: components["schemas"]["v1.GCEPersistentDiskVolumeSource"];
+            /**
+             * @description gitRepo represents a git repository at a particular revision.
+             *     Deprecated: GitRepo is deprecated. To provision a container with a git repo, mount an
+             *     EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir
+             *     into the Pod's container.
+             *     +optional
+             */
+            gitRepo?: components["schemas"]["v1.GitRepoVolumeSource"];
+            /**
+             * @description glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
+             *     Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
+             *     +optional
+             */
+            glusterfs?: components["schemas"]["v1.GlusterfsVolumeSource"];
+            /**
+             * @description hostPath represents a pre-existing file or directory on the host
+             *     machine that is directly exposed to the container. This is generally
+             *     used for system agents or other privileged things that are allowed
+             *     to see the host machine. Most containers will NOT need this.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+             *     ---
+             *     TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
+             *     mount host directories as read/write.
+             *     +optional
+             */
+            hostPath?: components["schemas"]["v1.HostPathVolumeSource"];
+            /**
+             * @description image represents an OCI object (a container image or artifact) pulled and mounted on the kubelet's host machine.
+             *     The volume is resolved at pod startup depending on which PullPolicy value is provided:
+             *
+             *     - Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+             *     - Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+             *     - IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+             *
+             *     The volume gets re-resolved if the pod gets deleted and recreated, which means that new remote content will become available on pod recreation.
+             *     A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
+             *     The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
+             *     The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
+             *     The volume will be mounted read-only (ro) and non-executable files (noexec).
+             *     Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath) before 1.33.
+             *     The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
+             *     +featureGate=ImageVolume
+             *     +optional
+             */
+            image?: components["schemas"]["v1.ImageVolumeSource"];
+            /**
+             * @description iscsi represents an ISCSI Disk resource that is attached to a
+             *     kubelet's host machine and then exposed to the pod.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes/#iscsi
+             *     +optional
+             */
+            iscsi?: components["schemas"]["v1.ISCSIVolumeSource"];
+            /**
+             * @description name of the volume.
+             *     Must be a DNS_LABEL and unique within the pod.
+             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * @description nfs represents an NFS mount on the host that shares a pod's lifetime
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs
+             *     +optional
+             */
+            nfs?: components["schemas"]["v1.NFSVolumeSource"];
+            /**
+             * @description persistentVolumeClaimVolumeSource represents a reference to a
+             *     PersistentVolumeClaim in the same namespace.
+             *     More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims
+             *     +optional
+             */
+            persistentVolumeClaim?: components["schemas"]["v1.PersistentVolumeClaimVolumeSource"];
+            /**
+             * @description photonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine.
+             *     Deprecated: PhotonPersistentDisk is deprecated and the in-tree photonPersistentDisk type is no longer supported.
+             */
+            photonPersistentDisk?: components["schemas"]["v1.PhotonPersistentDiskVolumeSource"];
+            /**
+             * @description portworxVolume represents a portworx volume attached and mounted on kubelets host machine.
+             *     Deprecated: PortworxVolume is deprecated. All operations for the in-tree portworxVolume type
+             *     are redirected to the pxd.portworx.com CSI driver when the CSIMigrationPortworx feature-gate
+             *     is on.
+             *     +optional
+             */
+            portworxVolume?: components["schemas"]["v1.PortworxVolumeSource"];
+            /** @description projected items for all in one resources secrets, configmaps, and downward API */
+            projected?: components["schemas"]["v1.ProjectedVolumeSource"];
+            /**
+             * @description quobyte represents a Quobyte mount on the host that shares a pod's lifetime.
+             *     Deprecated: Quobyte is deprecated and the in-tree quobyte type is no longer supported.
+             *     +optional
+             */
+            quobyte?: components["schemas"]["v1.QuobyteVolumeSource"];
+            /**
+             * @description rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
+             *     Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
+             *     +optional
+             */
+            rbd?: components["schemas"]["v1.RBDVolumeSource"];
+            /**
+             * @description scaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.
+             *     Deprecated: ScaleIO is deprecated and the in-tree scaleIO type is no longer supported.
+             *     +optional
+             */
+            scaleIO?: components["schemas"]["v1.ScaleIOVolumeSource"];
+            /**
+             * @description secret represents a secret that should populate this volume.
+             *     More info: https://kubernetes.io/docs/concepts/storage/volumes#secret
+             *     +optional
+             */
+            secret?: components["schemas"]["v1.SecretVolumeSource"];
+            /**
+             * @description storageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.
+             *     Deprecated: StorageOS is deprecated and the in-tree storageos type is no longer supported.
+             *     +optional
+             */
+            storageos?: components["schemas"]["v1.StorageOSVolumeSource"];
+            /**
+             * @description vsphereVolume represents a vSphere volume attached and mounted on kubelets host machine.
+             *     Deprecated: VsphereVolume is deprecated. All operations for the in-tree vsphereVolume type
+             *     are redirected to the csi.vsphere.vmware.com CSI driver.
+             *     +optional
+             */
+            vsphereVolume?: components["schemas"]["v1.VsphereVirtualDiskVolumeSource"];
         };
         "v1.VolumeDevice": {
             /** @description devicePath is the path inside of the container that the device will be mapped to. */
@@ -10180,24 +16442,31 @@ export interface components {
             name?: string;
         };
         "v1.VolumeMount": {
-            /** @description Path within the container at which the volume should be mounted.  Must
-             *     not contain ':'. */
+            /**
+             * @description Path within the container at which the volume should be mounted.  Must
+             *     not contain ':'.
+             */
             mountPath?: string;
-            /** @description mountPropagation determines how mounts are propagated from the host
+            /**
+             * @description mountPropagation determines how mounts are propagated from the host
              *     to container and the other way around.
              *     When not set, MountPropagationNone is used.
              *     This field is beta in 1.10.
              *     When RecursiveReadOnly is set to IfPossible or to Enabled, MountPropagation must be None or unspecified
              *     (which defaults to None).
-             *     +optional */
-            mountPropagation?: string;
+             *     +optional
+             */
+            mountPropagation?: components["schemas"]["v1.MountPropagationMode"];
             /** @description This must match the Name of a Volume. */
             name?: string;
-            /** @description Mounted read-only if true, read-write otherwise (false or unspecified).
+            /**
+             * @description Mounted read-only if true, read-write otherwise (false or unspecified).
              *     Defaults to false.
-             *     +optional */
+             *     +optional
+             */
             readOnly?: boolean;
-            /** @description RecursiveReadOnly specifies whether read-only mounts should be handled
+            /**
+             * @description RecursiveReadOnly specifies whether read-only mounts should be handled
              *     recursively.
              *
              *     If ReadOnly is false, this field has no meaning and must be unspecified.
@@ -10213,882 +16482,483 @@ export interface components {
              *     None (or be unspecified, which defaults to None).
              *
              *     If this field is not specified, it is treated as an equivalent of Disabled.
-             *
-             *     +featureGate=RecursiveReadOnlyMounts
-             *     +optional */
-            recursiveReadOnly?: string;
-            /** @description Path within the volume from which the container's volume should be mounted.
+             *     +optional
+             */
+            recursiveReadOnly?: components["schemas"]["v1.RecursiveReadOnlyMode"];
+            /**
+             * @description Path within the volume from which the container's volume should be mounted.
              *     Defaults to "" (volume's root).
-             *     +optional */
+             *     +optional
+             */
             subPath?: string;
-            /** @description Expanded path within the volume from which the container's volume should be mounted.
+            /**
+             * @description Expanded path within the volume from which the container's volume should be mounted.
              *     Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
              *     Defaults to "" (volume's root).
              *     SubPathExpr and SubPath are mutually exclusive.
-             *     +optional */
+             *     +optional
+             */
             subPathExpr?: string;
         };
+        "v1.VolumeMountStatus": {
+            /** @description MountPath corresponds to the original VolumeMount. */
+            mountPath?: string;
+            /** @description Name corresponds to the name of the original VolumeMount. */
+            name?: string;
+            /**
+             * @description ReadOnly corresponds to the original VolumeMount.
+             *     +optional
+             */
+            readOnly?: boolean;
+            /**
+             * @description RecursiveReadOnly must be set to Disabled, Enabled, or unspecified (for non-readonly mounts).
+             *     An IfPossible value in the original VolumeMount must be translated to Disabled or Enabled,
+             *     depending on the mount result.
+             *     +optional
+             */
+            recursiveReadOnly?: components["schemas"]["v1.RecursiveReadOnlyMode"];
+        };
+        "v1.VolumeProjection": {
+            /**
+             * @description ClusterTrustBundle allows a pod to access the `.spec.trustBundle` field
+             *     of ClusterTrustBundle objects in an auto-updating file.
+             *
+             *     Alpha, gated by the ClusterTrustBundleProjection feature gate.
+             *
+             *     ClusterTrustBundle objects can either be selected by name, or by the
+             *     combination of signer name and a label selector.
+             *
+             *     Kubelet performs aggressive normalization of the PEM contents written
+             *     into the pod filesystem.  Esoteric PEM features such as inter-block
+             *     comments and block headers are stripped.  Certificates are deduplicated.
+             *     The ordering of certificates within the file is arbitrary, and Kubelet
+             *     may change the order over time.
+             *
+             *     +featureGate=ClusterTrustBundleProjection
+             *     +optional
+             */
+            clusterTrustBundle?: components["schemas"]["v1.ClusterTrustBundleProjection"];
+            /**
+             * @description configMap information about the configMap data to project
+             *     +optional
+             */
+            configMap?: components["schemas"]["v1.ConfigMapProjection"];
+            /**
+             * @description downwardAPI information about the downwardAPI data to project
+             *     +optional
+             */
+            downwardAPI?: components["schemas"]["v1.DownwardAPIProjection"];
+            /**
+             * @description Projects an auto-rotating credential bundle (private key and certificate
+             *     chain) that the pod can use either as a TLS client or server.
+             *
+             *     Kubelet generates a private key and uses it to send a
+             *     PodCertificateRequest to the named signer.  Once the signer approves the
+             *     request and issues a certificate chain, Kubelet writes the key and
+             *     certificate chain to the pod filesystem.  The pod does not start until
+             *     certificates have been issued for each podCertificate projected volume
+             *     source in its spec.
+             *
+             *     Kubelet will begin trying to rotate the certificate at the time indicated
+             *     by the signer using the PodCertificateRequest.Status.BeginRefreshAt
+             *     timestamp.
+             *
+             *     Kubelet can write a single file, indicated by the credentialBundlePath
+             *     field, or separate files, indicated by the keyPath and
+             *     certificateChainPath fields.
+             *
+             *     The credential bundle is a single file in PEM format.  The first PEM
+             *     entry is the private key (in PKCS#8 format), and the remaining PEM
+             *     entries are the certificate chain issued by the signer (typically,
+             *     signers will return their certificate chain in leaf-to-root order).
+             *
+             *     Prefer using the credential bundle format, since your application code
+             *     can read it atomically.  If you use keyPath and certificateChainPath,
+             *     your application must make two separate file reads. If these coincide
+             *     with a certificate rotation, it is possible that the private key and leaf
+             *     certificate you read may not correspond to each other.  Your application
+             *     will need to check for this condition, and re-read until they are
+             *     consistent.
+             *
+             *     The named signer controls chooses the format of the certificate it
+             *     issues; consult the signer implementation's documentation to learn how to
+             *     use the certificates it issues.
+             *
+             *     +featureGate=PodCertificateProjection
+             *     +optional
+             */
+            podCertificate?: components["schemas"]["v1.PodCertificateProjection"];
+            /**
+             * @description secret information about the secret data to project
+             *     +optional
+             */
+            secret?: components["schemas"]["v1.SecretProjection"];
+            /**
+             * @description serviceAccountToken is information about the serviceAccountToken data to project
+             *     +optional
+             */
+            serviceAccountToken?: components["schemas"]["v1.ServiceAccountTokenProjection"];
+        };
+        "v1.VolumeResourceRequirements": {
+            /**
+             * @description Limits describes the maximum amount of compute resources allowed.
+             *     More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+             *     +optional
+             */
+            limits?: components["schemas"]["v1.ResourceList"];
+            /**
+             * @description Requests describes the minimum amount of compute resources required.
+             *     If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+             *     otherwise to an implementation-defined value. Requests cannot exceed Limits.
+             *     More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+             *     +optional
+             */
+            requests?: components["schemas"]["v1.ResourceList"];
+        };
+        "v1.VsphereVirtualDiskVolumeSource": {
+            /**
+             * @description fsType is filesystem type to mount.
+             *     Must be a filesystem type supported by the host operating system.
+             *     Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+             *     +optional
+             */
+            fsType?: string;
+            /**
+             * @description storagePolicyID is the storage Policy Based Management (SPBM) profile ID associated with the StoragePolicyName.
+             *     +optional
+             */
+            storagePolicyID?: string;
+            /**
+             * @description storagePolicyName is the storage Policy Based Management (SPBM) profile name.
+             *     +optional
+             */
+            storagePolicyName?: string;
+            /** @description volumePath is the path that identifies vSphere volume vmdk */
+            volumePath?: string;
+        };
+        "v1.WeightedPodAffinityTerm": {
+            /** @description Required. A pod affinity term, associated with the corresponding weight. */
+            podAffinityTerm?: components["schemas"]["v1.PodAffinityTerm"];
+            /**
+             * @description weight associated with matching the corresponding podAffinityTerm,
+             *     in the range 1-100.
+             */
+            weight?: number;
+        };
         "v1.WindowsSecurityContextOptions": {
-            /** @description GMSACredentialSpec is where the GMSA admission webhook
+            /**
+             * @description GMSACredentialSpec is where the GMSA admission webhook
              *     (https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the
              *     GMSA credential spec named by the GMSACredentialSpecName field.
-             *     +optional */
+             *     +optional
+             */
             gmsaCredentialSpec?: string;
-            /** @description GMSACredentialSpecName is the name of the GMSA credential spec to use.
-             *     +optional */
+            /**
+             * @description GMSACredentialSpecName is the name of the GMSA credential spec to use.
+             *     +optional
+             */
             gmsaCredentialSpecName?: string;
-            /** @description HostProcess determines if a container should be run as a 'Host Process' container.
+            /**
+             * @description HostProcess determines if a container should be run as a 'Host Process' container.
              *     All of a Pod's containers must have the same effective HostProcess value
              *     (it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
              *     In addition, if HostProcess is true then HostNetwork must also be set to true.
-             *     +optional */
+             *     +optional
+             */
             hostProcess?: boolean;
-            /** @description The UserName in Windows to run the entrypoint of the container process.
+            /**
+             * @description The UserName in Windows to run the entrypoint of the container process.
              *     Defaults to the user specified in image metadata if unspecified.
              *     May also be set in PodSecurityContext. If set in both SecurityContext and
              *     PodSecurityContext, the value specified in SecurityContext takes precedence.
-             *     +optional */
+             *     +optional
+             */
             runAsUserName?: string;
+        };
+        "v1.WorkloadReference": {
+            /**
+             * @description Name defines the name of the Workload object this Pod belongs to.
+             *     Workload must be in the same namespace as the Pod.
+             *     If it doesn't match any existing Workload, the Pod will remain unschedulable
+             *     until a Workload object is created and observed by the kube-scheduler.
+             *     It must be a DNS subdomain.
+             *
+             *     +required
+             */
+            name?: string;
+            /**
+             * @description PodGroup is the name of the PodGroup within the Workload that this Pod
+             *     belongs to. If it doesn't match any existing PodGroup within the Workload,
+             *     the Pod will remain unschedulable until the Workload object is recreated
+             *     and observed by the kube-scheduler. It must be a DNS label.
+             *
+             *     +required
+             */
+            podGroup?: string;
+            /**
+             * @description PodGroupReplicaKey specifies the replica key of the PodGroup to which this
+             *     Pod belongs. It is used to distinguish pods belonging to different replicas
+             *     of the same pod group. The pod group policy is applied separately to each replica.
+             *     When set, it must be a DNS label.
+             *
+             *     +optional
+             */
+            podGroupReplicaKey?: string;
         };
         "v1beta1.ContainerMetrics": {
             /** @description Container name corresponding to the one from pod.spec.containers. */
             name?: string;
+            /** @description The memory usage is the memory working set. */
             usage?: components["schemas"]["v1.ResourceList"];
         };
         "v1beta1.NodeMetrics": {
-            /** @description Annotations is an unstructured key value map stored with a resource that may be
-             *     set by external tools to store and retrieve arbitrary metadata. They are not
-             *     queryable and should be preserved when modifying objects.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
-             *     +optional */
-            annotations?: {
-                [key: string]: string;
-            };
-            /** @description APIVersion defines the versioned schema of this representation of an object.
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
              *     Servers should convert recognized schemas to the latest internal value, and
              *     may reject unrecognized values.
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-             *     +optional */
-            apiVersion?: string;
-            /** @description CreationTimestamp is a timestamp representing the server time when this object was
-             *     created. It is not guaranteed to be set in happens-before order across separate operations.
-             *     Clients may not set this value. It is represented in RFC3339 form and is in UTC.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     Null for lists.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-             *     +optional */
-            creationTimestamp?: string;
-            /** @description Number of seconds allowed for this object to gracefully terminate before
-             *     it will be removed from the system. Only set when deletionTimestamp is also set.
-             *     May only be shortened.
-             *     Read-only.
-             *     +optional */
-            deletionGracePeriodSeconds?: number;
-            /** @description DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This
-             *     field is set by the server when a graceful deletion is requested by the user, and is not
-             *     directly settable by a client. The resource is expected to be deleted (no longer visible
-             *     from resource lists, and not reachable by name) after the time in this field, once the
-             *     finalizers list is empty. As long as the finalizers list contains items, deletion is blocked.
-             *     Once the deletionTimestamp is set, this value may not be unset or be set further into the
-             *     future, although it may be shortened or the resource may be deleted prior to this time.
-             *     For example, a user may request that a pod is deleted in 30 seconds. The Kubelet will react
-             *     by sending a graceful termination signal to the containers in the pod. After that 30 seconds,
-             *     the Kubelet will send a hard termination signal (SIGKILL) to the container and after cleanup,
-             *     remove the pod from the API. In the presence of network partitions, this object may still
-             *     exist after this timestamp, until an administrator or automated process can determine the
-             *     resource is fully terminated.
-             *     If not set, graceful deletion of the object has not been requested.
-             *
-             *     Populated by the system when a graceful deletion is requested.
-             *     Read-only.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-             *     +optional */
-            deletionTimestamp?: string;
-            /** @description Must be empty before the object is deleted from the registry. Each entry
-             *     is an identifier for the responsible component that will remove the entry
-             *     from the list. If the deletionTimestamp of the object is non-nil, entries
-             *     in this list can only be removed.
-             *     Finalizers may be processed and removed in any order.  Order is NOT enforced
-             *     because it introduces significant risk of stuck finalizers.
-             *     finalizers is a shared field, any actor with permission can reorder it.
-             *     If the finalizer list is processed in order, then this can lead to a situation
-             *     in which the component responsible for the first finalizer in the list is
-             *     waiting for a signal (field value, external system, or other) produced by a
-             *     component responsible for a finalizer later in the list, resulting in a deadlock.
-             *     Without enforced ordering finalizers are free to order amongst themselves and
-             *     are not vulnerable to ordering changes in the list.
              *     +optional
-             *     +patchStrategy=merge
-             *     +listType=set */
-            finalizers?: string[];
-            /** @description GenerateName is an optional prefix, used by the server, to generate a unique
-             *     name ONLY IF the Name field has not been provided.
-             *     If this field is used, the name returned to the client will be different
-             *     than the name passed. This value will also be combined with a unique suffix.
-             *     The provided value has the same validation rules as the Name field,
-             *     and may be truncated by the length of the suffix required to make the value
-             *     unique on the server.
-             *
-             *     If this field is specified and the generated name exists, the server will return a 409.
-             *
-             *     Applied only if Name is not specified.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
-             *     +optional */
-            generateName?: string;
-            /** @description A sequence number representing a specific generation of the desired state.
-             *     Populated by the system. Read-only.
-             *     +optional */
-            generation?: number;
-            /** @description Kind is a string value representing the REST resource this object represents.
+             */
+            apiVersion?: string;
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
              *     Servers may infer this from the endpoint the client submits requests to.
              *     Cannot be updated.
              *     In CamelCase.
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-             *     +optional */
+             *     +optional
+             */
             kind?: string;
-            /** @description Map of string keys and values that can be used to organize and categorize
-             *     (scope and select) objects. May match selectors of replication controllers
-             *     and services.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-             *     +optional */
-            labels?: {
-                [key: string]: string;
-            };
-            /** @description ManagedFields maps workflow-id and version to the set of fields
-             *     that are managed by that workflow. This is mostly for internal
-             *     housekeeping, and users typically shouldn't need to set or
-             *     understand this field. A workflow can be the user's name, a
-             *     controller's name, or the name of a specific apply path like
-             *     "ci-cd". The set of fields is always in the version that the
-             *     workflow used when modifying the object.
-             *
+            /**
+             * @description Standard object's metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
              *     +optional
-             *     +listType=atomic */
-            managedFields?: components["schemas"]["v1.ManagedFieldsEntry"][];
-            /** @description Name must be unique within a namespace. Is required when creating resources, although
-             *     some resources may allow a client to request the generation of an appropriate name
-             *     automatically. Name is primarily intended for creation idempotence and configuration
-             *     definition.
-             *     Cannot be updated.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
-             *     +optional */
-            name?: string;
-            /** @description Namespace defines the space within which each name must be unique. An empty namespace is
-             *     equivalent to the "default" namespace, but "default" is the canonical representation.
-             *     Not all objects are required to be scoped to a namespace - the value of this field for
-             *     those objects will be empty.
-             *
-             *     Must be a DNS_LABEL.
-             *     Cannot be updated.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
-             *     +optional */
-            namespace?: string;
-            /** @description List of objects depended by this object. If ALL objects in the list have
-             *     been deleted, this object will be garbage collected. If this object is managed by a controller,
-             *     then an entry in this list will point to this controller, with the controller field set to true.
-             *     There cannot be more than one managing controller.
-             *     +optional
-             *     +patchMergeKey=uid
-             *     +patchStrategy=merge
-             *     +listType=map
-             *     +listMapKey=uid */
-            ownerReferences?: components["schemas"]["v1.OwnerReference"][];
-            /** @description An opaque value that represents the internal version of this object that can
-             *     be used by clients to determine when objects have changed. May be used for optimistic
-             *     concurrency, change detection, and the watch operation on a resource or set of resources.
-             *     Clients must treat these values as opaque and passed unmodified back to the server.
-             *     They may only be valid for a particular resource or set of resources.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     Value must be treated as opaque by clients and .
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-             *     +optional */
-            resourceVersion?: string;
-            /** @description Deprecated: selfLink is a legacy read-only field that is no longer populated by the system.
-             *     +optional */
-            selfLink?: string;
-            /** @description The following fields define time interval from which metrics were
-             *     collected from the interval [Timestamp-Window, Timestamp]. */
+             */
+            metadata?: components["schemas"]["v1.ObjectMeta"];
+            /**
+             * @description The following fields define time interval from which metrics were
+             *     collected from the interval [Timestamp-Window, Timestamp].
+             */
             timestamp?: string;
-            /** @description UID is the unique in time and space value for this object. It is typically generated by
-             *     the server on successful creation of a resource and is not allowed to change on PUT
-             *     operations.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids
-             *     +optional */
-            uid?: string;
+            /** @description The memory usage is the memory working set. */
             usage?: components["schemas"]["v1.ResourceList"];
-            window?: components["schemas"]["v1.Duration"];
+            window?: string;
         };
         "v1beta1.NodeMetricsList": {
-            /** @description APIVersion defines the versioned schema of this representation of an object.
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
              *     Servers should convert recognized schemas to the latest internal value, and
              *     may reject unrecognized values.
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-             *     +optional */
+             *     +optional
+             */
             apiVersion?: string;
-            /** @description continue may be set if the user set a limit on the number of items returned, and indicates that
-             *     the server has more data available. The value is opaque and may be used to issue another request
-             *     to the endpoint that served this list to retrieve the next set of available objects. Continuing a
-             *     consistent list may not be possible if the server configuration has changed or more than a few
-             *     minutes have passed. The resourceVersion field returned when using this continue value will be
-             *     identical to the value in the first response, unless you have received this token from an error
-             *     message. */
-            continue?: string;
             /** @description List of node metrics. */
             items?: components["schemas"]["v1beta1.NodeMetrics"][];
-            /** @description Kind is a string value representing the REST resource this object represents.
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
              *     Servers may infer this from the endpoint the client submits requests to.
              *     Cannot be updated.
              *     In CamelCase.
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-             *     +optional */
+             *     +optional
+             */
             kind?: string;
-            /** @description remainingItemCount is the number of subsequent items in the list which are not included in this
-             *     list response. If the list request contained label or field selectors, then the number of
-             *     remaining items is unknown and the field will be left unset and omitted during serialization.
-             *     If the list is complete (either because it is not chunking or because this is the last chunk),
-             *     then there are no more remaining items and this field will be left unset and omitted during
-             *     serialization.
-             *     Servers older than v1.15 do not set this field.
-             *     The intended use of the remainingItemCount is *estimating* the size of a collection. Clients
-             *     should not rely on the remainingItemCount to be set or to be exact.
-             *     +optional */
-            remainingItemCount?: number;
-            /** @description String that identifies the server's internal version of this object that
-             *     can be used by clients to determine when objects have changed.
-             *     Value must be treated as opaque by clients and passed unmodified back to the server.
-             *     Populated by the system.
-             *     Read-only.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-             *     +optional */
-            resourceVersion?: string;
-            /** @description Deprecated: selfLink is a legacy read-only field that is no longer populated by the system.
-             *     +optional */
-            selfLink?: string;
+            /**
+             * @description Standard list metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+             */
+            metadata?: components["schemas"]["v1.ListMeta"];
         };
         "v1beta1.PodMetrics": {
-            /** @description Annotations is an unstructured key value map stored with a resource that may be
-             *     set by external tools to store and retrieve arbitrary metadata. They are not
-             *     queryable and should be preserved when modifying objects.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
-             *     +optional */
-            annotations?: {
-                [key: string]: string;
-            };
-            /** @description APIVersion defines the versioned schema of this representation of an object.
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
              *     Servers should convert recognized schemas to the latest internal value, and
              *     may reject unrecognized values.
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-             *     +optional */
-            apiVersion?: string;
-            /** @description Metrics for all containers are collected within the same time window.
-             *     +listType=atomic */
-            containers?: components["schemas"]["v1beta1.ContainerMetrics"][];
-            /** @description CreationTimestamp is a timestamp representing the server time when this object was
-             *     created. It is not guaranteed to be set in happens-before order across separate operations.
-             *     Clients may not set this value. It is represented in RFC3339 form and is in UTC.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     Null for lists.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-             *     +optional */
-            creationTimestamp?: string;
-            /** @description Number of seconds allowed for this object to gracefully terminate before
-             *     it will be removed from the system. Only set when deletionTimestamp is also set.
-             *     May only be shortened.
-             *     Read-only.
-             *     +optional */
-            deletionGracePeriodSeconds?: number;
-            /** @description DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This
-             *     field is set by the server when a graceful deletion is requested by the user, and is not
-             *     directly settable by a client. The resource is expected to be deleted (no longer visible
-             *     from resource lists, and not reachable by name) after the time in this field, once the
-             *     finalizers list is empty. As long as the finalizers list contains items, deletion is blocked.
-             *     Once the deletionTimestamp is set, this value may not be unset or be set further into the
-             *     future, although it may be shortened or the resource may be deleted prior to this time.
-             *     For example, a user may request that a pod is deleted in 30 seconds. The Kubelet will react
-             *     by sending a graceful termination signal to the containers in the pod. After that 30 seconds,
-             *     the Kubelet will send a hard termination signal (SIGKILL) to the container and after cleanup,
-             *     remove the pod from the API. In the presence of network partitions, this object may still
-             *     exist after this timestamp, until an administrator or automated process can determine the
-             *     resource is fully terminated.
-             *     If not set, graceful deletion of the object has not been requested.
-             *
-             *     Populated by the system when a graceful deletion is requested.
-             *     Read-only.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-             *     +optional */
-            deletionTimestamp?: string;
-            /** @description Must be empty before the object is deleted from the registry. Each entry
-             *     is an identifier for the responsible component that will remove the entry
-             *     from the list. If the deletionTimestamp of the object is non-nil, entries
-             *     in this list can only be removed.
-             *     Finalizers may be processed and removed in any order.  Order is NOT enforced
-             *     because it introduces significant risk of stuck finalizers.
-             *     finalizers is a shared field, any actor with permission can reorder it.
-             *     If the finalizer list is processed in order, then this can lead to a situation
-             *     in which the component responsible for the first finalizer in the list is
-             *     waiting for a signal (field value, external system, or other) produced by a
-             *     component responsible for a finalizer later in the list, resulting in a deadlock.
-             *     Without enforced ordering finalizers are free to order amongst themselves and
-             *     are not vulnerable to ordering changes in the list.
              *     +optional
-             *     +patchStrategy=merge
-             *     +listType=set */
-            finalizers?: string[];
-            /** @description GenerateName is an optional prefix, used by the server, to generate a unique
-             *     name ONLY IF the Name field has not been provided.
-             *     If this field is used, the name returned to the client will be different
-             *     than the name passed. This value will also be combined with a unique suffix.
-             *     The provided value has the same validation rules as the Name field,
-             *     and may be truncated by the length of the suffix required to make the value
-             *     unique on the server.
-             *
-             *     If this field is specified and the generated name exists, the server will return a 409.
-             *
-             *     Applied only if Name is not specified.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
-             *     +optional */
-            generateName?: string;
-            /** @description A sequence number representing a specific generation of the desired state.
-             *     Populated by the system. Read-only.
-             *     +optional */
-            generation?: number;
-            /** @description Kind is a string value representing the REST resource this object represents.
+             */
+            apiVersion?: string;
+            /**
+             * @description Metrics for all containers are collected within the same time window.
+             *     +listType=atomic
+             */
+            containers?: components["schemas"]["v1beta1.ContainerMetrics"][];
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
              *     Servers may infer this from the endpoint the client submits requests to.
              *     Cannot be updated.
              *     In CamelCase.
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-             *     +optional */
+             *     +optional
+             */
             kind?: string;
-            /** @description Map of string keys and values that can be used to organize and categorize
-             *     (scope and select) objects. May match selectors of replication controllers
-             *     and services.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-             *     +optional */
-            labels?: {
-                [key: string]: string;
-            };
-            /** @description ManagedFields maps workflow-id and version to the set of fields
-             *     that are managed by that workflow. This is mostly for internal
-             *     housekeeping, and users typically shouldn't need to set or
-             *     understand this field. A workflow can be the user's name, a
-             *     controller's name, or the name of a specific apply path like
-             *     "ci-cd". The set of fields is always in the version that the
-             *     workflow used when modifying the object.
-             *
+            /**
+             * @description Standard object's metadata.
+             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
              *     +optional
-             *     +listType=atomic */
-            managedFields?: components["schemas"]["v1.ManagedFieldsEntry"][];
-            /** @description Name must be unique within a namespace. Is required when creating resources, although
-             *     some resources may allow a client to request the generation of an appropriate name
-             *     automatically. Name is primarily intended for creation idempotence and configuration
-             *     definition.
-             *     Cannot be updated.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
-             *     +optional */
-            name?: string;
-            /** @description Namespace defines the space within which each name must be unique. An empty namespace is
-             *     equivalent to the "default" namespace, but "default" is the canonical representation.
-             *     Not all objects are required to be scoped to a namespace - the value of this field for
-             *     those objects will be empty.
-             *
-             *     Must be a DNS_LABEL.
-             *     Cannot be updated.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
-             *     +optional */
-            namespace?: string;
-            /** @description List of objects depended by this object. If ALL objects in the list have
-             *     been deleted, this object will be garbage collected. If this object is managed by a controller,
-             *     then an entry in this list will point to this controller, with the controller field set to true.
-             *     There cannot be more than one managing controller.
-             *     +optional
-             *     +patchMergeKey=uid
-             *     +patchStrategy=merge
-             *     +listType=map
-             *     +listMapKey=uid */
-            ownerReferences?: components["schemas"]["v1.OwnerReference"][];
-            /** @description An opaque value that represents the internal version of this object that can
-             *     be used by clients to determine when objects have changed. May be used for optimistic
-             *     concurrency, change detection, and the watch operation on a resource or set of resources.
-             *     Clients must treat these values as opaque and passed unmodified back to the server.
-             *     They may only be valid for a particular resource or set of resources.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     Value must be treated as opaque by clients and .
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-             *     +optional */
-            resourceVersion?: string;
-            /** @description Deprecated: selfLink is a legacy read-only field that is no longer populated by the system.
-             *     +optional */
-            selfLink?: string;
-            /** @description The following fields define time interval from which metrics were
-             *     collected from the interval [Timestamp-Window, Timestamp]. */
+             */
+            metadata?: components["schemas"]["v1.ObjectMeta"];
+            /**
+             * @description The following fields define time interval from which metrics were
+             *     collected from the interval [Timestamp-Window, Timestamp].
+             */
             timestamp?: string;
-            /** @description UID is the unique in time and space value for this object. It is typically generated by
-             *     the server on successful creation of a resource and is not allowed to change on PUT
-             *     operations.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids
-             *     +optional */
-            uid?: string;
-            window?: components["schemas"]["v1.Duration"];
+            window?: string;
         };
         "v1beta1.PodMetricsList": {
-            /** @description APIVersion defines the versioned schema of this representation of an object.
+            /**
+             * @description APIVersion defines the versioned schema of this representation of an object.
              *     Servers should convert recognized schemas to the latest internal value, and
              *     may reject unrecognized values.
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-             *     +optional */
+             *     +optional
+             */
             apiVersion?: string;
-            /** @description continue may be set if the user set a limit on the number of items returned, and indicates that
-             *     the server has more data available. The value is opaque and may be used to issue another request
-             *     to the endpoint that served this list to retrieve the next set of available objects. Continuing a
-             *     consistent list may not be possible if the server configuration has changed or more than a few
-             *     minutes have passed. The resourceVersion field returned when using this continue value will be
-             *     identical to the value in the first response, unless you have received this token from an error
-             *     message. */
-            continue?: string;
             /** @description List of pod metrics. */
             items?: components["schemas"]["v1beta1.PodMetrics"][];
-            /** @description Kind is a string value representing the REST resource this object represents.
+            /**
+             * @description Kind is a string value representing the REST resource this object represents.
              *     Servers may infer this from the endpoint the client submits requests to.
              *     Cannot be updated.
              *     In CamelCase.
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-             *     +optional */
-            kind?: string;
-            /** @description remainingItemCount is the number of subsequent items in the list which are not included in this
-             *     list response. If the list request contained label or field selectors, then the number of
-             *     remaining items is unknown and the field will be left unset and omitted during serialization.
-             *     If the list is complete (either because it is not chunking or because this is the last chunk),
-             *     then there are no more remaining items and this field will be left unset and omitted during
-             *     serialization.
-             *     Servers older than v1.15 do not set this field.
-             *     The intended use of the remainingItemCount is *estimating* the size of a collection. Clients
-             *     should not rely on the remainingItemCount to be set or to be exact.
-             *     +optional */
-            remainingItemCount?: number;
-            /** @description String that identifies the server's internal version of this object that
-             *     can be used by clients to determine when objects have changed.
-             *     Value must be treated as opaque by clients and passed unmodified back to the server.
-             *     Populated by the system.
-             *     Read-only.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-             *     +optional */
-            resourceVersion?: string;
-            /** @description Deprecated: selfLink is a legacy read-only field that is no longer populated by the system.
-             *     +optional */
-            selfLink?: string;
-        };
-        "v2.ContainerResourceMetricSource": {
-            /** @description container is the name of the container in the pods of the scaling target */
-            container?: string;
-            /** @description name is the name of the resource in question. */
-            name?: string;
-            target?: components["schemas"]["v2.MetricTarget"];
-        };
-        "v2.ContainerResourceMetricStatus": {
-            /** @description container is the name of the container in the pods of the scaling target */
-            container?: string;
-            current?: components["schemas"]["v2.MetricValueStatus"];
-            /** @description name is the name of the resource in question. */
-            name?: string;
-        };
-        "v2.CrossVersionObjectReference": {
-            /** @description apiVersion is the API version of the referent
-             *     +optional */
-            apiVersion?: string;
-            /** @description kind is the kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds */
-            kind?: string;
-            /** @description name is the name of the referent; More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names */
-            name?: string;
-        };
-        "v2.ExternalMetricSource": {
-            metric?: components["schemas"]["v2.MetricIdentifier"];
-            target?: components["schemas"]["v2.MetricTarget"];
-        };
-        "v2.ExternalMetricStatus": {
-            current?: components["schemas"]["v2.MetricValueStatus"];
-            metric?: components["schemas"]["v2.MetricIdentifier"];
-        };
-        "v2.HPAScalingPolicy": {
-            /** @description periodSeconds specifies the window of time for which the policy should hold true.
-             *     PeriodSeconds must be greater than zero and less than or equal to 1800 (30 min). */
-            periodSeconds?: number;
-            /** @description type is used to specify the scaling policy. */
-            type?: string;
-            /** @description value contains the amount of change which is permitted by the policy.
-             *     It must be greater than zero */
-            value?: number;
-        };
-        "v2.HPAScalingRules": {
-            /** @description policies is a list of potential scaling polices which can be used during scaling.
-             *     At least one policy must be specified, otherwise the HPAScalingRules will be discarded as invalid
-             *     +listType=atomic
-             *     +optional */
-            policies?: components["schemas"]["v2.HPAScalingPolicy"][];
-            /** @description selectPolicy is used to specify which policy should be used.
-             *     If not set, the default value Max is used.
-             *     +optional */
-            selectPolicy?: string;
-            /** @description stabilizationWindowSeconds is the number of seconds for which past recommendations should be
-             *     considered while scaling up or scaling down.
-             *     StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour).
-             *     If not set, use the default values:
-             *     - For scale up: 0 (i.e. no stabilization is done).
-             *     - For scale down: 300 (i.e. the stabilization window is 300 seconds long).
-             *     +optional */
-            stabilizationWindowSeconds?: number;
-        };
-        "v2.HorizontalPodAutoscaler": {
-            /** @description Annotations is an unstructured key value map stored with a resource that may be
-             *     set by external tools to store and retrieve arbitrary metadata. They are not
-             *     queryable and should be preserved when modifying objects.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
-             *     +optional */
-            annotations?: {
-                [key: string]: string;
-            };
-            /** @description APIVersion defines the versioned schema of this representation of an object.
-             *     Servers should convert recognized schemas to the latest internal value, and
-             *     may reject unrecognized values.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-             *     +optional */
-            apiVersion?: string;
-            /** @description CreationTimestamp is a timestamp representing the server time when this object was
-             *     created. It is not guaranteed to be set in happens-before order across separate operations.
-             *     Clients may not set this value. It is represented in RFC3339 form and is in UTC.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     Null for lists.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-             *     +optional */
-            creationTimestamp?: string;
-            /** @description Number of seconds allowed for this object to gracefully terminate before
-             *     it will be removed from the system. Only set when deletionTimestamp is also set.
-             *     May only be shortened.
-             *     Read-only.
-             *     +optional */
-            deletionGracePeriodSeconds?: number;
-            /** @description DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This
-             *     field is set by the server when a graceful deletion is requested by the user, and is not
-             *     directly settable by a client. The resource is expected to be deleted (no longer visible
-             *     from resource lists, and not reachable by name) after the time in this field, once the
-             *     finalizers list is empty. As long as the finalizers list contains items, deletion is blocked.
-             *     Once the deletionTimestamp is set, this value may not be unset or be set further into the
-             *     future, although it may be shortened or the resource may be deleted prior to this time.
-             *     For example, a user may request that a pod is deleted in 30 seconds. The Kubelet will react
-             *     by sending a graceful termination signal to the containers in the pod. After that 30 seconds,
-             *     the Kubelet will send a hard termination signal (SIGKILL) to the container and after cleanup,
-             *     remove the pod from the API. In the presence of network partitions, this object may still
-             *     exist after this timestamp, until an administrator or automated process can determine the
-             *     resource is fully terminated.
-             *     If not set, graceful deletion of the object has not been requested.
-             *
-             *     Populated by the system when a graceful deletion is requested.
-             *     Read-only.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-             *     +optional */
-            deletionTimestamp?: string;
-            /** @description Must be empty before the object is deleted from the registry. Each entry
-             *     is an identifier for the responsible component that will remove the entry
-             *     from the list. If the deletionTimestamp of the object is non-nil, entries
-             *     in this list can only be removed.
-             *     Finalizers may be processed and removed in any order.  Order is NOT enforced
-             *     because it introduces significant risk of stuck finalizers.
-             *     finalizers is a shared field, any actor with permission can reorder it.
-             *     If the finalizer list is processed in order, then this can lead to a situation
-             *     in which the component responsible for the first finalizer in the list is
-             *     waiting for a signal (field value, external system, or other) produced by a
-             *     component responsible for a finalizer later in the list, resulting in a deadlock.
-             *     Without enforced ordering finalizers are free to order amongst themselves and
-             *     are not vulnerable to ordering changes in the list.
              *     +optional
-             *     +patchStrategy=merge
-             *     +listType=set */
-            finalizers?: string[];
-            /** @description GenerateName is an optional prefix, used by the server, to generate a unique
-             *     name ONLY IF the Name field has not been provided.
-             *     If this field is used, the name returned to the client will be different
-             *     than the name passed. This value will also be combined with a unique suffix.
-             *     The provided value has the same validation rules as the Name field,
-             *     and may be truncated by the length of the suffix required to make the value
-             *     unique on the server.
-             *
-             *     If this field is specified and the generated name exists, the server will return a 409.
-             *
-             *     Applied only if Name is not specified.
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
-             *     +optional */
-            generateName?: string;
-            /** @description A sequence number representing a specific generation of the desired state.
-             *     Populated by the system. Read-only.
-             *     +optional */
-            generation?: number;
-            /** @description Kind is a string value representing the REST resource this object represents.
-             *     Servers may infer this from the endpoint the client submits requests to.
-             *     Cannot be updated.
-             *     In CamelCase.
+             */
+            kind?: string;
+            /**
+             * @description Standard list metadata.
              *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-             *     +optional */
-            kind?: string;
-            /** @description Map of string keys and values that can be used to organize and categorize
-             *     (scope and select) objects. May match selectors of replication controllers
-             *     and services.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-             *     +optional */
-            labels?: {
-                [key: string]: string;
-            };
-            /** @description ManagedFields maps workflow-id and version to the set of fields
-             *     that are managed by that workflow. This is mostly for internal
-             *     housekeeping, and users typically shouldn't need to set or
-             *     understand this field. A workflow can be the user's name, a
-             *     controller's name, or the name of a specific apply path like
-             *     "ci-cd". The set of fields is always in the version that the
-             *     workflow used when modifying the object.
-             *
-             *     +optional
-             *     +listType=atomic */
-            managedFields?: components["schemas"]["v1.ManagedFieldsEntry"][];
-            /** @description Name must be unique within a namespace. Is required when creating resources, although
-             *     some resources may allow a client to request the generation of an appropriate name
-             *     automatically. Name is primarily intended for creation idempotence and configuration
-             *     definition.
-             *     Cannot be updated.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
-             *     +optional */
-            name?: string;
-            /** @description Namespace defines the space within which each name must be unique. An empty namespace is
-             *     equivalent to the "default" namespace, but "default" is the canonical representation.
-             *     Not all objects are required to be scoped to a namespace - the value of this field for
-             *     those objects will be empty.
-             *
-             *     Must be a DNS_LABEL.
-             *     Cannot be updated.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
-             *     +optional */
-            namespace?: string;
-            /** @description List of objects depended by this object. If ALL objects in the list have
-             *     been deleted, this object will be garbage collected. If this object is managed by a controller,
-             *     then an entry in this list will point to this controller, with the controller field set to true.
-             *     There cannot be more than one managing controller.
-             *     +optional
-             *     +patchMergeKey=uid
-             *     +patchStrategy=merge
-             *     +listType=map
-             *     +listMapKey=uid */
-            ownerReferences?: components["schemas"]["v1.OwnerReference"][];
-            /** @description An opaque value that represents the internal version of this object that can
-             *     be used by clients to determine when objects have changed. May be used for optimistic
-             *     concurrency, change detection, and the watch operation on a resource or set of resources.
-             *     Clients must treat these values as opaque and passed unmodified back to the server.
-             *     They may only be valid for a particular resource or set of resources.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     Value must be treated as opaque by clients and .
-             *     More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-             *     +optional */
-            resourceVersion?: string;
-            /** @description Deprecated: selfLink is a legacy read-only field that is no longer populated by the system.
-             *     +optional */
-            selfLink?: string;
-            spec?: components["schemas"]["v2.HorizontalPodAutoscalerSpec"];
-            status?: components["schemas"]["v2.HorizontalPodAutoscalerStatus"];
-            /** @description UID is the unique in time and space value for this object. It is typically generated by
-             *     the server on successful creation of a resource and is not allowed to change on PUT
-             *     operations.
-             *
-             *     Populated by the system.
-             *     Read-only.
-             *     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids
-             *     +optional */
-            uid?: string;
-        };
-        "v2.HorizontalPodAutoscalerBehavior": {
-            scaleDown?: components["schemas"]["v2.HPAScalingRules"];
-            scaleUp?: components["schemas"]["v2.HPAScalingRules"];
-        };
-        "v2.HorizontalPodAutoscalerCondition": {
-            /** @description lastTransitionTime is the last time the condition transitioned from
-             *     one status to another
-             *     +optional */
-            lastTransitionTime?: string;
-            /** @description message is a human-readable explanation containing details about
-             *     the transition
-             *     +optional */
-            message?: string;
-            /** @description reason is the reason for the condition's last transition.
-             *     +optional */
-            reason?: string;
-            /** @description status is the status of the condition (True, False, Unknown) */
-            status?: string;
-            /** @description type describes the current condition */
-            type?: string;
-        };
-        "v2.HorizontalPodAutoscalerSpec": {
-            behavior?: components["schemas"]["v2.HorizontalPodAutoscalerBehavior"];
-            /** @description maxReplicas is the upper limit for the number of replicas to which the autoscaler can scale up.
-             *     It cannot be less that minReplicas. */
-            maxReplicas?: number;
-            /** @description metrics contains the specifications for which to use to calculate the
-             *     desired replica count (the maximum replica count across all metrics will
-             *     be used).  The desired replica count is calculated multiplying the
-             *     ratio between the target value and the current value by the current
-             *     number of pods.  Ergo, metrics used must decrease as the pod count is
-             *     increased, and vice-versa.  See the individual metric source types for
-             *     more information about how each type of metric must respond.
-             *     If not set, the default metric will be set to 80% average CPU utilization.
-             *     +listType=atomic
-             *     +optional */
-            metrics?: components["schemas"]["v2.MetricSpec"][];
-            /** @description minReplicas is the lower limit for the number of replicas to which the autoscaler
-             *     can scale down.  It defaults to 1 pod.  minReplicas is allowed to be 0 if the
-             *     alpha feature gate HPAScaleToZero is enabled and at least one Object or External
-             *     metric is configured.  Scaling is active as long as at least one metric value is
-             *     available.
-             *     +optional */
-            minReplicas?: number;
-            scaleTargetRef?: components["schemas"]["v2.CrossVersionObjectReference"];
-        };
-        "v2.HorizontalPodAutoscalerStatus": {
-            /** @description conditions is the set of conditions required for this autoscaler to scale its target,
-             *     and indicates whether or not those conditions are met.
-             *     +patchMergeKey=type
-             *     +patchStrategy=merge
-             *     +listType=map
-             *     +listMapKey=type
-             *     +optional */
-            conditions?: components["schemas"]["v2.HorizontalPodAutoscalerCondition"][];
-            /** @description currentMetrics is the last read state of the metrics used by this autoscaler.
-             *     +listType=atomic
-             *     +optional */
-            currentMetrics?: components["schemas"]["v2.MetricStatus"][];
-            /** @description currentReplicas is current number of replicas of pods managed by this autoscaler,
-             *     as last seen by the autoscaler.
-             *     +optional */
-            currentReplicas?: number;
-            /** @description desiredReplicas is the desired number of replicas of pods managed by this autoscaler,
-             *     as last calculated by the autoscaler. */
-            desiredReplicas?: number;
-            /** @description lastScaleTime is the last time the HorizontalPodAutoscaler scaled the number of pods,
-             *     used by the autoscaler to control how often the number of pods is changed.
-             *     +optional */
-            lastScaleTime?: string;
-            /** @description observedGeneration is the most recent generation observed by this autoscaler.
-             *     +optional */
-            observedGeneration?: number;
-        };
-        "v2.MetricIdentifier": {
-            /** @description name is the name of the given metric */
-            name?: string;
-            selector?: components["schemas"]["v1.LabelSelector"];
-        };
-        "v2.MetricSpec": {
-            containerResource?: components["schemas"]["v2.ContainerResourceMetricSource"];
-            external?: components["schemas"]["v2.ExternalMetricSource"];
-            object?: components["schemas"]["v2.ObjectMetricSource"];
-            pods?: components["schemas"]["v2.PodsMetricSource"];
-            resource?: components["schemas"]["v2.ResourceMetricSource"];
-            /** @description type is the type of metric source.  It should be one of "ContainerResource", "External",
-             *     "Object", "Pods" or "Resource", each mapping to a matching field in the object. */
-            type?: string;
-        };
-        "v2.MetricStatus": {
-            containerResource?: components["schemas"]["v2.ContainerResourceMetricStatus"];
-            external?: components["schemas"]["v2.ExternalMetricStatus"];
-            object?: components["schemas"]["v2.ObjectMetricStatus"];
-            pods?: components["schemas"]["v2.PodsMetricStatus"];
-            resource?: components["schemas"]["v2.ResourceMetricStatus"];
-            /** @description type is the type of metric source.  It will be one of "ContainerResource", "External",
-             *     "Object", "Pods" or "Resource", each corresponds to a matching field in the object. */
-            type?: string;
-        };
-        "v2.MetricTarget": {
-            /** @description averageUtilization is the target value of the average of the
-             *     resource metric across all relevant pods, represented as a percentage of
-             *     the requested value of the resource for the pods.
-             *     Currently only valid for Resource metric source type
-             *     +optional */
-            averageUtilization?: number;
-            averageValue?: components["schemas"]["resource.Quantity"];
-            /** @description type represents whether the metric type is Utilization, Value, or AverageValue */
-            type?: string;
-            value?: components["schemas"]["resource.Quantity"];
-        };
-        "v2.MetricValueStatus": {
-            /** @description currentAverageUtilization is the current value of the average of the
-             *     resource metric across all relevant pods, represented as a percentage of
-             *     the requested value of the resource for the pods.
-             *     +optional */
-            averageUtilization?: number;
-            averageValue?: components["schemas"]["resource.Quantity"];
-            value?: components["schemas"]["resource.Quantity"];
-        };
-        "v2.ObjectMetricSource": {
-            describedObject?: components["schemas"]["v2.CrossVersionObjectReference"];
-            metric?: components["schemas"]["v2.MetricIdentifier"];
-            target?: components["schemas"]["v2.MetricTarget"];
-        };
-        "v2.ObjectMetricStatus": {
-            current?: components["schemas"]["v2.MetricValueStatus"];
-            describedObject?: components["schemas"]["v2.CrossVersionObjectReference"];
-            metric?: components["schemas"]["v2.MetricIdentifier"];
-        };
-        "v2.PodsMetricSource": {
-            metric?: components["schemas"]["v2.MetricIdentifier"];
-            target?: components["schemas"]["v2.MetricTarget"];
-        };
-        "v2.PodsMetricStatus": {
-            current?: components["schemas"]["v2.MetricValueStatus"];
-            metric?: components["schemas"]["v2.MetricIdentifier"];
-        };
-        "v2.ResourceMetricSource": {
-            /** @description name is the name of the resource in question. */
-            name?: string;
-            target?: components["schemas"]["v2.MetricTarget"];
-        };
-        "v2.ResourceMetricStatus": {
-            current?: components["schemas"]["v2.MetricValueStatus"];
-            /** @description name is the name of the resource in question. */
-            name?: string;
+             */
+            metadata?: components["schemas"]["v1.ListMeta"];
         };
         "webhooks.webhookCreatePayload": {
-            /**
-             * @description Environment(Endpoint) identifier. Reference the environment(endpoint) that will be used for deployment
-             * @example 1
-             */
-            endpointID?: number;
-            /**
-             * @description Registry Identifier
-             * @example 1
-             */
-            registryID?: number;
-            resourceID?: string;
+            EndpointID?: number;
+            RegistryID?: number;
+            ResourceID?: string;
             /** @description Type of webhook (1 - service) */
-            webhookType?: number;
+            WebhookType?: components["schemas"]["portainer.WebhookType"];
         };
         "webhooks.webhookUpdatePayload": {
-            /** @description Registry Identifier */
-            registryID?: number;
+            RegistryID?: number;
+        };
+        "workflows.ArtifactDetail": {
+            autoUpdate?: components["schemas"]["portainer.AutoUpdateSettings"];
+            creationDate?: number;
+            files?: components["schemas"]["workflows.ArtifactFileDetail"][];
+            id: number;
+            lastSyncDate?: number;
+            name: string;
+            platform?: components["schemas"]["workflows.DeploymentPlatform"];
+            status?: components["schemas"]["workflows.WorkflowStatusObject"];
+            target?: components["schemas"]["workflows.Target"];
+            type: components["schemas"]["workflows.Type"];
+        };
+        "workflows.ArtifactFileDetail": {
+            /** @example abc123 */
+            hash?: string;
+            /** @example portainer.yaml */
+            path?: string;
+            pathError?: string;
+            pathStatus?: components["schemas"]["sources.Status"];
+            /** @example refs/heads/main */
+            ref?: string;
+            refError?: string;
+            refStatus?: components["schemas"]["sources.Status"];
+            sourceId?: number;
+        };
+        /** @enum {string} */
+        "workflows.DeploymentPlatform": "dockerStandalone" | "dockerSwarm" | "kubernetes";
+        /** @enum {string} */
+        "workflows.Status": "healthy" | "syncing" | "error" | "paused" | "unknown";
+        "workflows.StatusSummary": {
+            error?: number;
+            healthy?: number;
+            paused?: number;
+            syncing?: number;
+            unknown?: number;
+        };
+        "workflows.Target": {
+            edgeGroupIds?: number[];
+            endpointId?: number;
+            groupStatus?: {
+                [key: string]: components["schemas"]["workflows.Status"];
+            };
+            namespace?: string;
+            resolvedEndpointIds?: number[];
+        };
+        /** @enum {string} */
+        "workflows.Type": "stack" | "edgeStack";
+        "workflows.Workflow": {
+            artifacts?: components["schemas"]["workflows.ArtifactDetail"][];
+            creationDate?: number;
+            id: number;
+            lastSyncDate?: number;
+            name: string;
+            status: components["schemas"]["workflows.WorkflowStatusObject"];
+        };
+        "workflows.WorkflowPhaseStatus": {
+            error?: string;
+            status?: components["schemas"]["workflows.Status"];
+        };
+        "workflows.WorkflowStatusObject": {
+            artifact?: components["schemas"]["workflows.WorkflowPhaseStatus"];
+            source?: components["schemas"]["workflows.WorkflowPhaseStatus"];
+            target?: components["schemas"]["workflows.WorkflowPhaseStatus"];
         };
     };
     responses: never;
     parameters: never;
-    requestBodies: never;
+    requestBodies: {
+        /** @description Deployment definition */
+        "kubernetes.K8sDeploymentWriteRequest": {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sDeploymentWriteRequest"];
+            };
+        };
+        /** @description Ingress controllers */
+        "kubernetes.K8sIngressControllerArray": {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sIngressController"][];
+            };
+        };
+        /** @description List of environments to delete, with optional deleteCluster flag to clean-up associated resources (cloud environments only) */
+        "endpoints.endpointDeleteBatchPayload": {
+            content: {
+                "application/json": components["schemas"]["endpoints.endpointDeleteBatchPayload"];
+            };
+        };
+        /** @description Namespace details */
+        "kubernetes.K8sNamespaceDetails": {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sNamespaceDetails"];
+            };
+        };
+        /** @description ConfigMap definition */
+        "kubernetes.K8sConfigMapWriteRequest": {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sConfigMapWriteRequest"];
+            };
+        };
+        /** @description Ingress details */
+        "kubernetes.K8sIngressInfo": {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sIngressInfo"];
+            };
+        };
+        /** @description Secret definition */
+        "kubernetes.K8sSecretWriteRequest": {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sSecretWriteRequest"];
+            };
+        };
+        /** @description Service definition */
+        "kubernetes.K8sServiceInfo": {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sServiceInfo"];
+            };
+        };
+    };
     headers: never;
     pathItems: never;
 }
@@ -11252,7 +17122,7 @@ export interface operations {
         parameters: {
             query: {
                 /** @description Template types */
-                type: number[];
+                type: (1 | 2 | 3)[];
                 /** @description Filter by edge templates */
                 edge?: boolean;
             };
@@ -11534,17 +17404,15 @@ export interface operations {
                     /** @description A note that will be displayed in the UI. Supports HTML content */
                     Note: string;
                     /**
-                     * Format: int32
                      * @description Platform associated to the template (1 - 'linux', 2 - 'windows')
                      * @enum {integer}
                      */
-                    Platform: "1" | "2";
+                    Platform: 1 | 2;
                     /**
-                     * Format: int32
                      * @description Type of created stack (1 - swarm, 2 - compose, 3 - kubernetes)
                      * @enum {integer}
                      */
-                    Type: "1" | "2" | "3";
+                    Type: 1 | 2 | 3;
                     /**
                      * Format: binary
                      * @description File
@@ -11955,7 +17823,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Edge group is in use by an Edge stack or Edge job */
+            /** @description Edge group is in use by an Edge stack, Edge job or Workflow */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -12440,7 +18308,7 @@ export interface operations {
         /** @description EdgeGroup data when method is string */
         requestBody: {
             content: {
-                "*/*": components["schemas"]["edgejobs.edgeJobCreateFromFileContentPayload"];
+                "application/json": components["schemas"]["edgejobs.edgeJobCreateFromFileContentPayload"];
             };
         };
         responses: {
@@ -12471,7 +18339,10 @@ export interface operations {
     };
     EdgeStackList: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description will summarize the statuses */
+                summarizeStatuses?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12767,10 +18638,7 @@ export interface operations {
                     file: string;
                     /** @description JSON stringified array of Edge Groups ids */
                     EdgeGroups: string;
-                    /**
-                     * Format: int32
-                     * @description deploy type 0 - 'compose', 1 - 'kubernetes'
-                     */
+                    /** @description deploy type 0 - 'compose', 1 - 'kubernetes' */
                     DeploymentType: number;
                     /** @description JSON stringified array of Registry ids to use for this stack */
                     Registries?: string;
@@ -12829,7 +18697,7 @@ export interface operations {
         /** @description stack config */
         requestBody: {
             content: {
-                "*/*": components["schemas"]["edgestacks.edgeStackFromGitRepositoryPayload"];
+                "application/json": components["schemas"]["edgestacks.edgeStackFromGitRepositoryPayload"];
             };
         };
         responses: {
@@ -12878,7 +18746,7 @@ export interface operations {
         /** @description stack config */
         requestBody: {
             content: {
-                "*/*": components["schemas"]["edgestacks.edgeStackFromStringPayload"];
+                "application/json": components["schemas"]["edgestacks.edgeStackFromStringPayload"];
             };
         };
         responses: {
@@ -12916,7 +18784,10 @@ export interface operations {
     };
     EndpointGroupList: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description If true, each environment(endpoint) group will include the number of environments(endpoints) associated to it and breakdown by type */
+                size?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12929,7 +18800,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["portainer.EndpointGroup"][];
+                    "application/json": components["schemas"]["endpointgroups.EndpointGroupResponse"][];
                 };
             };
             /** @description Server error */
@@ -13127,8 +18998,10 @@ export interface operations {
                 start?: number;
                 /** @description Limit results to this value */
                 limit?: number;
+                /** @description Sort results by this value */
+                sort?: "Name" | "Group" | "Status" | "LastCheckIn" | "EdgeID" | "PlatformType" | "Health" | "Id";
                 /** @description Order sorted results by desc/asc */
-                order?: number;
+                order?: string;
                 /** @description Search query */
                 search?: string;
                 /** @description List environments(endpoints) of these groups */
@@ -13136,7 +19009,13 @@ export interface operations {
                 /** @description List environments(endpoints) by this status */
                 status?: number[];
                 /** @description List environments(endpoints) of this type */
-                types?: number[];
+                types?: (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7)[];
+                /** @description Filter environments by platform type */
+                platformTypes?: (0 | 1 | 2 | 3 | 4)[];
+                /** @description If true, return only environments with an outdated agent */
+                outdated?: boolean;
+                /** @description Exclude environments of these groups */
+                excludeGroupIds?: number[];
                 /** @description search environments(endpoints) with these tags (depends on tagsPartialMatch) */
                 tagIds?: number[];
                 /** @description If true, will return environment(endpoint) which has one of tagIds, if false (or missing) will return only environments(endpoints) that has all the tags */
@@ -13145,8 +19024,6 @@ export interface operations {
                 endpointIds?: number[];
                 /** @description will exclude these environments(endpoints) */
                 excludeIds?: number[];
-                /** @description If true, will return environment(endpoint) that were provisioned */
-                provisioned?: boolean;
                 /** @description will return only environments with on of these agent versions */
                 agentVersions?: string[];
                 /** @description if exists true show only edge async agents, false show only standard edge agents. if missing, will show both types (relevant only for edge agents) */
@@ -13157,12 +19034,12 @@ export interface operations {
                 edgeCheckInPassedSeconds?: number;
                 /** @description if true, the snapshot data won't be retrieved */
                 excludeSnapshots?: boolean;
-                /** @description if true, the SnapshotRaw field won't be retrieved */
-                excludeSnapshotRaw?: boolean;
                 /** @description will return only environments(endpoints) with this name */
                 name?: string;
+                /** @description will return the environments of the specified edge stack */
+                edgeStackId?: number;
                 /** @description only applied when edgeStackId exists. Filter the returned environments based on their deployment status in the stack (not the environment status!) */
-                edgeStackStatus?: string;
+                edgeStackStatus?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
                 /** @description List environments(endpoints) of these edge groups */
                 edgeGroupIds?: number[];
                 /** @description Exclude environments(endpoints) of these edge groups */
@@ -13205,20 +19082,17 @@ export interface operations {
                     /** @description Name that will be used to identify this environment(endpoint) (example: my-environment) */
                     Name: string;
                     /**
-                     * Format: int32
                      * @description Environment(Endpoint) type. Value must be one of: 1 (Local Docker environment), 2 (Agent environment), 3 (Azure environment), 4 (Edge agent environment) or 5 (Local Kubernetes Environment)
+                     * @enum {integer}
                      */
-                    EndpointCreationType: number;
+                    EndpointCreationType: 0 | 1 | 2 | 3 | 4 | 5;
                     /** @description Container engine used by the environment(endpoint). Value must be one of: 'docker' or 'podman' */
                     ContainerEngine?: string;
                     /** @description URL or IP address of a Docker host (example: docker.mydomain.tld:2375). Defaults to local if not specified (Linux: /var/run/docker.sock, Windows: //./pipe/docker_engine). Cannot be empty if EndpointCreationType is set to 4 (Edge agent environment) */
                     URL?: string;
                     /** @description URL or IP address where exposed containers will be reachable. Defaults to URL if not specified (example: docker.mydomain.tld:2375) */
                     PublicURL?: string;
-                    /**
-                     * Format: int32
-                     * @description Environment(Endpoint) group identifier. If not specified will default to 1 (unassigned).
-                     */
+                    /** @description Environment(Endpoint) group identifier. If not specified will default to 1 (unassigned). */
                     GroupID?: number;
                     /** @description Require TLS to connect against this environment(endpoint). Must be true if EndpointCreationType is set to 2 (Agent environment) */
                     TLS?: boolean;
@@ -13247,15 +19121,12 @@ export interface operations {
                     AzureTenantID?: string;
                     /** @description Azure authentication key. Required if environment(endpoint) type is set to 3 */
                     AzureAuthenticationKey?: string;
-                    /** @description List of tag identifiers to which this environment(endpoint) is associated */
-                    TagIds?: number[];
-                    /**
-                     * Format: int32
-                     * @description The check in interval for edge agent (in seconds)
-                     */
+                    /** @description JSON-parsable array of tag identifiers to which this environment(endpoint) is associated */
+                    TagIds?: string;
+                    /** @description The check in interval for edge agent (in seconds) */
                     EdgeCheckinInterval?: number;
                     /** @description URL or IP address that will be used to establish a reverse tunnel */
-                    EdgeTunnelServerAddress: string;
+                    EdgeTunnelServerAddress?: string;
                     /** @description List of GPUs - json stringified array of {name, value} structs */
                     Gpus?: string;
                 };
@@ -13301,12 +19172,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        /** @description List of environments to delete, with optional deleteCluster flag to clean-up associated resources (cloud environments only) */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["endpoints.endpointDeleteBatchPayload"];
-            };
-        };
+        requestBody: components["requestBodies"]["endpoints.endpointDeleteBatchPayload"];
         responses: {
             /** @description Environment(s) successfully deleted. */
             204: {
@@ -13352,8 +19218,6 @@ export interface operations {
             query?: {
                 /** @description if true, the snapshot data won't be retrieved */
                 excludeSnapshot?: boolean;
-                /** @description if true, the SnapshotRaw field won't be retrieved */
-                excludeSnapshotRaw?: boolean;
             };
             header?: never;
             path: {
@@ -13601,7 +19465,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Environment(Endpoint) identifier */
+                /** @description Environment identifier */
                 id: number;
             };
             cookie?: never;
@@ -13624,14 +19488,14 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Permission denied to access environment(endpoint) */
+            /** @description Permission denied to access environment */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Environment(Endpoint) not found */
+            /** @description Environment not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -13763,7 +19627,10 @@ export interface operations {
     };
     HelmInstall: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Dry run */
+                dryRun?: boolean;
+            };
             header?: never;
             path: {
                 /** @description Environment(Endpoint) identifier */
@@ -13786,6 +19653,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["release.Release"];
                 };
+            };
+            /** @description Invalid request payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {
@@ -13825,7 +19699,7 @@ export interface operations {
                 /** @description Environment(Endpoint) identifier */
                 id: number;
                 /** @description Helm release name */
-                name: string;
+                release: string;
             };
             cookie?: never;
         };
@@ -13942,7 +19816,7 @@ export interface operations {
                 /** @description Environment(Endpoint) identifier */
                 id: number;
                 /** @description Helm release name */
-                name: string;
+                release: string;
             };
             cookie?: never;
         };
@@ -14256,12 +20130,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        /** @description List of environments to delete, with optional deleteCluster flag to clean-up associated resources (cloud environments only) */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["endpoints.endpointDeleteBatchPayload"];
-            };
-        };
+        requestBody: components["requestBodies"]["endpoints.endpointDeleteBatchPayload"];
         responses: {
             /** @description Environment(s) successfully deleted. */
             204: {
@@ -14412,6 +20281,33 @@ export interface operations {
             };
         };
     };
+    EndpointSummaryCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Environment summary counts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["endpoints.EnvironmentSummaryCountsResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     GitOperationRepoFilePreview: {
         parameters: {
             query?: never;
@@ -14422,7 +20318,7 @@ export interface operations {
         /** @description Template details */
         requestBody: {
             content: {
-                "*/*": components["schemas"]["gitops.repositoryFilePreviewPayload"];
+                "application/json": components["schemas"]["gitops.repositoryFilePreviewPayload"];
             };
         };
         responses: {
@@ -14441,6 +20337,659 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Source not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsSourcesList: {
+        parameters: {
+            query?: {
+                /** @description Search term (matches URL) */
+                search?: string;
+                /** @description Sort field: name | status | type */
+                sort?: string;
+                /** @description Sort order: asc or desc */
+                order?: string;
+                /** @description Pagination start index */
+                start?: number;
+                /** @description Pagination limit (0 = unlimited) */
+                limit?: number;
+                /** @description Filter by status: healthy | syncing | error | paused | unknown */
+                status?: string;
+                /** @description Filter by source type: git | oci | helm */
+                type?: "git" | "helm" | "oci";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["sources.Source"][];
+                };
+            };
+            /** @description Invalid status parameter */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsSourceGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Source identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["sources.SourceDetail"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsSourcesUpdateGit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Source identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description Git source details */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["sources.GitSourceUpdatePayload"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["portainer.Source"];
+                };
+            };
+            /** @description Invalid request payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A source with this URL and credentials already exists */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsSourcesDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Source identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Source deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source is in use by one or more workflows or custom templates */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsSourcesUpdateAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Source identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description Source access control */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["sources.SourceAccessUpdatePayload"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["portainer.Source"];
+                };
+            };
+            /** @description Invalid request payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsSourcesTestById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Source identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description Optional connection overrides; omitted fields fall back to stored values */
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["sources.GitSourceUpdatePayload"];
+            };
+        };
+        responses: {
+            /** @description Connection test result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["sources.ConnectionTestResult"];
+                };
+            };
+            /** @description Invalid request payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsSourceWorkflowsList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Source identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["sources.Workflow"][];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsSourcesCreateGit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Git source details */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["sources.GitSourceCreatePayload"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["portainer.Source"];
+                };
+            };
+            /** @description Invalid request payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A source with this URL and credentials already exists */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsSourcesSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["workflows.StatusSummary"];
+                };
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsSourcesTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Git connection details */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["sources.GitSourceCreatePayload"];
+            };
+        };
+        responses: {
+            /** @description Connection test result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["sources.ConnectionTestResult"];
+                };
+            };
+            /** @description Invalid request payload */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsWorkflowsList: {
+        parameters: {
+            query?: {
+                /** @description Search term (matches workflow name) */
+                search?: string;
+                /** @description Sort field */
+                sort?: "name" | "status" | "creationDate" | "lastSyncDate";
+                /** @description Sort order */
+                order?: "asc" | "desc";
+                /** @description Pagination start index */
+                start?: number;
+                /** @description Pagination limit (0 = unlimited) */
+                limit?: number;
+                /** @description Filter by environment IDs (e.g. endpointIds[]=1&endpointIds[]=2) */
+                endpointIds?: number[];
+                /** @description Filter by status */
+                status?: "healthy" | "syncing" | "error" | "paused" | "unknown";
+                /** @description Keep workflows that have at least one artifact of this type */
+                type?: "stack";
+                /** @description Keep workflows that have at least one artifact on this platform */
+                platform?: "dockerStandalone" | "dockerSwarm" | "kubernetes";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["workflows.Workflow"][];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsWorkflowGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workflow identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["workflows.Workflow"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workflow not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GitOpsWorkflowsSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["workflows.StatusSummary"];
+                };
             };
             /** @description Server error */
             500: {
@@ -15085,6 +21634,55 @@ export interface operations {
             };
         };
     };
+    getAllKubernetesDeployments: {
+        parameters: {
+            query?: {
+                /** @description Kubernetes label selector to filter the deployments */
+                labelSelector?: string;
+                /** @description Kubernetes field selector to filter the deployments */
+                fieldSelector?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesDeploymentListResponse"];
+                };
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the deployments. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     DescribeResource: {
         parameters: {
             query: {
@@ -15204,6 +21802,50 @@ export interface operations {
             };
         };
     };
+    getKubernetesIngressClasses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sIngressClass"][];
+                };
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the ingress classes. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     GetAllKubernetesIngressControllers: {
         parameters: {
             query?: {
@@ -15275,12 +21917,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        /** @description Ingress controllers */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["kubernetes.K8sIngressController"][];
-            };
-        };
+        requestBody: components["requestBodies"]["kubernetes.K8sIngressControllerArray"];
         responses: {
             /** @description Success */
             204: {
@@ -15628,6 +22265,69 @@ export interface operations {
             };
         };
     };
+    DryRunKubernetesManifests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description The manifests to validate */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["kubernetes.manifestDryRunPayload"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.manifestDryRunResponse"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find an environment with the specified identifier. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to validate the manifests. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     GetKubernetesMaxResourceLimits: {
         parameters: {
             query?: never;
@@ -15830,52 +22530,6 @@ export interface operations {
             };
         };
     };
-    GetKubernetesMetricsForAllPods: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment identifier */
-                id: number;
-                /** @description Namespace */
-                namespace: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["v1beta1.PodMetricsList"];
-                };
-            };
-            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Server error occurred while attempting to retrieve the list of pods with their live metrics. */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     GetKubernetesMetricsForPod: {
         parameters: {
             query?: never;
@@ -15924,11 +22578,66 @@ export interface operations {
             };
         };
     };
+    GetKubernetesMetricsForAllPods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["v1beta1.PodMetricsList"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but is not authorized to access pod metrics in the specified namespace. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the list of pods with their live metrics. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     GetKubernetesNamespaces: {
         parameters: {
-            query: {
+            query?: {
                 /** @description When set to true, include the resource quota information as part of the Namespace information. Default is false */
-                withResourceQuota: boolean;
+                withResourceQuota?: boolean;
+                /** @description When set to true, include the unhealthy events information as part of the Namespace information. Default is false */
+                withUnhealthyEvents?: boolean;
             };
             header?: never;
             path: {
@@ -15997,12 +22706,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        /** @description Namespace details */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["kubernetes.K8sNamespaceDetails"];
-            };
-        };
+        requestBody: components["requestBodies"]["kubernetes.K8sNamespaceDetails"];
         responses: {
             /** @description Success */
             200: {
@@ -16073,7 +22777,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["portainer.K8sNamespaceInfo"];
+                    "application/json": components["schemas"]["kubernetes.KubernetesCreateNamespaceResponse"];
                 };
             };
             /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
@@ -16123,7 +22827,12 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        /** @description List of namespace names to delete */
+        requestBody: {
+            content: {
+                "application/json": string[];
+            };
+        };
         responses: {
             /** @description Success */
             200: {
@@ -16159,9 +22868,9 @@ export interface operations {
     };
     GetKubernetesNamespace: {
         parameters: {
-            query: {
+            query?: {
                 /** @description When set to true, include the resource quota information as part of the Namespace information. Default is false */
-                withResourceQuota: boolean;
+                withResourceQuota?: boolean;
             };
             header?: never;
             path: {
@@ -16232,12 +22941,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        /** @description Namespace details */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["kubernetes.K8sNamespaceDetails"];
-            };
-        };
+        requestBody: components["requestBodies"]["kubernetes.K8sNamespaceDetails"];
         responses: {
             /** @description Success */
             200: {
@@ -16277,6 +22981,66 @@ export interface operations {
                 content?: never;
             };
             /** @description Server error occurred while attempting to update the namespace. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateKubernetesConfigMap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description The namespace name where the configmap is created */
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["kubernetes.K8sConfigMapWriteRequest"];
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sConfigMap"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A configmap with the same name already exists in the namespace. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to create the configmap. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -16339,6 +23103,631 @@ export interface operations {
                 content?: never;
             };
             /** @description Server error occurred while attempting to retrieve a configmap by name within the specified namespace. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UpdateKubernetesConfigMap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description The namespace name where the configmap is located */
+                namespace: string;
+                /** @description The configmap name to update */
+                configmap: string;
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["kubernetes.K8sConfigMapWriteRequest"];
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sConfigMap"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields, fields not meeting validation criteria, or a payload name that does not match the route. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find the configmap to update. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to update the configmap. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteKubernetesConfigMap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description The namespace name where the configmap is located */
+                namespace: string;
+                /** @description The configmap name to delete */
+                configmap: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find the configmap to delete. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to delete the configmap. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getKubernetesDeploymentsForNamespace: {
+        parameters: {
+            query?: {
+                /** @description Kubernetes label selector to filter the deployments */
+                labelSelector?: string;
+                /** @description Kubernetes field selector to filter the deployments */
+                fieldSelector?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesDeploymentListResponse"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the deployments within the specified namespace. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateKubernetesDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["kubernetes.K8sDeploymentWriteRequest"];
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesDeploymentResponse"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A deployment with the same name already exists in the namespace. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to create the deployment. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getKubernetesDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+                /** @description Deployment name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesDeploymentResponse"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the deployment. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UpdateKubernetesDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+                /** @description Deployment name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["kubernetes.K8sDeploymentWriteRequest"];
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesDeploymentResponse"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields, fields not meeting validation criteria, or a payload name that does not match the route. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find the deployment to update. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The deployment was modified concurrently. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to update the deployment. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteKubernetesDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+                /** @description Deployment name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find the deployment to delete. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to delete the deployment. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PatchKubernetesDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+                /** @description Deployment name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        /** @description Annotations to apply */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sDeploymentPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesDeploymentResponse"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find the deployment to annotate. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to annotate the deployment. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RollbackKubernetesDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+                /** @description Deployment name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        /** @description Revision to roll back to */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sDeploymentRollbackRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesDeploymentResponse"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find the deployment, or the requested revision is not part of its rollout history. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to roll the deployment back. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScaleKubernetesDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+                /** @description Deployment name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        /** @description Desired replica count */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sDeploymentScaleRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesDeploymentResponse"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find the deployment to scale. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to scale the deployment. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -16475,12 +23864,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        /** @description Ingress controllers */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["kubernetes.K8sIngressController"][];
-            };
-        };
+        requestBody: components["requestBodies"]["kubernetes.K8sIngressControllerArray"];
         responses: {
             /** @description Success */
             204: {
@@ -16598,12 +23982,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        /** @description Ingress details */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["kubernetes.K8sIngressInfo"];
-            };
-        };
+        requestBody: components["requestBodies"]["kubernetes.K8sIngressInfo"];
         responses: {
             /** @description Success */
             204: {
@@ -16661,12 +24040,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        /** @description Ingress details */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["kubernetes.K8sIngressInfo"];
-            };
-        };
+        requestBody: components["requestBodies"]["kubernetes.K8sIngressInfo"];
         responses: {
             /** @description Success */
             204: {
@@ -16781,6 +24155,605 @@ export interface operations {
             };
         };
     };
+    GetKubernetesPersistentVolumeClaimsInNamespace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description Namespace name */
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sPersistentVolumeClaim"][];
+                };
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve persistent volume claims. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateKubernetesPersistentVolumeClaim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        /** @description PersistentVolumeClaim definition */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sPersistentVolumeClaimCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sPersistentVolumeClaim"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or a storage size that is not a valid quantity. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A persistent volume claim with the same name already exists in the namespace. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to create the persistent volume claim. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetKubernetesPersistentVolumeClaim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description Namespace name */
+                namespace: string;
+                /** @description PVC name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sPersistentVolumeClaim"];
+                };
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description PVC not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the persistent volume claim. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getKubernetesPodsForNamespace: {
+        parameters: {
+            query?: {
+                /** @description Kubernetes label selector to filter the pods (e.g. app=nginx) */
+                labelSelector?: string;
+                /** @description Kubernetes field selector to filter the pods (e.g. status.phase=Running) */
+                fieldSelector?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesPodListResponse"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the pods within the specified namespace. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteKubernetesPod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+                /** @description Pod name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find an environment with the specified identifier or unable to find the specified pod. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to delete the pod. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getKubernetesPodLogs: {
+        parameters: {
+            query?: {
+                /** @description Container name (required when the pod has multiple containers) */
+                container?: string;
+                /** @description Number of lines from the end of the logs to return */
+                tailLines?: number;
+                /** @description Only return logs newer than this many seconds */
+                sinceSeconds?: number;
+                /** @description Prefix each log line with an RFC3339 timestamp */
+                timestamps?: boolean;
+                /** @description Return the logs of the previous terminated container instance */
+                previous?: boolean;
+                /** @description Stream new log lines as they are produced until the client disconnects */
+                follow?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+                /** @description Pod name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the pod logs. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RestartKubernetesPod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+                /** @description Pod name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find an environment, the specified pod, or the cluster does not expose the pod-restart subresource (Kubernetes <1.35 or feature gate disabled). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The cluster does not support the pod-restart subresource (Kubernetes <1.35 or feature gate disabled). */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to restart the pod. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getKubernetesReplicaSets: {
+        parameters: {
+            query?: {
+                /** @description Only return replica sets owned by this deployment */
+                deployment?: string;
+                /** @description Kubernetes label selector to filter the replica sets */
+                labelSelector?: string;
+                /** @description Kubernetes field selector to filter the replica sets */
+                fieldSelector?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesReplicaSetListResponse"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find the deployment given in the deployment query parameter. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the replica sets within the specified namespace. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getKubernetesResourceQuotas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesResourceQuotaListResponse"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the resource quotas within the specified namespace. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateKubernetesSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description The namespace name where the secret is created */
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["kubernetes.K8sSecretWriteRequest"];
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sSecret"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A secret with the same name already exists in the namespace. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to create the secret. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     GetKubernetesSecret: {
         parameters: {
             query?: never;
@@ -16835,6 +24808,255 @@ export interface operations {
                 content?: never;
             };
             /** @description Server error occurred while attempting to retrieve a secret by name belong in a namespace. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UpdateKubernetesSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description The namespace name where the secret is located */
+                namespace: string;
+                /** @description The secret name to update */
+                secret: string;
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["kubernetes.K8sSecretWriteRequest"];
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sSecret"];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields, fields not meeting validation criteria, or a payload name that does not match the route. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find the secret to update. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to update the secret. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteKubernetesSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description The namespace name where the secret is located */
+                namespace: string;
+                /** @description The secret name to delete */
+                secret: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find the secret to delete. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to delete the secret. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetKubernetesServiceAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+                /** @description Service account name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sServiceAccount"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Service account not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UpdateKubernetesServiceAccountImagePullSecrets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description Namespace */
+                namespace: string;
+                /** @description Service account name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        /** @description New imagePullSecrets list */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sServiceAccountImagePullSecretsUpdatePayload"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find an environment with the specified identifier, namespace, or service account. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to update image pull secrets for the service account. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -16915,12 +25137,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        /** @description Service definition */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["kubernetes.K8sServiceInfo"];
-            };
-        };
+        requestBody: components["requestBodies"]["kubernetes.K8sServiceInfo"];
         responses: {
             /** @description Success */
             204: {
@@ -16978,12 +25195,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        /** @description Service definition */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["kubernetes.K8sServiceInfo"];
-            };
-        };
+        requestBody: components["requestBodies"]["kubernetes.K8sServiceInfo"];
         responses: {
             /** @description Success */
             204: {
@@ -17201,6 +25413,113 @@ export interface operations {
             };
         };
     };
+    GetKubernetesNodes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesNodeResponse"][];
+                };
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the list of nodes. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    drainNode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+                /** @description Name of the node to drain */
+                name: string;
+            };
+            cookie?: never;
+        };
+        /** @description Drain options, matching kubectl drain flags. Defaults are applied to any omitted field. */
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["kubernetes.drainNodePayload"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find an environment with the specified identifier or unable to find the specified node. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to drain node. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     GetKubernetesNodesLimits: {
         parameters: {
             query?: never;
@@ -17251,6 +25570,384 @@ export interface operations {
                 content?: never;
             };
             /** @description Server error occurred while attempting to retrieve nodes limits. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetAllKubernetesPersistentVolumeClaims: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sPersistentVolumeClaim"][];
+                };
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve persistent volume claims. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteKubernetesPersistentVolumeClaims: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description List of PVCs to delete (namespace + name) */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sVolumeDeleteRequest"][];
+            };
+        };
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to delete persistent volume claims. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ResizeKubernetesPersistentVolumeClaim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description PVC resize request */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sPVCResizeRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to resize the persistent volume claim. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetAllKubernetesPersistentVolumes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sPersistentVolume"][];
+                };
+            };
+            /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve persistent volumes. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetKubernetesPersistentVolume: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description PersistentVolume name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sPersistentVolume"];
+                };
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description PersistentVolume not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the persistent volume. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteKubernetesPersistentVolumes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description List of PV names to delete */
+        requestBody: {
+            content: {
+                "application/json": string[];
+            };
+        };
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to delete persistent volumes. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UpdateKubernetesPersistentVolumeReclaimPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description Reclaim policy update request */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["kubernetes.K8sPVReclaimPolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to update reclaim policy. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getAllKubernetesPods: {
+        parameters: {
+            query?: {
+                /** @description Kubernetes label selector to filter the pods (e.g. app=nginx) */
+                labelSelector?: string;
+                /** @description Kubernetes field selector to filter the pods (e.g. status.phase=Running) */
+                fieldSelector?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.KubernetesPodListResponse"];
+                };
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. Ensure that you have provided a valid API key or JWT token, and that you have the required permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. Check your user roles and permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the pods. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -17966,6 +26663,245 @@ export interface operations {
             };
         };
     };
+    GetAllKubernetesStorageClasses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sStorageClass"][];
+                };
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve storage classes. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetKubernetesStorageClass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description StorageClass name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.K8sStorageClass"];
+                };
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description StorageClass not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the storage class. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SetDefaultKubernetesStorageClass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+                /** @description StorageClass name */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to set default storage class. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteKubernetesStorageClasses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description List of StorageClass names to delete */
+        requestBody: {
+            content: {
+                "application/json": string[];
+            };
+        };
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized access or operation not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to delete storage classes. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetKubernetesVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Environment(Endpoint) identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["kubernetes.kubernetesVersionResponse"];
+                };
+            };
+            /** @description Unauthorized access - the user is not authenticated or does not have the necessary permissions. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied - the user is authenticated but does not have the necessary permissions to access the requested resource or perform the specified operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unable to find an environment with the specified identifier. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error occurred while attempting to retrieve the cluster version. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     GetAllKubernetesVolumes: {
         parameters: {
             query?: {
@@ -18120,8 +27056,8 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
-                    " application/yaml": Record<string, never>;
+                    "application/json": unknown;
+                    " application/yaml": unknown;
                 };
             };
             /** @description Invalid request payload, such as missing required fields or fields not meeting validation criteria. */
@@ -18213,276 +27149,8 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["motd.motdResponse"];
+                    "application/json": components["schemas"]["motd.Motd"];
                 };
-            };
-        };
-    };
-    OpenAMTConfigure: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description OpenAMT Settings */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["openamt.openAMTConfigurePayload"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Permission denied to access settings */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    openAMTActivate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment identifier */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Permission denied to access settings */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    OpenAMTDevices: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment(Endpoint) identifier */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Permission denied to access settings */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    DeviceAction: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment identifier */
-                id: number;
-                /** @description Device identifier */
-                deviceId: number;
-            };
-            cookie?: never;
-        };
-        /** @description Device Action */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["openamt.deviceActionPayload"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Permission denied to access settings */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    DeviceFeatures: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment identifier */
-                id: number;
-                /** @description Device identifier */
-                deviceId: number;
-            };
-            cookie?: never;
-        };
-        /** @description Device Features */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["openamt.deviceFeaturesPayload"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Permission denied to access settings */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    OpenAMTHostInfo: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment identifier */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Permission denied to access settings */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -18762,6 +27430,45 @@ export interface operations {
             };
         };
     };
+    RegistryPing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Registry credentials to test */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["registries.registryPingPayload"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["registries.registryPingResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ResourceControlCreate: {
         parameters: {
             query?: never;
@@ -18909,7 +27616,10 @@ export interface operations {
     Restore: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Setup token (required when instance is uninitialized and --no-setup-token is not set) */
+                "X-Setup-Token"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18929,6 +27639,13 @@ export interface operations {
             };
             /** @description Invalid request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied - invalid or missing setup token */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -19210,7 +27927,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["portainer.Stack"];
+                    "application/json": components["schemas"]["stacks.stackResponse"];
                 };
             };
             /** @description Invalid request */
@@ -19288,6 +28005,13 @@ export interface operations {
             };
             /** @description Not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -19456,6 +28180,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Git settings changed, redeploy required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Server error */
             500: {
                 headers: {
@@ -19491,7 +28222,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["portainer.Stack"];
+                    "application/json": components["schemas"]["stacks.stackResponse"];
                 };
             };
             /** @description Invalid request */
@@ -19540,7 +28271,7 @@ export interface operations {
         /** @description Git configs for pull and redeploy of a stack. **StackName** may only be populated for Kuberenetes stacks, and if specified with a blank string, it will be set to blank */
         requestBody: {
             content: {
-                "application/json": components["schemas"]["stacks.stackGitRedployPayload"];
+                "application/json": components["schemas"]["stacks.stackGitRedeployPayload"];
             };
         };
         responses: {
@@ -19574,6 +28305,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Server error */
             500: {
                 headers: {
@@ -19599,7 +28337,7 @@ export interface operations {
         /** @description Stack migration details */
         requestBody: {
             content: {
-                "*/*": components["schemas"]["stacks.stackMigratePayload"];
+                "application/json": components["schemas"]["stacks.stackMigratePayload"];
             };
         };
         responses: {
@@ -19694,7 +28432,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Stack name is not unique */
+            /** @description Stack is already active, deploying, or in error state */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -19755,6 +28493,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Server error */
             500: {
                 headers: {
@@ -19777,7 +28522,7 @@ export interface operations {
         /** @description stack config */
         requestBody: {
             content: {
-                "*/*": components["schemas"]["stacks.kubernetesGitDeploymentPayload"];
+                "application/json": components["schemas"]["stacks.kubernetesGitDeploymentPayload"];
             };
         };
         responses: {
@@ -19787,7 +28532,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["portainer.Stack"];
+                    "application/json": components["schemas"]["stacks.createKubernetesStackResponse"];
                 };
             };
             /** @description Invalid request */
@@ -19826,7 +28571,7 @@ export interface operations {
         /** @description stack config */
         requestBody: {
             content: {
-                "*/*": components["schemas"]["stacks.kubernetesStringDeploymentPayload"];
+                "application/json": components["schemas"]["stacks.kubernetesStringDeploymentPayload"];
             };
         };
         responses: {
@@ -19836,7 +28581,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["portainer.Stack"];
+                    "application/json": components["schemas"]["stacks.createKubernetesStackResponse"];
                 };
             };
             /** @description Invalid request */
@@ -19868,7 +28613,7 @@ export interface operations {
         /** @description stack config */
         requestBody: {
             content: {
-                "*/*": components["schemas"]["stacks.kubernetesManifestURLDeploymentPayload"];
+                "application/json": components["schemas"]["stacks.kubernetesManifestURLDeploymentPayload"];
             };
         };
         responses: {
@@ -19878,7 +28623,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["portainer.Stack"];
+                    "application/json": components["schemas"]["stacks.createKubernetesStackResponse"];
                 };
             };
             /** @description Invalid request */
@@ -20263,7 +29008,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Autoupdate for the stack isn't available */
+            /** @description Autoupdate for the stack isn't available" or "Stack deployment is already in progress */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -21127,12 +29872,12 @@ export interface operations {
     HelmShow: {
         parameters: {
             query: {
-                /** @description Helm repository URL */
-                repo: string;
-                /** @description Chart name */
+                /** @description Helm repository URL (required unless chart is a self-contained oci:// reference) */
+                repo?: string;
+                /** @description Chart name, or a self-contained oci:// chart reference */
                 chart: string;
                 /** @description Chart version */
-                version: string;
+                version?: string;
             };
             header?: never;
             path: {
@@ -21444,6 +30189,57 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description User not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UserEffectiveAccessInspect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description User identifier */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["users.EffectiveAccessEntry"][];
+                };
             };
             /** @description Invalid request */
             400: {
@@ -21903,7 +30699,10 @@ export interface operations {
     UserAdminInit: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Setup token (required when instance is uninitialized and --no-setup-token is not set) */
+                "X-Setup-Token"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21925,6 +30724,13 @@ export interface operations {
             };
             /** @description Invalid request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied - invalid or missing setup token */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

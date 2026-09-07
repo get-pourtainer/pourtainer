@@ -3,7 +3,6 @@ package com.pourtainer.mobile
 import Container
 import WidgetIntentState
 import android.appwidget.AppWidgetManager
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -15,18 +14,16 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.glance.appwidget.GlanceAppWidgetManager
-import appGroupName
-import com.google.gson.Gson
-import expo.modules.widgetkit.Connection
-import androidx.core.content.edit
-import savedConnectionsKey
-import savedWidgetStateKey
-import isSubscribedKey
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.launch
+import loadConnections
+import stackNameFrom
 
-class PourtainerAppWidgetConfigurationActivity: AppCompatActivity() {
-    override fun onCreate(savedConnectionState: Bundle?) {
-        super.onCreate(savedConnectionState)
+class PourtainerAppWidgetConfigurationActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
         setResult(RESULT_CANCELED)
 
@@ -37,71 +34,70 @@ class PourtainerAppWidgetConfigurationActivity: AppCompatActivity() {
 
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             finish()
-
             return
         }
 
-        val prefs = getSharedPreferences(appGroupName, Context.MODE_PRIVATE)
-        val rawConnections = prefs.getString(savedConnectionsKey, "[]")
-        val connections = Gson().fromJson(rawConnections, Array<Connection>::class.java) ?: emptyArray()
-
-        setWidgetState(WidgetIntentState.LOADING)
+        val connections = loadConnections(this)
 
         setContent {
-            var widgetState = remember { mutableStateOf(WidgetIntentState.LOADING) }
+            var widgetState by remember { mutableStateOf(WidgetIntentState.LOADING) }
             val options = remember { mutableStateListOf<Container>() }
             var selectedContainer by remember { mutableStateOf<Container?>(null) }
 
             LaunchedEffect(Unit) {
-                for (connection in connections) {
-                    try {
-                        val endpoints = fetchEndpoints(connection)
+                var anyError = false
 
-                        for (endpoint in endpoints) {
-                            val containers = fetchContainers(connection, endpoint)
-
-                            options.addAll(containers.map { container ->
-                                // Clean container name by removing leading slash if present
-                                val containerName = container.Names.firstOrNull() ?: "Unknown"
-                                val cleanedName = if (containerName.startsWith("/")) {
-                                    containerName.substring(1)
-                                } else {
-                                    containerName
-                                }
-                                
-                                Container(
-                                    id = container.Id,
-                                    name = cleanedName,
-									state = container.State,
-                                    connection = connection,
-                                    endpoint = endpoint,
-                                    stackName = container.Labels?.get("com.docker.compose.project.name")
-                                )
-                            })
+                // Every connection and endpoint is listed concurrently; one
+                // unreachable endpoint must not hide the others
+                val listed = connections.map { connection ->
+                    async {
+                        val endpoints = try {
+                            fetchEndpoints(connection)
+                        } catch (error: Exception) {
+                            anyError = true
+                            return@async emptyList<Container>()
                         }
 
-                        val nextState = if (connections.isEmpty()) WidgetIntentState.NO_CONTAINERS else WidgetIntentState.HAS_CONTAINERS
-
-                        setWidgetState(nextState)
-                        widgetState.value = nextState
-
-                    } catch (e: Exception) {
-                        setWidgetState(WidgetIntentState.API_FAILED)
-                        widgetState.value = WidgetIntentState.API_FAILED
+                        endpoints.map { endpoint ->
+                            async {
+                                try {
+                                    fetchContainers(connection, endpoint).map { container ->
+                                        Container(
+                                            id = container.Id,
+                                            name = (container.Names.firstOrNull() ?: "Unknown").removePrefix("/"),
+                                            state = container.State,
+                                            stackName = stackNameFrom(container.Labels),
+                                            connection = connection,
+                                            endpoint = endpoint
+                                        )
+                                    }
+                                } catch (error: Exception) {
+                                    anyError = true
+                                    emptyList()
+                                }
+                            }
+                        }.awaitAll().flatten()
                     }
+                }.awaitAll().flatten()
+
+                options.addAll(listed)
+
+                widgetState = when {
+                    options.isEmpty() && anyError -> WidgetIntentState.API_FAILED
+                    options.isEmpty() -> WidgetIntentState.NO_CONTAINERS
+                    else -> WidgetIntentState.HAS_CONTAINERS
                 }
             }
 
             setupUI(
                 connections.isNotEmpty(),
-                widgetState.value,
+                widgetState,
                 selectedContainer,
                 options,
-                appWidgetId,
-                { container ->
-                    selectedContainer = container
-                }
-            )
+                appWidgetId
+            ) { container ->
+                selectedContainer = container
+            }
         }
     }
 
@@ -122,18 +118,17 @@ class PourtainerAppWidgetConfigurationActivity: AppCompatActivity() {
                 containers,
                 onContainerSelected,
                 onDone = {
-					val prefs = getSharedPreferences(appGroupName, Context.MODE_PRIVATE)
-                    val isSubscribed = prefs.getBoolean(isSubscribedKey, false)
-					
-                    val glanceId = GlanceAppWidgetManager(applicationContext).getGlanceIdBy(appWidgetId)
-                    ContainerWidgetReceiver().onContainerSelected(applicationContext, glanceId, selectedContainer, isSubscribed)
+                    val container = selectedContainer
+                    if (container != null) {
+                        lifecycleScope.launch {
+                            ContainerWidgetReceiver().onContainerSelected(applicationContext, appWidgetId, container)
 
-                    val resultValue = Intent().apply {
-                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                            setResult(RESULT_OK, Intent().apply {
+                                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                            })
+                            finish()
+                        }
                     }
-
-                    setResult(RESULT_OK, resultValue)
-                    finish()
                 },
                 openApp = {
                     packageManager.getLaunchIntentForPackage(packageName)?.let { startActivity(it) }
@@ -141,14 +136,4 @@ class PourtainerAppWidgetConfigurationActivity: AppCompatActivity() {
             )
         }
     }
-
-    private fun setWidgetState(state: WidgetIntentState) {
-        val prefs = getSharedPreferences(appGroupName, Context.MODE_PRIVATE)
-
-        prefs.edit {
-            putInt(savedWidgetStateKey, state.value)
-            apply()
-        }
-    }
 }
-

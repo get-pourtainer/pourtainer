@@ -1,5 +1,6 @@
 import { updateContainer } from '@/api/mutations'
 import { fetchContainer } from '@/api/queries'
+import buildPlaceholder from '@/components/base/Placeholder'
 import {
     type ContainerEditForm,
     editFormToCreateRequest,
@@ -10,10 +11,13 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Sentry from '@sentry/react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Haptics from 'expo-haptics'
-import { useGlobalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { type ReactNode, useEffect, useState } from 'react'
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import ContextMenu from 'react-native-context-menu-view'
+
+type RowKey = 'ports' | 'env' | 'labels' | 'volumes'
+type Row<K extends RowKey> = ContainerEditForm[K][number]
 
 const SectionContainer = ({
     title,
@@ -105,24 +109,38 @@ const ContextTypePicker = ({
 }
 
 export default function EditContainerScreen() {
-    const { id } = useGlobalSearchParams<{ id: string }>()
+    const { id } = useLocalSearchParams<{ id: string }>()
     const router = useRouter()
     const queryClient = useQueryClient()
 
     const containerQuery = useQuery({
         queryKey: ['containers', id],
         queryFn: async () => await fetchContainer(id),
+        // The form is seeded once; a refetch must not discard unsaved edits
+        staleTime: Number.POSITIVE_INFINITY,
     })
 
     const [initialFormData, setInitialFormData] = useState<ContainerEditForm | null>(null)
     const [formData, setFormData] = useState<ContainerEditForm | null>(null)
 
+    // Every row list (ports, env, labels, volumes) shares one immutable update path
+    const updateRows = <K extends RowKey>(key: K, update: (rows: Row<K>[]) => Row<K>[]) =>
+        setFormData((prev) =>
+            prev ? ({ ...prev, [key]: update(prev[key] as Row<K>[]) } as ContainerEditForm) : null
+        )
+    const addRow = <K extends RowKey>(key: K, row: Row<K>) =>
+        updateRows(key, (rows) => [...rows, row])
+    const patchRow = <K extends RowKey>(key: K, index: number, patch: Partial<Row<K>>) =>
+        updateRows(key, (rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)))
+    const removeRow = (key: RowKey, index: number) =>
+        updateRows(key, (rows) => rows.filter((_, i) => i !== index))
+
     useEffect(() => {
-        if (!containerQuery.data) return
+        if (!containerQuery.data || initialFormData) return
         const converted = inspectResponseToEditForm(containerQuery.data)
         setInitialFormData(converted)
         setFormData(converted)
-    }, [containerQuery.data])
+    }, [containerQuery.data, initialFormData])
 
     const updateMutation = useMutation({
         mutationFn: async (form: ContainerEditForm) => {
@@ -133,10 +151,13 @@ export default function EditContainerScreen() {
             })
             return createdContainerResponse
         },
-        onSuccess: (createdContainerResponse) => {
+        onSuccess: (result) => {
             router.dismissAll()
             queryClient.resetQueries({ queryKey: ['containers'] })
-            router.push(`/container/${createdContainerResponse.Id}/`)
+            router.push(`/container/${result.Id}/`)
+            if (result.warnings.length > 0) {
+                Alert.alert('Container updated with warnings', result.warnings.join('\n'))
+            }
         },
         onError: (error) => {
             Sentry.captureException(error)
@@ -150,7 +171,15 @@ export default function EditContainerScreen() {
     }
 
     if (!formData) {
-        return null
+        return (
+            buildPlaceholder({
+                isLoading: containerQuery.isPending,
+                isError: containerQuery.isError,
+                hasData: false,
+                emptyLabel: 'Container not found',
+                errorLabel: containerQuery.error?.message || 'Error loading container',
+            }) ?? null
+        )
     }
 
     return (
@@ -207,6 +236,7 @@ export default function EditContainerScreen() {
                     <ContextTypePicker
                         value={formData.basic.logging}
                         options={[
+                            { label: 'Default (daemon)', value: '' },
                             { label: 'JSON File', value: 'json-file' },
                             { label: 'Local', value: 'local' },
                             { label: 'Syslog', value: 'syslog' },
@@ -258,17 +288,7 @@ export default function EditContainerScreen() {
                 endContent={
                     <TouchableOpacity
                         onPress={() =>
-                            setFormData((prev) =>
-                                prev
-                                    ? {
-                                          ...prev,
-                                          ports: [
-                                              ...prev.ports,
-                                              { hostPort: '', containerPort: '', protocol: 'tcp' },
-                                          ],
-                                      }
-                                    : null
-                            )
+                            addRow('ports', { hostPort: '', containerPort: '', protocol: 'tcp' })
                         }
                         style={{
                             backgroundColor: COLORS.primary,
@@ -306,9 +326,7 @@ export default function EditContainerScreen() {
                             }}
                             value={port.hostPort}
                             onChangeText={(text) => {
-                                const newPorts = [...formData.ports]
-                                newPorts[index].hostPort = text
-                                setFormData((prev) => (prev ? { ...prev, ports: newPorts } : null))
+                                patchRow('ports', index, { hostPort: text })
                             }}
                             placeholder="Host port"
                             placeholderTextColor={COLORS.textMuted}
@@ -331,9 +349,7 @@ export default function EditContainerScreen() {
                             }}
                             value={port.containerPort}
                             onChangeText={(text) => {
-                                const newPorts = [...formData.ports]
-                                newPorts[index].containerPort = text
-                                setFormData((prev) => (prev ? { ...prev, ports: newPorts } : null))
+                                patchRow('ports', index, { containerPort: text })
                             }}
                             placeholder="Container port"
                             placeholderTextColor={COLORS.textMuted}
@@ -351,18 +367,13 @@ export default function EditContainerScreen() {
                                     { label: 'UDP', value: 'udp' },
                                 ]}
                                 onSelect={(value) => {
-                                    const newPorts = [...formData.ports]
-                                    newPorts[index].protocol = value as 'tcp' | 'udp'
-                                    setFormData((prev) =>
-                                        prev ? { ...prev, ports: newPorts } : null
-                                    )
+                                    patchRow('ports', index, { protocol: value as 'tcp' | 'udp' })
                                 }}
                             />
                         </View>
                         <TouchableOpacity
                             onPress={() => {
-                                const newPorts = formData.ports.filter((_, i) => i !== index)
-                                setFormData((prev) => (prev ? { ...prev, ports: newPorts } : null))
+                                removeRow('ports', index)
                             }}
                             style={{
                                 backgroundColor: COLORS.errorDark,
@@ -389,7 +400,7 @@ export default function EditContainerScreen() {
                             borderRadius: 6,
                             color: COLORS.text,
                         }}
-                        value={formData.commands.command.join(' ')}
+                        value={formData.commands.command}
                         onChangeText={(text) =>
                             setFormData((prev) =>
                                 prev
@@ -397,7 +408,7 @@ export default function EditContainerScreen() {
                                           ...prev,
                                           commands: {
                                               ...prev.commands,
-                                              command: text.split(' ').filter(Boolean),
+                                              command: text,
                                           },
                                       }
                                     : null
@@ -420,7 +431,7 @@ export default function EditContainerScreen() {
                             borderRadius: 6,
                             color: COLORS.text,
                         }}
-                        value={formData.commands.entrypoint.join(' ')}
+                        value={formData.commands.entrypoint}
                         onChangeText={(text) =>
                             setFormData((prev) =>
                                 prev
@@ -428,7 +439,7 @@ export default function EditContainerScreen() {
                                           ...prev,
                                           commands: {
                                               ...prev.commands,
-                                              entrypoint: text.split(' ').filter(Boolean),
+                                              entrypoint: text,
                                           },
                                       }
                                     : null
@@ -521,13 +532,7 @@ export default function EditContainerScreen() {
                 title="Environment Variables"
                 endContent={
                     <TouchableOpacity
-                        onPress={() =>
-                            setFormData((prev) =>
-                                prev
-                                    ? { ...prev, env: [...prev.env, { key: '', value: '' }] }
-                                    : null
-                            )
-                        }
+                        onPress={() => addRow('env', { key: '', value: '' })}
                         style={{
                             backgroundColor: COLORS.primary,
                             height: 32,
@@ -564,9 +569,7 @@ export default function EditContainerScreen() {
                             }}
                             value={envVar.key}
                             onChangeText={(text) => {
-                                const newEnv = [...formData.env]
-                                newEnv[index].key = text
-                                setFormData((prev) => (prev ? { ...prev, env: newEnv } : null))
+                                patchRow('env', index, { key: text })
                             }}
                             placeholder="Name"
                             placeholderTextColor={COLORS.textMuted}
@@ -588,9 +591,7 @@ export default function EditContainerScreen() {
                             }}
                             value={envVar.value}
                             onChangeText={(text) => {
-                                const newEnv = [...formData.env]
-                                newEnv[index].value = text
-                                setFormData((prev) => (prev ? { ...prev, env: newEnv } : null))
+                                patchRow('env', index, { value: text })
                             }}
                             placeholder="Value"
                             placeholderTextColor={COLORS.textMuted}
@@ -601,8 +602,7 @@ export default function EditContainerScreen() {
                         />
                         <TouchableOpacity
                             onPress={() => {
-                                const newEnv = formData.env.filter((_, i) => i !== index)
-                                setFormData((prev) => (prev ? { ...prev, env: newEnv } : null))
+                                removeRow('env', index)
                             }}
                             style={{
                                 backgroundColor: COLORS.errorDark,
@@ -624,13 +624,7 @@ export default function EditContainerScreen() {
                 title="Labels"
                 endContent={
                     <TouchableOpacity
-                        onPress={() =>
-                            setFormData((prev) =>
-                                prev
-                                    ? { ...prev, labels: [...prev.labels, { key: '', value: '' }] }
-                                    : null
-                            )
-                        }
+                        onPress={() => addRow('labels', { key: '', value: '' })}
                         style={{
                             backgroundColor: COLORS.primary,
                             height: 32,
@@ -667,11 +661,7 @@ export default function EditContainerScreen() {
                             }}
                             value={label.key}
                             onChangeText={(text) => {
-                                const newLabels = [...formData.labels]
-                                newLabels[index].key = text
-                                setFormData((prev) =>
-                                    prev ? { ...prev, labels: newLabels } : null
-                                )
+                                patchRow('labels', index, { key: text })
                             }}
                             placeholder="Name"
                             placeholderTextColor={COLORS.textMuted}
@@ -693,11 +683,7 @@ export default function EditContainerScreen() {
                             }}
                             value={label.value}
                             onChangeText={(text) => {
-                                const newLabels = [...formData.labels]
-                                newLabels[index].value = text
-                                setFormData((prev) =>
-                                    prev ? { ...prev, labels: newLabels } : null
-                                )
+                                patchRow('labels', index, { value: text })
                             }}
                             placeholder="Value"
                             placeholderTextColor={COLORS.textMuted}
@@ -708,10 +694,7 @@ export default function EditContainerScreen() {
                         />
                         <TouchableOpacity
                             onPress={() => {
-                                const newLabels = formData.labels.filter((_, i) => i !== index)
-                                setFormData((prev) =>
-                                    prev ? { ...prev, labels: newLabels } : null
-                                )
+                                removeRow('labels', index)
                             }}
                             style={{
                                 backgroundColor: COLORS.errorDark,
@@ -734,22 +717,12 @@ export default function EditContainerScreen() {
                 endContent={
                     <TouchableOpacity
                         onPress={() =>
-                            setFormData((prev) =>
-                                prev
-                                    ? {
-                                          ...prev,
-                                          volumes: [
-                                              ...prev.volumes,
-                                              {
-                                                  containerPath: '',
-                                                  hostPath: '',
-                                                  type: 'bind',
-                                                  readOnly: false,
-                                              },
-                                          ],
-                                      }
-                                    : null
-                            )
+                            addRow('volumes', {
+                                containerPath: '',
+                                hostPath: '',
+                                type: 'bind',
+                                readOnly: false,
+                            })
                         }
                         style={{
                             backgroundColor: COLORS.primary,
@@ -786,11 +759,7 @@ export default function EditContainerScreen() {
                                 }}
                                 value={volume.containerPath}
                                 onChangeText={(text) => {
-                                    const newVolumes = [...formData.volumes]
-                                    newVolumes[index].containerPath = text
-                                    setFormData((prev) =>
-                                        prev ? { ...prev, volumes: newVolumes } : null
-                                    )
+                                    patchRow('volumes', index, { containerPath: text })
                                 }}
                                 placeholder="Container path"
                                 placeholderTextColor={COLORS.textMuted}
@@ -807,11 +776,9 @@ export default function EditContainerScreen() {
                                         { label: 'Bind', value: 'bind' },
                                     ]}
                                     onSelect={(value) => {
-                                        const newVolumes = [...formData.volumes]
-                                        newVolumes[index].type = value as 'volume' | 'bind'
-                                        setFormData((prev) =>
-                                            prev ? { ...prev, volumes: newVolumes } : null
-                                        )
+                                        patchRow('volumes', index, {
+                                            type: value as 'volume' | 'bind',
+                                        })
                                     }}
                                 />
                             </View>
@@ -836,11 +803,7 @@ export default function EditContainerScreen() {
                                 }}
                                 value={volume.hostPath}
                                 onChangeText={(text) => {
-                                    const newVolumes = [...formData.volumes]
-                                    newVolumes[index].hostPath = text
-                                    setFormData((prev) =>
-                                        prev ? { ...prev, volumes: newVolumes } : null
-                                    )
+                                    patchRow('volumes', index, { hostPath: text })
                                 }}
                                 placeholder={volume.type === 'volume' ? 'Volume name' : 'Host path'}
                                 placeholderTextColor={COLORS.textMuted}
@@ -857,22 +820,15 @@ export default function EditContainerScreen() {
                                         { label: 'Read Only', value: 'readonly' },
                                     ]}
                                     onSelect={(value) => {
-                                        const newVolumes = [...formData.volumes]
-                                        newVolumes[index].readOnly = value === 'readonly'
-                                        setFormData((prev) =>
-                                            prev ? { ...prev, volumes: newVolumes } : null
-                                        )
+                                        patchRow('volumes', index, {
+                                            readOnly: value === 'readonly',
+                                        })
                                     }}
                                 />
                             </View>
                             <TouchableOpacity
                                 onPress={() => {
-                                    const newVolumes = formData.volumes.filter(
-                                        (_, i) => i !== index
-                                    )
-                                    setFormData((prev) =>
-                                        prev ? { ...prev, volumes: newVolumes } : null
-                                    )
+                                    removeRow('volumes', index)
                                 }}
                                 style={{
                                     backgroundColor: COLORS.errorDark,

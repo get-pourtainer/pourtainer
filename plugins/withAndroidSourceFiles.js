@@ -88,7 +88,7 @@ const copySourceFiles = (widgetFolderPath, platformRoot, packageName) => {
     )
 
     if (!fs.existsSync(destinationFolder)) {
-        fs.mkdirSync(destinationFolder)
+        fs.mkdirSync(destinationFolder, { recursive: true })
     }
 
     console.log(`Copying source files from ${originalSourceFolder} to ${destinationFolder}`)
@@ -104,6 +104,7 @@ const copySourceFiles = (widgetFolderPath, platformRoot, packageName) => {
         if (fs.lstatSync(sourcePath).isDirectory()) {
             emptyDirSync(destinationPath)
             fs.cpSync(sourcePath, destinationPath, { recursive: true })
+            continue
         }
 
         const file = path.basename(relativePath)
@@ -154,7 +155,6 @@ const modifySourceFiles = (distPlaceholder, sourceFiles, packageName) => {
 
     for (const filePath of sourceFiles) {
         const contents = fs.readFileSync(filePath, { encoding: 'utf-8' })
-        console.log(contents)
 
         const withModulesFixed = replaceAll(contents, packageSearchStr, packageReplaceStr)
         const withImportsFixed = replaceAll(withModulesFixed, importSearchStr, importReplaceStr)

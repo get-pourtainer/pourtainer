@@ -1,68 +1,19 @@
-import { fetchEndpoints } from '@/api/queries'
-import { usePersistedStore } from '@/stores/persisted'
+import { useEnsureEndpoint } from '@/lib/portainer/endpoint'
+import { useSyncServerVersion } from '@/lib/portainer/version'
 import { COLORS } from '@/theme'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import Entypo from '@expo/vector-icons/Entypo'
 import Feather from '@expo/vector-icons/Feather'
-import { useQuery } from '@tanstack/react-query'
 import { Tabs } from 'expo-router'
-import { useEffect } from 'react'
-import { useMemo } from 'react'
-import { Platform } from 'react-native'
+import { Platform, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function TabLayout() {
-    const currentConnection = usePersistedStore((state) => state.currentConnection)
-    const switchConnection = usePersistedStore((state) => state.switchConnection)
+    useSyncServerVersion()
 
     const { bottom: bottomInset } = useSafeAreaInsets()
 
-    const currentEndpointId = useMemo(
-        () => currentConnection?.currentEndpointId,
-        [currentConnection]
-    )
-
-    const endpointsQuery = useQuery({
-        queryKey: ['endpoints'],
-        queryFn: async () => await fetchEndpoints(),
-    })
-
-    useEffect(() => {
-        // this is needed on first login, and when switching connections (not accounts/teams/workspaces)
-        console.log('currentEndpointId', currentEndpointId)
-
-        if (!endpointsQuery.data || endpointsQuery.data.length === 0) return
-
-        if (!currentConnection?.id) return
-
-        if (!currentEndpointId) {
-            for (const endpoint of endpointsQuery.data) {
-                if (endpoint.Id) {
-                    switchConnection({
-                        connectionId: currentConnection.id,
-                        endpointId: endpoint.Id.toString(),
-                    })
-                    break
-                }
-            }
-        }
-
-        // sets a new endpoint if the user lost access to the current one
-        if (
-            endpointsQuery.data &&
-            !endpointsQuery.data.find((endpoint) => endpoint.Id.toString() === currentEndpointId)
-        ) {
-            for (const endpoint of endpointsQuery.data) {
-                if (endpoint.Id) {
-                    switchConnection({
-                        connectionId: currentConnection.id,
-                        endpointId: endpoint.Id.toString(),
-                    })
-                    break
-                }
-            }
-        }
-    }, [currentEndpointId, currentConnection?.id, switchConnection, endpointsQuery.data])
+    useEnsureEndpoint()
 
     return (
         <Tabs
@@ -78,6 +29,17 @@ export default function TabLayout() {
                 },
                 tabBarActiveTintColor: COLORS.primaryLight,
                 tabBarInactiveTintColor: COLORS.primaryDark,
+                // The default button is a PlatformPressable with a themed ripple;
+                // a plain Pressable without android_ripple has no press effect.
+                tabBarButton: ({
+                    android_ripple,
+                    pressColor,
+                    pressOpacity,
+                    hoverEffect,
+                    href,
+                    ref,
+                    ...props
+                }) => <Pressable {...props} android_ripple={null} />,
             }}
         >
             <Tabs.Screen

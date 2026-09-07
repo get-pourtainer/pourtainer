@@ -24,9 +24,19 @@ import { KeyboardAwareScrollView, useAnimatedKeyboard } from 'react-native-keybo
 import Animated, { interpolate, useAnimatedStyle, withTiming } from 'react-native-reanimated'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-// remove trailing slashes from url
+const TRAILING_SLASHES = /\/+$/
+const URL_FRAGMENT = /#.*$/
+const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i
+const API_SUFFIX = /\/api$/i
+
+// Accepts what people paste: a bare host, a URL copied from the Portainer UI
+// (with its #!/ route), or one ending in /api
 const sanitizeUrl = (url: string) => {
-    return url.replace(/\/+$/, '')
+    const withoutFragment = url.trim().replace(URL_FRAGMENT, '')
+    const withScheme = HAS_SCHEME.test(withoutFragment)
+        ? withoutFragment
+        : `https://${withoutFragment}`
+    return withScheme.replace(TRAILING_SLASHES, '').replace(API_SUFFIX, '')
 }
 
 export default function LoginScreen() {
@@ -59,33 +69,43 @@ export default function LoginScreen() {
         }
     })
 
+    // Throws a specific message; the mutation's onError shows it once
     const validateConnection = useCallback(async (sanitizedUrl: string, apiToken: string) => {
-        try {
-            // Try to authenticate with the API token and check system status
-            const userResponse = await guestClient(sanitizedUrl, '/api/users/me', apiToken)
+        const userResponse = await guestClient(sanitizedUrl, '/api/users/me', apiToken)
+        const userStatus = userResponse.respInfo.status
 
-            const statusResponse = await guestClient(sanitizedUrl, '/api/system/status', apiToken)
-
-            if (
-                userResponse.respInfo.status >= 200 &&
-                userResponse.respInfo.status < 300 &&
-                statusResponse.respInfo.status >= 200 &&
-                statusResponse.respInfo.status < 300
-            ) {
-                const { InstanceID } = statusResponse.json()
-                console.log('InstanceID', InstanceID)
-                return InstanceID
-            }
-            Alert.alert(
-                'Error',
-                'Could not connect to server. Please check your server address and API token.'
-            )
-        } catch {
-            Alert.alert(
-                'Error',
-                'Could not connect to server. Please check your server address and API token.'
+        if (userStatus === 401 || userStatus === 403) {
+            throw new Error('Invalid API token. Please check the token and try again.')
+        }
+        if (userStatus < 200 || userStatus >= 300) {
+            throw new Error(
+                `Could not connect to server (HTTP ${userStatus}). Please check your server address.`
             )
         }
+
+        const statusResponse = await guestClient(sanitizedUrl, '/api/system/status', apiToken)
+        const status = statusResponse.respInfo.status
+
+        if (status < 200 || status >= 300) {
+            throw new Error(
+                `Could not connect to server (HTTP ${status}). Please check your server address.`
+            )
+        }
+
+        let parsed: { InstanceID?: string; Version?: string }
+        try {
+            parsed = statusResponse.json()
+        } catch {
+            parsed = {}
+        }
+
+        if (!parsed.InstanceID) {
+            throw new Error(
+                'The server did not return a Portainer response. Please check your server address.'
+            )
+        }
+
+        return { instanceId: parsed.InstanceID, version: parsed.Version }
     }, [])
 
     const loginMutation = useMutation({
@@ -98,13 +118,13 @@ export default function LoginScreen() {
             }
 
             const sanitizedUrl = sanitizeUrl(baseUrl)
-            const instanceId = await validateConnection(sanitizedUrl, apiToken)
+            const { instanceId, version: serverVersion } = await validateConnection(
+                sanitizedUrl,
+                apiToken
+            )
 
-            if (!instanceId) {
-                throw new Error('Invalid token')
-            }
-
-            if (connections.find((c) => c.id === instanceId)) {
+            // Read the store directly: the render-time snapshot can be stale
+            if (usePersistedStore.getState().connections.find((c) => c.id === instanceId)) {
                 throw new Error('You are already connected to this instance')
             }
 
@@ -126,18 +146,19 @@ export default function LoginScreen() {
                 throw new Error('Your server does not have any endpoints.')
             }
 
-            return { instanceId, apiToken, sanitizedUrl, firstId }
+            return { instanceId, serverVersion, apiToken, sanitizedUrl, firstId }
         },
-        onSuccess: ({ instanceId, apiToken, sanitizedUrl, firstId }) => {
+        onSuccess: ({ instanceId, serverVersion, apiToken, sanitizedUrl, firstId }) => {
             addConnection({
                 id: instanceId,
                 apiToken,
                 baseUrl: sanitizedUrl,
                 currentEndpointId: null,
+                serverVersion,
             })
             switchConnection({ connectionId: instanceId, endpointId: firstId.toString() })
 
-            if (connections.length === 1) {
+            if (usePersistedStore.getState().connections.length === 1) {
                 registerPlacement({
                     placement: 'SuccessfulLogin',
                 }).catch()
@@ -246,7 +267,9 @@ export default function LoginScreen() {
                                 }}
                                 returnKeyLabel="Connect"
                                 returnKeyType="go"
-                                onSubmitEditing={() => loginMutation.mutate()}
+                                onSubmitEditing={() => {
+                                    if (!loginMutation.isPending) loginMutation.mutate()
+                                }}
                             />
                             <View style={styles.buttonContainer}>
                                 <Button

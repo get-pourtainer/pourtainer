@@ -1,6 +1,6 @@
 // required on android for `https` connections with self signed certificates (selfhosted portainer)
 
-const { withMainApplication } = require('@expo/config-plugins')
+const { AndroidConfig, withMainApplication } = require('@expo/config-plugins')
 const { mergeContents } = require('@expo/config-plugins/build/utils/generateCode')
 
 const withBlobSelfSignedServer = (config) =>
@@ -21,13 +21,18 @@ ReactNativeBlobUtilUtils.sharedTrustManager = object : X509TrustManager {
 };
     `
 
+        const packageName = AndroidConfig.Package.getPackage(config)
+        if (!packageName) {
+            throw new Error('withBlobSelfSignedServer: android.package is required')
+        }
+
         let newFileContents = config.modResults.contents
 
         newFileContents = mergeContents({
             src: newFileContents,
             newSrc: importContents,
             tag: 'ReactNativeBlobUtilUtilsImports',
-            anchor: /package com.pourtainer.mobile/,
+            anchor: new RegExp(`package ${packageName.replace(/\./g, '\\.')}`),
             offset: 1,
             comment: '//',
         }).contents

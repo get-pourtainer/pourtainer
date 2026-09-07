@@ -31,9 +31,6 @@ module.exports = ({ config }) => {
             },
         },
 
-        androidNavigationBar: {
-            enforceContrast: false,
-        },
         android: {
             package: process.env.EXPO_PUBLIC_ANDROID_PACKAGE,
             adaptiveIcon: {
@@ -57,13 +54,15 @@ module.exports = ({ config }) => {
                     },
                     android: {
                         minSdkVersion: 24,
-                        targetSdkVersion: 35,
+                        usesCleartextTraffic: true,
                         enablePngCrunchInReleaseBuilds: false,
                     },
                 },
             ],
             './plugins/withAndroidHeap',
             'expo-router',
+            ['expo-status-bar', { style: 'light' }],
+            ['expo-navigation-bar', { enforceContrast: false }],
             [
                 'expo-splash-screen',
                 {
@@ -98,7 +97,6 @@ module.exports = ({ config }) => {
                     receiverName: 'ContainerWidgetReceiver',
                     versions: {
                         glance: '1.1.1',
-                        kotlinExtension: '2.0.0',
                         gson: '2.13.2',
                         activityCompose: '1.11.0',
                         composeUi: '1.9.3',
@@ -107,7 +105,6 @@ module.exports = ({ config }) => {
                     },
                 },
             ],
-            './plugins/withHotUpdaterAndroidFix',
             [
                 '@hot-updater/react-native',
                 {

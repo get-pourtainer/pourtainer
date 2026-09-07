@@ -10,7 +10,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Haptics from 'expo-haptics'
 import { NotificationFeedbackType } from 'expo-haptics'
 import { router, useGlobalSearchParams, useNavigation } from 'expo-router'
-import yaml from 'js-yaml'
+import { load } from 'js-yaml'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Alert, Pressable, TextInput } from 'react-native'
 import ContextMenu from 'react-native-context-menu-view'
@@ -49,7 +49,7 @@ export default function StackHomeScreen() {
         onSuccess: () => {
             Haptics.notificationAsync(NotificationFeedbackType.Success)
             setHasChanges(false)
-            queryClient.invalidateQueries({ queryKey: ['stack', stackId, 'file'] })
+            queryClient.invalidateQueries({ queryKey: ['stack', stackId] })
             Alert.alert('Success', 'Stack file updated successfully')
         },
         onError: (error) => {
@@ -61,7 +61,7 @@ export default function StackHomeScreen() {
 
     const validateYaml = useCallback(() => {
         try {
-            yaml.load(editedContent)
+            load(editedContent)
             return { valid: true }
         } catch (error) {
             const errorMessage =

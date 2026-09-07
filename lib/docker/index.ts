@@ -1,16 +1,16 @@
 // https://www.npmjs.com/package/openapi-typescript
 
 import type { paths } from '@/lib/docker/schema'
+import { throwOnError } from '@/lib/portainer/errors'
 import { usePersistedStore } from '@/stores/persisted'
 import createClient from 'openapi-fetch'
 import ReactNativeBlobUtil from 'react-native-blob-util'
 
-const IGNORE_BODY_URLS = ['images/create']
-
 export default function client({
     connectionId,
     endpointId,
-}: { connectionId?: string; endpointId: string }) {
+    accessDenied,
+}: { connectionId?: string; endpointId: string; accessDenied?: string }) {
     const currentConnection = connectionId
         ? usePersistedStore.getState().connections.find((c) => c.id === connectionId)
         : usePersistedStore.getState().currentConnection
@@ -52,12 +52,9 @@ export default function client({
                 body ? body : undefined
             )
 
-            const skipPayload = IGNORE_BODY_URLS.some((url) => input.url.includes(url))
-
-            const returnBody =
-                [200, 201, 204].includes(req.respInfo.status) && !skipPayload ? req.data : '{}'
-
-            const res = new Response(returnBody, {
+            // The body is passed through on every status so the error
+            // middleware can read Docker's {message}
+            const res = new Response(req.data, {
                 status: req.respInfo.status,
                 statusText: req.respInfo.state,
                 headers: req.respInfo.headers,
@@ -66,6 +63,10 @@ export default function client({
             return res
         },
     })
+
+    // Rejects on any non-2xx response. 304 is Docker's "already started /
+    // stopped", not a failure.
+    newClient.use(throwOnError({ allow: [304], accessDenied }))
 
     return newClient
 }

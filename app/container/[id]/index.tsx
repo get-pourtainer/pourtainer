@@ -19,7 +19,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocalSearchParams } from 'expo-router'
 import { useRouter } from 'expo-router'
 import { Stack } from 'expo-router'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -30,8 +30,20 @@ export default function ContainerDetailScreen() {
         endpointId?: string
     }>()
     const currentConnection = usePersistedStore((state) => state.currentConnection)
+    const connections = usePersistedStore((state) => state.connections)
 
-    console.log('id', id)
+    // A widget deep link names its connection and endpoint; WidgetSyncer switches
+    // to them. Unknown connections fail fast, and an endpoint that never
+    // reconciles stops blocking after a few seconds instead of spinning forever.
+    const knownConnection = !connectionId || connections.some((c) => c.id === connectionId)
+    const endpointReady = !endpointId || endpointId === currentConnection?.currentEndpointId
+    const [endpointTimedOut, setEndpointTimedOut] = useState(false)
+
+    useEffect(() => {
+        if (endpointReady) return
+        const timer = setTimeout(() => setEndpointTimedOut(true), 5000)
+        return () => clearTimeout(timer)
+    }, [endpointReady])
 
     const { bottom: bottomInset } = useSafeAreaInsets()
 
@@ -41,7 +53,7 @@ export default function ContainerDetailScreen() {
     const containersQuery = useQuery({
         queryKey: ['containers'],
         queryFn: async () => fetchContainers(),
-        enabled: endpointId ? endpointId === currentConnection?.currentEndpointId : true,
+        enabled: knownConnection && (endpointReady || endpointTimedOut),
     })
 
     const container = useMemo(() => {
@@ -137,14 +149,23 @@ export default function ContainerDetailScreen() {
 
     const Placeholder = useMemo(() => {
         const emptyContainer = buildPlaceholder({
-            isLoading: containersQuery.isLoading || containersQuery.isPending,
-            isError: containersQuery.isError,
+            isLoading: knownConnection && (containersQuery.isLoading || containersQuery.isPending),
+            isError: containersQuery.isError || !knownConnection,
             hasData: !!container,
             emptyLabel: 'Container not found',
-            errorLabel: 'Error loading container',
+            errorLabel: knownConnection
+                ? containersQuery.error?.message || 'Error loading container'
+                : 'This container belongs to a server that is not configured on this device',
         })
         return emptyContainer
-    }, [containersQuery.isLoading, containersQuery.isError, containersQuery.isPending, container])
+    }, [
+        containersQuery.isLoading,
+        containersQuery.isError,
+        containersQuery.isPending,
+        containersQuery.error,
+        container,
+        knownConnection,
+    ])
 
     return (
         <>

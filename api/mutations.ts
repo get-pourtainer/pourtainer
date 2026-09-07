@@ -1,6 +1,14 @@
+import { fetchStack, fetchStackFile } from '@/api/queries'
 import dockerClient from '@/lib/docker'
+import { splitImageReference } from '@/lib/docker/image'
 import type { components } from '@/lib/docker/schema'
 import portainerClient from '@/lib/portainer'
+import {
+    ACCESS_DENIED_CONTAINER,
+    ACCESS_DENIED_VOLUME,
+    ApiError,
+    assertBlobOk,
+} from '@/lib/portainer/errors'
 import { usePersistedStore } from '@/stores/persisted'
 import ReactNativeBlobUtil from 'react-native-blob-util'
 
@@ -9,7 +17,7 @@ export async function restartContainer(id: string): Promise<void> {
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await dockerClient({
+        await dockerClient({
             connectionId: currentConnection?.id,
             endpointId: currentConnection?.currentEndpointId!,
         }).POST('/containers/{id}/restart', {
@@ -19,10 +27,6 @@ export async function restartContainer(id: string): Promise<void> {
                 },
             },
         })
-
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
     } catch (error) {
         console.error('Error restarting container:', error)
         throw error
@@ -34,7 +38,7 @@ export async function stopContainer(id: string): Promise<void> {
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await dockerClient({
+        await dockerClient({
             connectionId: currentConnection?.id,
             endpointId: currentConnection?.currentEndpointId!,
         }).POST('/containers/{id}/stop', {
@@ -44,10 +48,6 @@ export async function stopContainer(id: string): Promise<void> {
                 },
             },
         })
-
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
     } catch (error) {
         console.error('Error stopping container:', error)
         throw error
@@ -59,7 +59,7 @@ export async function startContainer(id: string): Promise<void> {
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await dockerClient({
+        await dockerClient({
             connectionId: currentConnection?.id,
             endpointId: currentConnection?.currentEndpointId!,
         }).POST('/containers/{id}/start', {
@@ -69,10 +69,6 @@ export async function startContainer(id: string): Promise<void> {
                 },
             },
         })
-
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
     } catch (error) {
         console.error('Error starting container:', error)
         throw error
@@ -84,7 +80,7 @@ export async function pauseContainer(id: string): Promise<void> {
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await dockerClient({
+        await dockerClient({
             connectionId: currentConnection?.id,
             endpointId: currentConnection?.currentEndpointId!,
         }).POST('/containers/{id}/pause', {
@@ -94,10 +90,6 @@ export async function pauseContainer(id: string): Promise<void> {
                 },
             },
         })
-
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
     } catch (error) {
         console.error('Error pausing container:', error)
         throw error
@@ -109,7 +101,7 @@ export async function unpauseContainer(id: string): Promise<void> {
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await dockerClient({
+        await dockerClient({
             connectionId: currentConnection?.id,
             endpointId: currentConnection?.currentEndpointId!,
         }).POST('/containers/{id}/unpause', {
@@ -119,10 +111,6 @@ export async function unpauseContainer(id: string): Promise<void> {
                 },
             },
         })
-
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
     } catch (error) {
         console.error('Error unpausing container:', error)
         throw error
@@ -134,7 +122,7 @@ export async function killContainer(id: string): Promise<void> {
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await dockerClient({
+        await dockerClient({
             connectionId: currentConnection?.id,
             endpointId: currentConnection?.currentEndpointId!,
         }).POST('/containers/{id}/kill', {
@@ -144,10 +132,6 @@ export async function killContainer(id: string): Promise<void> {
                 },
             },
         })
-
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
     } catch (error) {
         console.error('Error killing container:', error)
         throw error
@@ -166,6 +150,7 @@ export async function startTerminalSession(
         const response = await dockerClient({
             connectionId: currentConnection?.id,
             endpointId: currentConnection?.currentEndpointId!,
+            accessDenied: ACCESS_DENIED_CONTAINER,
         }).POST('/containers/{id}/exec', {
             params: {
                 path: {
@@ -182,8 +167,8 @@ export async function startTerminalSession(
             },
         })
 
-        if (response.error) {
-            throw new Error(response.error.message)
+        if (!response.data) {
+            throw new Error('Failed to start terminal session')
         }
 
         return response.data
@@ -201,7 +186,7 @@ export async function deleteImage(
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await dockerClient({
+        await dockerClient({
             connectionId: currentConnection?.id,
             endpointId: currentConnection?.currentEndpointId!,
         }).DELETE('/images/{name}', {
@@ -214,10 +199,6 @@ export async function deleteImage(
                 },
             },
         })
-
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
     } catch (error) {
         console.error('Error deleting image:', error)
         throw error
@@ -229,7 +210,7 @@ export async function deleteVolume(name: string): Promise<void> {
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await dockerClient({
+        await dockerClient({
             connectionId: currentConnection?.id,
             endpointId: currentConnection?.currentEndpointId!,
         }).DELETE('/volumes/{name}', {
@@ -239,10 +220,6 @@ export async function deleteVolume(name: string): Promise<void> {
                 },
             },
         })
-
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
     } catch (error) {
         console.error('Error deleting volume:', error)
         throw error
@@ -272,43 +249,39 @@ export async function uploadFile(
         },
     ]
 
-    const response = await portainerClient().POST('/endpoints/{id}/docker/v2/browse/put', {
-        params: {
-            path: {
-                id: Number(currentConnection?.currentEndpointId!),
-            },
-            query: {
-                volumeID: volumeId,
-            },
-        },
-        body: body as any,
-    })
-
-    if (response.error) {
-        // @ts-ignore
-        throw new Error(response.error.message)
-    }
-}
-
-export async function deleteFile(volumeId: string, path: string): Promise<void> {
-    const currentConnection = usePersistedStore.getState().currentConnection
-    try {
-        const response = await portainerClient().DELETE('/endpoints/{id}/docker/v2/browse/delete', {
+    await portainerClient({ accessDenied: ACCESS_DENIED_VOLUME }).POST(
+        '/endpoints/{id}/docker/v2/browse/put',
+        {
             params: {
                 path: {
                     id: Number(currentConnection?.currentEndpointId!),
                 },
                 query: {
-                    path: path,
                     volumeID: volumeId,
                 },
             },
-        })
-
-        if (response.error) {
-            // @ts-ignore
-            throw new Error(response.error.message)
+            body: body as any,
         }
+    )
+}
+
+export async function deleteFile(volumeId: string, path: string): Promise<void> {
+    const currentConnection = usePersistedStore.getState().currentConnection
+    try {
+        await portainerClient({ accessDenied: ACCESS_DENIED_VOLUME }).DELETE(
+            '/endpoints/{id}/docker/v2/browse/delete',
+            {
+                params: {
+                    path: {
+                        id: Number(currentConnection?.currentEndpointId!),
+                    },
+                    query: {
+                        path: path,
+                        volumeID: volumeId,
+                    },
+                },
+            }
+        )
     } catch (error) {
         console.error('Error deleting file:', error)
         throw error
@@ -326,28 +299,23 @@ export async function renameFile(volumeId: string, path: string, newName: string
     const newFilePath = `${dirPath}/${newName}`.replace('//', '/')
 
     try {
-        const response = await portainerClient().PUT('/endpoints/{id}/docker/v2/browse/rename', {
-            params: {
-                path: {
-                    id: Number(currentConnection?.currentEndpointId!),
+        await portainerClient({ accessDenied: ACCESS_DENIED_VOLUME }).PUT(
+            '/endpoints/{id}/docker/v2/browse/rename',
+            {
+                params: {
+                    path: {
+                        id: Number(currentConnection?.currentEndpointId!),
+                    },
+                    query: {
+                        volumeID: volumeId,
+                    },
                 },
-                query: {
-                    volumeID: volumeId,
+                body: {
+                    CurrentFilePath: currentFilePath,
+                    NewFilePath: newFilePath,
                 },
-            },
-            body: {
-                CurrentFilePath: currentFilePath,
-                NewFilePath: newFilePath,
-            },
-        })
-
-        if (response.error) {
-            throw new Error(
-                (response.error as unknown) instanceof Error
-                    ? (response.error as Error).message
-                    : 'Unknown error'
-            )
-        }
+            }
+        )
     } catch (error) {
         console.error('Error renaming file:', error)
         throw error
@@ -371,9 +339,7 @@ export async function backupConfig(password?: string) {
             })
         )
 
-        if (response.respInfo.status < 200 || response.respInfo.status >= 300) {
-            throw new Error(`Network response was not ok: ${response.respInfo.status}`)
-        }
+        assertBlobOk(response, 'Failed to back up')
 
         const data = await response.base64()
 
@@ -384,28 +350,46 @@ export async function backupConfig(password?: string) {
     }
 }
 
-export async function pullImage(imageName: string) {
+export async function pullImage(imageName: string): Promise<void> {
     const currentConnection = usePersistedStore.getState().currentConnection
-
-    try {
-        const response = await dockerClient({
-            connectionId: currentConnection?.id,
-            endpointId: currentConnection?.currentEndpointId!,
-        }).POST('/images/create', {
-            params: {
-                query: {
-                    fromImage: imageName,
-                },
-            },
-        })
-
-        if (response.error) {
-            throw new Error(response.error.message)
-        }
-    } catch (error) {
-        console.error('Error pulling image:', error)
-        throw error
+    if (!currentConnection) {
+        throw new Error('No connection found')
     }
+
+    const { fromImage, tag } = splitImageReference(imageName)
+    const params = new URLSearchParams({ fromImage, ...(tag ? { tag } : {}) })
+    const url = `${currentConnection.baseUrl}/api/endpoints/${currentConnection.currentEndpointId}/docker/images/create?${params}`
+
+    // Requested directly: the response is an NDJSON progress stream, and
+    // Docker reports some pull failures inside it with HTTP 200
+    const response = await ReactNativeBlobUtil.config({ trusty: true }).fetch('POST', url, {
+        'x-api-key': currentConnection.apiToken,
+    })
+
+    assertBlobOk(response, 'Failed to pull image')
+
+    const streamError = findPullError(typeof response.data === 'string' ? response.data : '')
+    if (streamError) {
+        throw new ApiError(streamError.message, response.respInfo.status, streamError.details)
+    }
+}
+
+// An {"error": ...} event inside the progress stream, normally the last line
+// of thousands for a multi-layer pull, so only candidate lines are parsed.
+function findPullError(stream: string): { message: string; details?: string } | null {
+    if (!stream.includes('"error"')) return null
+
+    for (const line of stream.split('\n').reverse()) {
+        if (!line.includes('"error"')) continue
+        try {
+            const event = JSON.parse(line) as { error?: string; errorDetail?: { message?: string } }
+            if (event.error) {
+                return { message: event.error, details: event.errorDetail?.message }
+            }
+        } catch {}
+    }
+
+    return null
 }
 
 export async function updateContainer(
@@ -417,135 +401,84 @@ export async function updateContainer(
         id: string
         name: string
     }
-) {
-    console.log('Creating container:', JSON.stringify(input, null, 2))
+): Promise<{ Id: string; warnings: string[] }> {
     const currentConnection = usePersistedStore.getState().currentConnection
-
     const { id, name } = extraData
+    const oldName = `${name}-old`
+
+    const client = dockerClient({
+        connectionId: currentConnection?.id,
+        endpointId: currentConnection?.currentEndpointId!,
+    })
+
+    // Recreate flow: (stop) -> rename old -> create new -> start new -> delete old.
+    // Every step after the rename rolls back to the original container.
+    const inspect = await client.GET('/containers/{id}/json', { params: { path: { id } } })
+    const wasRunning = inspect.data?.State?.Running === true
+
+    if (wasRunning) {
+        await client.POST('/containers/{id}/stop', { params: { path: { id } } })
+    }
+
+    await client.POST('/containers/{id}/rename', {
+        params: { path: { id }, query: { name: oldName } },
+    })
+
+    // Best effort: give the original container its name (and state) back
+    const restoreOriginal = async () => {
+        try {
+            await client.POST('/containers/{id}/rename', {
+                params: { path: { id }, query: { name } },
+            })
+            if (wasRunning) {
+                await client.POST('/containers/{id}/start', { params: { path: { id } } })
+            }
+        } catch (error) {
+            console.error('Could not restore the original container:', error)
+        }
+    }
+
+    let newId: string
+    const warnings: string[] = []
 
     try {
-        // renames current container to "name-old"
-        // creates new container with new name
-        // starts new container
-        // deletes old container
-
-        const stopResponse = await dockerClient({
-            connectionId: currentConnection?.id,
-            endpointId: currentConnection?.currentEndpointId!,
-        }).POST('/containers/{id}/stop', {
-            params: {
-                path: {
-                    id,
-                },
-            },
+        const created = await client.POST('/containers/create', {
+            params: { query: { name } },
+            body: { ...input, Name: undefined, Id: undefined },
         })
-
-        if (stopResponse.error) {
-            throw new Error(stopResponse.error.message)
+        if (!created.data) {
+            throw new ApiError('Failed to create updated container', created.response.status)
         }
-
-        const renameResponse = await dockerClient({
-            connectionId: currentConnection?.id,
-            endpointId: currentConnection?.currentEndpointId!,
-        }).POST('/containers/{id}/rename', {
-            params: {
-                path: {
-                    id,
-                },
-                query: {
-                    'name': `${name}-old`,
-                },
-            },
-        })
-
-        if (renameResponse.error) {
-            throw new Error(renameResponse.error.message)
-        }
-
-        const bodyData = {
-            ...input,
-            Name: undefined,
-            Id: undefined,
-        }
-
-        const createResponse = await dockerClient({
-            connectionId: currentConnection?.id,
-            endpointId: currentConnection?.currentEndpointId!,
-        }).POST('/containers/create', {
-            params: {
-                query: {
-                    name,
-                },
-            },
-            body: bodyData,
-        })
-
-        if (createResponse.error) {
-            // try to rename old container back to original name
-            await dockerClient({
-                connectionId: currentConnection?.id,
-                endpointId: currentConnection?.currentEndpointId!,
-            }).POST('/containers/{id}/rename', {
-                params: {
-                    path: {
-                        id,
-                    },
-                    query: {
-                        'name': name,
-                    },
-                },
-            })
-
-            // try to start old container
-            await dockerClient({
-                connectionId: currentConnection?.id,
-                endpointId: currentConnection?.currentEndpointId!,
-            }).POST('/containers/{id}/start', {
-                params: {
-                    path: {
-                        id,
-                    },
-                },
-            })
-
-            throw new Error(createResponse.error.message)
-        }
-
-        if (!createResponse.data) {
-            throw new Error('Failed to create updated container')
-        }
-
-        const startResponse = await dockerClient({
-            connectionId: currentConnection?.id,
-            endpointId: currentConnection?.currentEndpointId!,
-        }).POST('/containers/{id}/start', {
-            params: {
-                path: {
-                    id: createResponse.data.Id,
-                },
-            },
-        })
-
-        console.log('startResponse', startResponse)
-
-        const deleteResponse = await dockerClient({
-            connectionId: currentConnection?.id,
-            endpointId: currentConnection?.currentEndpointId!,
-        }).DELETE('/containers/{id}', {
-            params: {
-                path: {
-                    id,
-                },
-            },
-        })
-
-        console.log('deleteResponse', deleteResponse)
-
-        return createResponse.data
+        newId = created.data.Id
+        warnings.push(...(created.data.Warnings ?? []))
     } catch (error) {
-        console.error('Error creating container:', error)
+        await restoreOriginal()
         throw error
     }
+
+    try {
+        await client.POST('/containers/{id}/start', { params: { path: { id: newId } } })
+    } catch (error) {
+        await client
+            .DELETE('/containers/{id}', { params: { path: { id: newId }, query: { force: true } } })
+            .catch(() => {})
+        await restoreOriginal()
+        const cause = error instanceof ApiError ? error : new ApiError(String(error), 0)
+        throw new ApiError(
+            `The updated container could not start: ${cause.message}`,
+            cause.status,
+            cause.details
+        )
+    }
+
+    try {
+        await client.DELETE('/containers/{id}', { params: { path: { id } } })
+    } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error)
+        warnings.push(`The old container "${oldName}" could not be removed: ${reason}`)
+    }
+
+    return { Id: newId, warnings }
 }
 
 export async function updateStackFile(
@@ -557,11 +490,14 @@ export async function updateStackFile(
         pullImage?: boolean
     } = {}
 ): Promise<void> {
-    console.log('Updating stack file:', stackId)
     const currentConnection = usePersistedStore.getState().currentConnection
 
     try {
-        const response = await portainerClient().PUT('/stacks/{id}', {
+        // Portainer replaces the stack's variables with whatever is sent, so an
+        // omitted env must be the server's current one, never an empty list.
+        const env = options.env ?? (await fetchStack(stackId)).Env ?? []
+
+        await portainerClient().PUT('/stacks/{id}', {
             params: {
                 path: {
                     id: stackId,
@@ -571,18 +507,30 @@ export async function updateStackFile(
                 },
             },
             body: {
-                stackFileContent,
-                env: options.env || [],
-                prune: options.prune ?? false,
-                pullImage: options.pullImage ?? false,
+                StackFileContent: stackFileContent,
+                Env: env,
+                Prune: options.prune ?? false,
+                // PullImage is deprecated since Portainer 2.36 in favour of
+                // RepullImageAndRedeploy; sending both works on every version.
+                PullImage: options.pullImage ?? false,
+                RepullImageAndRedeploy: options.pullImage ?? false,
             },
         })
-
-        if (response.error) {
-            throw new Error('Failed to update stack file')
-        }
     } catch (error) {
         console.error('Error updating stack file:', error)
         throw error
     }
+}
+
+export async function updateStackEnv(
+    stackId: number,
+    env: Array<{ name: string; value: string }>
+): Promise<void> {
+    const file = await fetchStackFile(stackId)
+
+    if (!file?.StackFileContent) {
+        throw new Error('Could not read the current stack file')
+    }
+
+    await updateStackFile(stackId, file.StackFileContent, { env })
 }

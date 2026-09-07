@@ -1,3 +1,4 @@
+import pRetry from 'p-retry'
 import ReactNativeBlobUtil, { type FetchBlobResponse } from 'react-native-blob-util'
 
 type RequestConfig = {
@@ -16,6 +17,18 @@ type RequestConfig = {
     body?: any
 }
 
+// Transient statuses worth retrying; definitive errors (401, 404) are not.
+const RETRYABLE_STATUSES = new Set([408, 429, 500, 502, 503, 504])
+
+class RetryableStatusError extends Error {
+    readonly response: FetchBlobResponse
+
+    constructor(response: FetchBlobResponse) {
+        super(`Retryable HTTP status ${response.respInfo.status}`)
+        this.response = response
+    }
+}
+
 export default async function guestClient(
     baseUrl: string,
     path: string,
@@ -29,24 +42,37 @@ export default async function guestClient(
     }
 
     const fullUrl = `${baseUrl}${path}`
+    const method = config.method || 'GET'
+    const body = config.body ? JSON.stringify(config.body) : undefined
 
     try {
-        const response = await ReactNativeBlobUtil.config({
-            trusty: true,
-        }).fetch(
-            config.method || 'GET',
-            fullUrl,
-            headers,
-            config.body ? JSON.stringify(config.body) : undefined
-        )
+        return await pRetry(
+            async () => {
+                const response = await ReactNativeBlobUtil.config({
+                    trusty: true,
+                }).fetch(method, fullUrl, headers, body)
 
-        return response
+                if (RETRYABLE_STATUSES.has(response.respInfo.status)) {
+                    throw new RetryableStatusError(response)
+                }
+
+                return response
+            },
+            {
+                retries: 5,
+                minTimeout: 250,
+            }
+        )
     } catch (error) {
+        // Retries exhausted on an HTTP error: hand back the last response so
+        // callers still see its status and body.
+        if (error instanceof RetryableStatusError) return error.response
+
         console.error('Fetch error details:', {
             error,
             url: fullUrl,
             headers,
-            method: config.method || 'GET',
+            method,
         })
         throw error
     }

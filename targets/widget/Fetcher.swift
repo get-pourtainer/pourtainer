@@ -11,293 +11,153 @@ enum HTTPMethod: String {
 
 // Parameters needed to perform an HTTP request to Pourtainer API
 struct FetchParams {
-    let method: HTTPMethod  // HTTP method to use (GET, POST, etc.)
-    let url: String         // API endpoint path (must start with /)
-    let connection: Connection  // Connection containing server URL and authentication information
+    let method: HTTPMethod
+    let url: String           // API endpoint path (must start with /)
+    let connection: Connection
+}
+
+/// A non-2xx response. `body` is the server's error text when present.
+struct HTTPError: Error, LocalizedError {
+    let statusCode: Int
+    let body: String?
+
+    var isNotFound: Bool { statusCode == 404 }
+    var errorDescription: String? { "HTTP \(statusCode)" }
+}
+
+struct RequestError: Error, LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
 }
 
 /**
- * Delegate class to handle self-signed SSL certificates
- * This allows the app to connect to servers with self-signed certificates
+ * Accepts the self-signed certificates typical of self-hosted Portainer, but
+ * only for hosts the user configured and only for server-trust challenges.
+ * Client-certificate or NTLM challenges fall through to the system default.
  */
-class SelfSignedSSLDelegate: NSObject, URLSessionDelegate {
-    public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        // Accept the server trust and proceed with the connection
-        let urlCredential = URLCredential(trust: challenge.protectionSpace.serverTrust!)
-        completionHandler(.useCredential, urlCredential)
+final class SelfSignedSSLDelegate: NSObject, URLSessionDelegate {
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let trust = challenge.protectionSpace.serverTrust,
+              configuredHosts().contains(challenge.protectionSpace.host) else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+
+        completionHandler(.useCredential, URLCredential(trust: trust))
+    }
+
+    private func configuredHosts() -> Set<String> {
+        Set(loadConnections().compactMap { URL(string: $0.url)?.host })
     }
 }
 
+// One session for the whole extension; a session per request leaks
+private let sharedSession: URLSession = {
+    let configuration = URLSessionConfiguration.default
+    configuration.timeoutIntervalForRequest = 15
+    configuration.waitsForConnectivity = false
+    return URLSession(configuration: configuration, delegate: SelfSignedSSLDelegate(), delegateQueue: nil)
+}()
+
 /**
- * Performs an HTTP request using the provided parameters
- * 
- * @param params Parameters for the HTTP request (method, URL, authentication)
- * @param completion Callback with the result (Data on success or Error on failure)
+ * Performs an HTTP request and returns the response body. Redirects, including
+ * http -> https, are followed by URLSession.
  */
-private func fetch(params: FetchParams, completion: @escaping (Result<Data, Error>) -> Void) {
-    // Validate URL format - must start with /
-    if (!params.url.starts(with: "/")) {
-        return completion(.failure(
-            NSError(
-                domain: "InvalidUrl", 
-                code: 0, 
-                userInfo: [NSLocalizedDescriptionKey: "URL should start with /"]
-            )
-        ))
+func fetch(params: FetchParams) async throws -> Data {
+    guard params.url.hasPrefix("/") else {
+        throw RequestError(message: "URL should start with /")
     }
 
-    // Build the full URL by combining connection URL and endpoint path
-    let fullUrlString = "\(params.connection.url)\(params.url)"
-
-    guard let fullUrl = URL(string: fullUrlString) else {
-        return completion(.failure(
-            NSError(
-                domain: "InvalidURL", 
-                code: 0, 
-                userInfo: [NSLocalizedDescriptionKey: "Invalid URL"]
-            )
-        ))
+    guard let fullUrl = URL(string: "\(params.connection.url)\(params.url)") else {
+        throw RequestError(message: "Invalid URL")
     }
 
-    // Configure the request with required headers and authentication
     var request = URLRequest(url: fullUrl)
     request.httpMethod = params.method.rawValue
     request.addValue("application/json", forHTTPHeaderField: "Accept")
     request.addValue(params.connection.accessToken, forHTTPHeaderField: "x-api-key")
 
-    // Create session with SSL delegate for self-signed certificates
-    let session = URLSession(
-        configuration: .default, 
-        delegate: SelfSignedSSLDelegate(), 
-        delegateQueue: OperationQueue.main
-    )
+    let (data, response) = try await sharedSession.data(for: request)
 
-    // Execute the request and handle the response
-    let task = session.dataTask(with: request) { data, response, error in
-        // Handle connection error (network issues, timeouts, etc.)
-        if let error = error {
-            completion(.failure(error))
-            return
-        }
-
-        // Validate HTTP response
-        guard let httpResponse = response as? HTTPURLResponse else {
-            return completion(.failure(
-                NSError(
-                    domain: "InvalidResponse", 
-                    code: 0, 
-                    userInfo: [NSLocalizedDescriptionKey: "Invalid response"]
-                )
-            ))
-        }
-
-        // Handle HTTP error status codes (non-2xx responses)
-        if !(200...299).contains(httpResponse.statusCode) {
-            let error = NSError(
-                domain: "HTTPError", 
-                code: httpResponse.statusCode, 
-                userInfo: [NSLocalizedDescriptionKey: "HTTP Error: \(httpResponse.statusCode)"]
-            )
-
-            // Log error response body for debugging
-            if let data = data, let errorString = String(data: data, encoding: .utf8) {
-                print("Error Response Body: \(errorString)")
-            }
-
-            return completion(.failure(error))
-        }
-
-        // Ensure data was received in the response
-        guard let data = data else {
-            return completion(.failure(
-                NSError(
-                    domain: "NoData", 
-                    code: 0, 
-                    userInfo: [NSLocalizedDescriptionKey: "No data received"]
-                )
-            ))
-        }
-
-        completion(.success(data))
+    guard let httpResponse = response as? HTTPURLResponse else {
+        throw RequestError(message: "Invalid response")
     }
 
-    task.resume()
+    guard (200...299).contains(httpResponse.statusCode) else {
+        throw HTTPError(statusCode: httpResponse.statusCode, body: String(data: data, encoding: .utf8))
+    }
+
+    return data
 }
 
-/**
- * Generic HTTP request function that decodes JSON response to the specified type
- * Provides modern Swift async/await interface over the completion handler pattern
- * 
- * @param params Parameters for the HTTP request
- * @return Decoded object of type T
- * @throws Error if the request fails or response cannot be decoded
- */
 func httpRequest<T: Decodable>(params: FetchParams) async throws -> T {
-    try await withCheckedThrowingContinuation { continuation in
-        fetch(params: params) { result in
-            switch result {
-            case .success(let data):
-                do {
-                    let decoder = JSONDecoder()
-                    let decodedResult = try decoder.decode(T.self, from: data)
-                    continuation.resume(returning: decodedResult)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            case .failure(let error):
-                continuation.resume(throwing: error)
-            }
-        }
-    }
+    let data = try await fetch(params: params)
+    return try JSONDecoder().decode(T.self, from: data)
+}
+
+/// Only network failures and 5xx responses are worth another attempt.
+private func isRetryable(_ error: Error) -> Bool {
+    if error is CancellationError { return false }
+    if let httpError = error as? HTTPError { return httpError.statusCode >= 500 }
+    return true
 }
 
 /**
- * Generic HTTP request function with automatic retry capability
- * Attempts the request multiple times with exponential backoff for transient failures
- * This helps improve reliability over unstable networks
- * 
- * @param params Parameters for the HTTP request
- * @param maxAttempts Maximum number of retry attempts (default: 3)
- * @param baseDelay Base delay in seconds before retrying (default: 1.0)
- * @return Decoded object of type T
- * @throws Error if all retry attempts fail
+ * Retries with exponential backoff: baseDelay * 2^(attempt-1).
  */
+func withRetry<T>(
+    maxAttempts: Int = 3,
+    baseDelay: TimeInterval = 1.0,
+    _ operation: () async throws -> T
+) async throws -> T {
+    var attempts = 0
+    var lastError: Error?
+
+    while attempts < maxAttempts {
+        do {
+            try Task.checkCancellation()
+            return try await operation()
+        } catch {
+            attempts += 1
+            lastError = error
+
+            if attempts >= maxAttempts || !isRetryable(error) {
+                break
+            }
+
+            let delayNanoseconds = UInt64(baseDelay * pow(2.0, Double(attempts - 1)) * 1_000_000_000)
+            try await Task.sleep(nanoseconds: delayNanoseconds)
+        }
+    }
+
+    throw lastError ?? RequestError(message: "All retry attempts failed")
+}
+
 func httpRequestWithRetry<T: Decodable>(
     params: FetchParams,
     maxAttempts: Int = 3,
     baseDelay: TimeInterval = 1.0
 ) async throws -> T {
-    var attempts = 0
-    var lastError: Error?
-    
-    // Try up to maxAttempts times
-    while attempts < maxAttempts {
-        do {
-            // Check for task cancellation
-            try Task.checkCancellation()
-            
-            // Attempt the request
-            return try await httpRequest(params: params)
-        } catch {
-            attempts += 1
-            lastError = error
-            
-            // Don't wait if this was our last attempt
-            if attempts >= maxAttempts {
-                break
-            }
-            
-            // Check for certain error types that shouldn't be retried
-            let nsError = error as NSError
-            
-            // Don't retry authentication or permission errors
-            if nsError.domain == "HTTPError" && (nsError.code == 401 || nsError.code == 403) {
-                break
-            }
-            
-            // Don't retry bad requests or not found errors
-            if nsError.domain == "HTTPError" && (nsError.code == 400 || nsError.code == 404) {
-                break
-            }
-            
-            // Calculate exponential backoff delay: baseDelay * 2^(attempts-1)
-            // e.g., with baseDelay=1: 1s, 2s, 4s, etc.
-            let delayNanoseconds = UInt64(baseDelay * pow(2.0, Double(attempts-1)) * 1_000_000_000)
-            
-            // Wait before retrying
-            try await Task.sleep(nanoseconds: delayNanoseconds)
-        }
+    try await withRetry(maxAttempts: maxAttempts, baseDelay: baseDelay) {
+        try await httpRequest(params: params)
     }
-    
-    // If we get here, all attempts failed
-    throw lastError ?? NSError(
-        domain: "RetryFailed", 
-        code: 0, 
-        userInfo: [NSLocalizedDescriptionKey: "All retry attempts failed"]
-    )
 }
 
-/**
- * Fetches raw data from an HTTP request without JSON decoding
- * Useful for endpoints that return non-JSON data like logs
- * 
- * @param params Parameters for the HTTP request
- * @return Raw Data from the server response
- * @throws Error if the request fails
- */
 func httpRequestRawData(params: FetchParams) async throws -> Data {
-    try await withCheckedThrowingContinuation { continuation in
-        fetch(params: params) { result in
-            switch result {
-            case .success(let data):
-                continuation.resume(returning: data)
-            case .failure(let error):
-                continuation.resume(throwing: error)
-            }
-        }
-    }
+    try await fetch(params: params)
 }
 
-/**
- * Fetches raw data with automatic retry capability
- * Similar to httpRequestWithRetry but returns raw Data instead of decoded JSON
- * 
- * @param params Parameters for the HTTP request
- * @param maxAttempts Maximum number of retry attempts (default: 3)
- * @param baseDelay Base delay in seconds before retrying (default: 1.0)
- * @return Raw Data from the server response
- * @throws Error if all retry attempts fail
- */
 func httpRequestRawDataWithRetry(
     params: FetchParams,
     maxAttempts: Int = 3,
     baseDelay: TimeInterval = 1.0
 ) async throws -> Data {
-    var attempts = 0
-    var lastError: Error?
-    
-    // Try up to maxAttempts times
-    while attempts < maxAttempts {
-        do {
-            // Check for task cancellation
-            try Task.checkCancellation()
-            
-            // Attempt the request
-            return try await httpRequestRawData(params: params)
-        } catch {
-            attempts += 1
-            lastError = error
-            
-            // Don't wait if this was our last attempt
-            if attempts >= maxAttempts {
-                break
-            }
-            
-            // Check for certain error types that shouldn't be retried
-            let nsError = error as NSError
-            
-            // Don't retry authentication or permission errors
-            if nsError.domain == "HTTPError" && (nsError.code == 401 || nsError.code == 403) {
-                break
-            }
-            
-            // Don't retry bad requests or not found errors
-            if nsError.domain == "HTTPError" && (nsError.code == 400 || nsError.code == 404) {
-                break
-            }
-            
-            // Calculate exponential backoff delay: baseDelay * 2^(attempts-1)
-            let delayNanoseconds = UInt64(baseDelay * pow(2.0, Double(attempts-1)) * 1_000_000_000)
-            
-            // Wait before retrying
-            try await Task.sleep(nanoseconds: delayNanoseconds)
-        }
+    try await withRetry(maxAttempts: maxAttempts, baseDelay: baseDelay) {
+        try await httpRequestRawData(params: params)
     }
-    
-    // If we get here, all attempts failed
-    throw lastError ?? NSError(
-        domain: "RetryFailed", 
-        code: 0, 
-        userInfo: [NSLocalizedDescriptionKey: "All retry attempts failed"]
-    )
 }

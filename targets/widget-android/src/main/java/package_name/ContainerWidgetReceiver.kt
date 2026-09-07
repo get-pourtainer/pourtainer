@@ -1,21 +1,22 @@
 package com.pourtainer.mobile
 
 import Container
-import LogLine
+import SelectedContainer
 import WidgetIntentState
+import android.appwidget.AppWidgetManager
 import android.content.Context
-import android.content.Intent
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -23,240 +24,102 @@ import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import savedConnectionsKey
-import savedWidgetStateKey
 import java.util.concurrent.TimeUnit
-import isSubscribedKey
 
-class ContainerWidgetReceiver: GlanceAppWidgetReceiver() {
+class ContainerWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = ContainerWidget()
 
     companion object {
-        const val sharedPreferencesGroup = "group.com.pourtainer.mobile"
         val selectedContainerKey = stringPreferencesKey("selectedContainer")
         val widgetStateKey = stringPreferencesKey("state")
         val containerMetadataKey = stringPreferencesKey("containerMetadata")
-        val connectionsKey = stringPreferencesKey("connections")
         val containerLogsKey = stringPreferencesKey("containerLogs")
-		  val isSubscribedValueKey = booleanPreferencesKey("isSubscribed")
+
+        // WorkManager clamps anything shorter to this anyway
+        private const val REFRESH_MINUTES = 15L
+
+        fun periodicWorkName(appWidgetId: Int) = "widget_update_$appWidgetId"
+        fun immediateWorkName(appWidgetId: Int) = "widget_update_now_$appWidgetId"
+
+        private fun networkConstraints() =
+            Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+
+        /** KEEP on update ticks so the period is not reset; UPDATE on (re)configuration. */
+        fun ensurePeriodicWork(
+            context: Context,
+            appWidgetId: Int,
+            policy: ExistingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.KEEP
+        ) {
+            val work = PeriodicWorkRequestBuilder<ContainerWidgetDataWorker>(REFRESH_MINUTES, TimeUnit.MINUTES)
+                .setInputData(workDataOf(ContainerWidgetDataWorker.appWidgetIdKey to appWidgetId))
+                .setConstraints(networkConstraints())
+                .build()
+
+            WorkManager.getInstance(context)
+                .enqueueUniquePeriodicWork(periodicWorkName(appWidgetId), policy, work)
+        }
+
+        /** Fetches right away, so a freshly configured widget does not wait a full period. */
+        fun refreshNow(context: Context, appWidgetId: Int) {
+            val work = OneTimeWorkRequestBuilder<ContainerWidgetDataWorker>()
+                .setInputData(workDataOf(ContainerWidgetDataWorker.appWidgetIdKey to appWidgetId))
+                .setConstraints(networkConstraints())
+                .build()
+
+            WorkManager.getInstance(context)
+                .enqueueUniqueWork(immediateWorkName(appWidgetId), ExistingWorkPolicy.REPLACE, work)
+        }
+
+        fun cancelWork(context: Context, appWidgetId: Int) {
+            val workManager = WorkManager.getInstance(context)
+            workManager.cancelUniqueWork(periodicWorkName(appWidgetId))
+            workManager.cancelUniqueWork(immediateWorkName(appWidgetId))
+        }
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == "android.appwidget.action.APPWIDGET_UPDATE") {
-            CoroutineScope(Dispatchers.IO).launch {
-                val glanceIds = GlanceAppWidgetManager(context).getGlanceIds(ContainerWidget::class.java)
-                val sharedPrefs = context.getSharedPreferences(sharedPreferencesGroup, Context.MODE_PRIVATE)
+    // Glance's own onReceive dispatches onUpdate/onDeleted/resizes and registers the
+    // widget ids that GlanceAppWidgetManager resolves; it must not be overridden.
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
 
-                glanceIds.forEach { glanceId ->
-                    updateAppWidgetState(
-                        context = context,
-                        definition = PreferencesGlanceStateDefinition,
-                        glanceId = glanceId
-                    ) { prefs ->
-                        val rawContainer = prefs[selectedContainerKey] ?: "null"
-                        val container = Gson().fromJson(rawContainer, Container::class.java)
-
-                        if (container != null) {
-                            schedulePeriodicWork(context, glanceId, container)
-                        }
-
-                        prefs.toMutablePreferences().apply {
-                            this[connectionsKey] = sharedPrefs.getString(savedConnectionsKey, "null").toString()
-                            this[widgetStateKey] = sharedPrefs.getInt(savedWidgetStateKey, WidgetIntentState.LOADING.value).toString()
-                            this[isSubscribedValueKey] = sharedPrefs.getBoolean(isSubscribedKey, false)
-                        }
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val manager = GlanceAppWidgetManager(context)
+                appWidgetIds.forEach { appWidgetId ->
+                    val glanceId = runCatching { manager.getGlanceIdBy(appWidgetId) }.getOrNull()
+                        ?: return@forEach
+                    val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
+                    if (prefs[selectedContainerKey] != null) {
+                        ensurePeriodicWork(context, appWidgetId)
                     }
-
-                    glanceAppWidget.update(context, glanceId)
                 }
+            } finally {
+                pendingResult.finish()
             }
         }
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         super.onDeleted(context, appWidgetIds)
-
-        appWidgetIds.forEach { appWidgetId ->
-            val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
-            val workManager = WorkManager.getInstance(context)
-
-            // widget should no longer get periodic updates
-            workManager.cancelUniqueWork("widget_update_${glanceId.hashCode()}")
-        }
+        appWidgetIds.forEach { cancelWork(context, it) }
     }
 
-    fun onContainerSelected(context: Context, glanceId: GlanceId, container: Container?, isSubscribed: Boolean) {
-        if (container == null) {
-            return
-        }
+    /** Called from the configuration activity once the user picks a container. */
+    suspend fun onContainerSelected(context: Context, appWidgetId: Int, container: Container) {
+        val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val glanceIds = GlanceAppWidgetManager(context).getGlanceIds(ContainerWidget::class.java)
-
-            glanceIds.forEach { runningGlanceId ->
-                if (runningGlanceId == glanceId) {
-                    updateAppWidgetState(
-                        context = context,
-                        definition = PreferencesGlanceStateDefinition,
-                        glanceId = glanceId
-                    ) { prefs ->
-                        prefs.toMutablePreferences().apply {
-                            this[selectedContainerKey] = Gson().toJson(container)
-							this[isSubscribedValueKey] = isSubscribed
-                        }
-                    }
-
-                    glanceAppWidget.update(context, glanceId)
-                    schedulePeriodicWork(context, glanceId, container)
-                }
+        updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
+            prefs.toMutablePreferences().apply {
+                this[selectedContainerKey] = Gson().toJson(SelectedContainer.from(container))
+                this[widgetStateKey] = WidgetIntentState.LOADING.name
+                remove(containerMetadataKey)
+                remove(containerLogsKey)
             }
         }
-    }
 
-    /**
-     * Updates the widget with container and log information
-     * 
-     * @param context Application context
-     * @param glanceId ID of the widget to update
-     * @param container Container data to display
-     * @param logs List of log lines to display
-     */
-    fun onStatusUpdated(context: Context, glanceId: GlanceId, container: Container?, logs: List<LogLine> = emptyList()) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val glanceIds = GlanceAppWidgetManager(context).getGlanceIds(ContainerWidget::class.java)
-
-            glanceIds.forEach { runningGlanceId ->
-                if (runningGlanceId == glanceId) {
-                    updateAppWidgetState(
-                        context = context,
-                        definition = PreferencesGlanceStateDefinition,
-                        glanceId = glanceId
-                    ) { prefs ->
-                        prefs.toMutablePreferences().apply {
-                            // Store container data
-                            this[containerMetadataKey] = Gson().toJson(container)
-                            
-                            // Store log data
-                            this[containerLogsKey] = Gson().toJson(logs)
-                            
-                            // Update widget state to show we have container data
-                            this[widgetStateKey] = if (container != null) {
-                                WidgetIntentState.HAS_CONTAINERS.toString()
-                            } else {
-                                WidgetIntentState.NO_CONTAINERS.toString()
-                            }
-                        }
-                    }
-
-                    glanceAppWidget.update(context, glanceId)
-                    
-                    // If container was updated successfully, adjust the refresh interval based on status
-                    if (container != null) {
-                        updateRefreshInterval(context, glanceId, container)
-                    }
-                }
-            }
-        }
-    }
-
-    fun onFetchError(context: Context, glanceId: GlanceId) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val glanceIds = GlanceAppWidgetManager(context).getGlanceIds(ContainerWidget::class.java)
-
-            glanceIds.forEach { runningGlanceId ->
-                if (runningGlanceId == glanceId) {
-                    updateAppWidgetState(
-                        context = context,
-                        definition = PreferencesGlanceStateDefinition,
-                        glanceId = glanceId
-                    ) { prefs ->
-                        prefs.toMutablePreferences().apply {
-                            this[widgetStateKey] = WidgetIntentState.API_FAILED.toString()
-                        }
-                    }
-
-                    glanceAppWidget.update(context, glanceId)
-                }
-            }
-        }
-    }
-
-    /**
-     * Schedules periodic work to update the widget with container data
-     * Initial schedule with 15-minute interval
-     */
-    private fun schedulePeriodicWork(context: Context, glanceId: GlanceId, container: Container) {
-        val workManager = WorkManager.getInstance(context)
-
-        // cancel previous jobs if present
-        workManager.cancelUniqueWork("widget_update_${glanceId.hashCode()}")
-
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-        val work = PeriodicWorkRequestBuilder<ContainerWidgetDataWorker>(15, TimeUnit.MINUTES)
-            .setInputData(
-                workDataOf(
-                    ContainerWidgetDataWorker.containerKey to Gson().toJson(container),
-                    ContainerWidgetDataWorker.glanceIdKey to glanceId.hashCode().toString()
-                )
-            )
-            .setConstraints(constraints)
-            .build()
-
-        workManager.enqueueUniquePeriodicWork(
-            "widget_update_${glanceId.hashCode()}",
-            ExistingPeriodicWorkPolicy.UPDATE,
-            work
-        )
-    }
-    
-    /**
-     * Updates the refresh interval based on container status
-     * Similar to the iOS implementation's smart refresh policy
-     */
-    private suspend fun updateRefreshInterval(context: Context, glanceId: GlanceId, container: Container) {
-        val workManager = WorkManager.getInstance(context)
-        
-        // Get the refresh interval based on container status
-        val refreshMinutes = when (container.state) {
-            "running" -> 5     // Active containers update more frequently (5 minutes)
-            "exited" -> 30     // Inactive containers update less frequently (30 minutes)
-            else -> 15         // Unknown status - use a moderate refresh rate (15 minutes)
-        }
-        
-        // Get the previously selected container to use in the new work request
-        var selectedContainerJson = "null"
-        
-        updateAppWidgetState(
-            context = context,
-            definition = PreferencesGlanceStateDefinition,
-            glanceId = glanceId
-        ) { prefs -> 
-            selectedContainerJson = prefs[selectedContainerKey] ?: "null"
-            prefs // Return the preferences unmodified
-        }
-        
-        // Create new work request with adjusted interval
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-        val work = PeriodicWorkRequestBuilder<ContainerWidgetDataWorker>(refreshMinutes.toLong(), TimeUnit.MINUTES)
-            .setInputData(
-                workDataOf(
-                    ContainerWidgetDataWorker.containerKey to selectedContainerJson,
-                    ContainerWidgetDataWorker.glanceIdKey to glanceId.hashCode().toString()
-                )
-            )
-            .setConstraints(constraints)
-            .build()
-
-        // Update the work schedule
-        workManager.enqueueUniquePeriodicWork(
-            "widget_update_${glanceId.hashCode()}",
-            ExistingPeriodicWorkPolicy.UPDATE,
-            work
-        )
+        glanceAppWidget.update(context, glanceId)
+        ensurePeriodicWork(context, appWidgetId, ExistingPeriodicWorkPolicy.UPDATE)
+        refreshNow(context, appWidgetId)
     }
 }

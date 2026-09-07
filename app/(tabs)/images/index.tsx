@@ -109,30 +109,37 @@ export default function ImagesScreen() {
         async (image: Image, actionName: string) => {
             if (actionName === 'Copy ID') {
                 Clipboard.setString(image.id)
-            } else if (actionName === 'Delete') {
-                try {
-                    await deleteImage(image.id)
-                    queryClient.invalidateQueries({ queryKey: ['images'] })
-                } catch (error) {
-                    Sentry.captureException(error)
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-                    Alert.alert(
-                        'Error',
-                        error instanceof Error ? error.message : 'Failed to delete image'
-                    )
-                }
-            } else if (actionName === 'Force Delete') {
-                try {
-                    await deleteImage(image.id, { force: true })
-                    queryClient.invalidateQueries({ queryKey: ['images'] })
-                } catch (error) {
-                    Sentry.captureException(error)
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-                    Alert.alert(
-                        'Error',
-                        error instanceof Error ? error.message : 'Failed to force delete image'
-                    )
-                }
+            } else if (actionName === 'Delete' || actionName === 'Force Delete') {
+                const force = actionName === 'Force Delete'
+                const label = image.tags?.[0] || image.id.substring(7, 19)
+                Alert.alert(
+                    force ? 'Force Delete Image' : 'Delete Image',
+                    `Delete "${label}"? This cannot be undone.`,
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                            text: 'Delete',
+                            style: 'destructive',
+                            onPress: async () => {
+                                try {
+                                    await deleteImage(image.id, force ? { force: true } : undefined)
+                                    queryClient.invalidateQueries({ queryKey: ['images'] })
+                                } catch (error) {
+                                    Sentry.captureException(error)
+                                    Haptics.notificationAsync(
+                                        Haptics.NotificationFeedbackType.Error
+                                    )
+                                    Alert.alert(
+                                        'Error',
+                                        error instanceof Error
+                                            ? error.message
+                                            : `Failed to ${force ? 'force ' : ''}delete image`
+                                    )
+                                }
+                            },
+                        },
+                    ]
+                )
             } else {
                 Alert.alert(
                     'Coming soon :)',
@@ -258,7 +265,7 @@ export default function ImagesScreen() {
                     <ImageRow image={image} />
                 </ContextMenu>
             )}
-            keyExtractor={(image) => image.id}
+            keyExtractor={(image) => `${image.nodeName}:${image.id}`}
             contentInsetAdjustmentBehavior="automatic"
             refreshControl={<RefreshControl onRefresh={imagesQuery.refetch} />}
         />

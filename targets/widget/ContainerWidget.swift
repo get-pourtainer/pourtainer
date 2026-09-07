@@ -3,290 +3,149 @@ import SwiftUI
 
 /**
  * Timeline provider for the Container widget
- * Responsible for providing widget timeline entries and data
  */
 struct Provider: AppIntentTimelineProvider {
-    /**
-     * This function will be called BEFORE widget is initialized
-     * We should pass here placeholder data for the widget loading state
-     * Used during widget gallery preview and initial loading
-     */
     func placeholder(in context: Context) -> WidgetEntry {
         placeholderWidget
     }
 
-    /**
-     * This function will be called when user configures the widget
-     * or when viewing in the home screen widget gallery
-     * Should display placeholder data that represents the widget appearance
-     */
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> WidgetEntry {
         placeholderWidget
     }
 
     /**
-     * Responsible for telling iOS WHEN widget should update + fetching data
-     * Creates a timeline of widget entries that determine when to refresh
-     * This is the main function that provides real data to the widget
-     * Enhanced with proper task management and cancellation handling
-     * 
-     * @param configuration The user's widget configuration with selected container
-     * @param context The widget context information
-     * @return Timeline with entries and refresh policy
+     * Decides the widget status once and always schedules the next refresh, so
+     * an unconfigured or failing widget recovers without launching the app.
      */
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<WidgetEntry> {
-        // Check for task cancellation at entry point
-        try? Task.checkCancellation()
-        
-        var entries: [WidgetEntry] = []
-		var isSubscribed: Bool = false
-		
-		if let sharedDefaults = UserDefaults(suiteName: appGroupName) {
-			let isSubscribedValue = sharedDefaults.bool(forKey: isSubscribedKey)
-			
-			isSubscribed = isSubscribedValue
-		}
+        let now = Date()
+        let refreshPolicy: TimelineReloadPolicy = .after(now.addingTimeInterval(15 * 60))
 
-        let currentDate = Date()
-        let connections = self.getConnections()
-        let hasContainers = self.hasContainers()
-        
-        // Early return if container configuration is incomplete
-        guard let containerId = configuration.container?.id,
-              let connection = configuration.container?.connection,
-              let endpoint = configuration.container?.endpoint else {
-            // No container selected, don't refresh
-            let entry = WidgetEntry(
-                date: currentDate, 
-                hasConnections: !connections.isEmpty, 
-                hasContainers: hasContainers, 
-                selectedContainer: nil,
-                logLines: [],
-                isSubscribed: isSubscribed,
-                connectionId: nil,
-                endpointId: nil
+        func timeline(_ status: WidgetStatus, connectionId: String? = nil, endpointId: Int? = nil) -> Timeline<WidgetEntry> {
+            Timeline(
+                entries: [WidgetEntry(date: now, status: status, connectionId: connectionId, endpointId: endpointId)],
+                policy: refreshPolicy
             )
-            
-            return Timeline(entries: [entry], policy: .never)
-        }
-        
-        // Try to fetch the selected container
-       var container: Container?
-        do {
-            // Create a high-priority task for fetching the container
-            // User-initiated priority is appropriate for foreground operations
-            let containerTask = Task(priority: .userInitiated) {
-                try await fetchContainer(
-                    connection: connection, 
-                    endpoint: endpoint, 
-                    containerId: containerId
-                )
-            }
-            
-            // Await the result, which can throw if cancelled
-            container = try await containerTask.value
-            
-            // If container name starts with '/', create a new container with the modified name
-            if let fetchedContainer = container, fetchedContainer.Name.hasPrefix("/") {
-                let modifiedName = String(fetchedContainer.Name.dropFirst())
-                container = Container(
-                    Id: fetchedContainer.Id,
-                    Name: modifiedName,
-                    State: fetchedContainer.State
-                )
-            }
-        } catch is CancellationError {
-            // Handle cancellation gracefully
-            container = nil
-        } catch {
-            // Handle other errors
-            print("Error fetching container: \(error.localizedDescription)")
-            container = nil
         }
 
-        let refreshPolicy: TimelineReloadPolicy = .after(Date().addingTimeInterval(15 * 60)) // 15 minutes
-        
-        // Fetch logs if we have a valid container
-        var logLines: [LogLine] = []
-        if let container = container {
-            do {
-                // Create a task for fetching logs with lower priority
-                let logsTask = Task(priority: .utility) {
-                    try await fetchLogs(
-                        connection: connection,
-                        endpoint: endpoint,
-                        containerId: containerId
-                    )
-                }
-                
-                // Await logs result
-                let logs = try await logsTask.value
-                
-                // Process logs into separate lines
-                if !logs.isEmpty {
-                    // Split logs into lines, filter empty ones, and convert to LogLine objects
-                    let rawLines = logs.components(separatedBy: .newlines)
-                        .filter { !$0.isEmpty }
-                    
-                    // Limit to most recent 10 lines
-                    let limitedLines = rawLines.count > 10 ? Array(rawLines.suffix(10)) : rawLines
-                    
-                    // Process and create LogLine objects
-                    logLines = limitedLines.map { line in
-                        let processedLine: String
-                        if line.count > 150 {
-                            processedLine = String(line.prefix(150)) + "..."
-                        } else {
-                            processedLine = line
-                        }
-                        return LogLine(content: processedLine)
-                    }
-                }
-            } catch {
-                print("Error fetching logs: \(error.localizedDescription)")
-                // Don't fail the widget if logs can't be fetched
-                logLines = []
-            }
+        let connections = loadConnections()
+        if connections.isEmpty {
+            return timeline(.unauthorized)
         }
-        
-        // Create a single entry with the smart refresh policy
-        let entry = WidgetEntry(
-            date: currentDate,
-            hasConnections: !connections.isEmpty, 
-            hasContainers: hasContainers, 
-            selectedContainer: container,
-            logLines: logLines,
-            isSubscribed: isSubscribed,
-            connectionId: connection.id,
-            endpointId: endpoint.Id
-        )
-        
-        return Timeline(entries: [entry], policy: refreshPolicy)
+
+        if !isSubscribed() {
+            return timeline(.unsubscribed)
+        }
+
+        // Always use the live token for the picked connection, not the one
+        // captured when the widget was configured
+        guard let item = configuration.container,
+              let connection = connections.first(where: { $0.id == item.connection.id }) else {
+            return timeline(.notConfigured)
+        }
+
+        let endpoint = item.endpoint
+
+        do {
+            // Independent requests, so they run concurrently
+            async let fetched = fetchContainer(connection: connection, endpoint: endpoint, containerId: item.containerId)
+            async let logLines = fetchLogLines(connection: connection, endpoint: endpoint, containerId: item.containerId)
+
+            let result = try await fetched
+            let container = Container(
+                Id: result.Id,
+                Name: result.Name.hasPrefix("/") ? String(result.Name.dropFirst()) : result.Name,
+                State: result.State
+            )
+            let lines = await logLines
+
+            WidgetCache.storeLastEntry(
+                LastGoodEntry(container: container, logLines: lines.map(\.content), date: now),
+                id: item.id
+            )
+
+            return timeline(.loaded(container, lines), connectionId: connection.id, endpointId: endpoint.Id)
+        } catch let error as HTTPError where error.isNotFound {
+            return timeline(.notFound, connectionId: connection.id, endpointId: endpoint.Id)
+        } catch {
+            // Transient failure: show the last good data when there is any
+            let last = WidgetCache.loadLastEntry(id: item.id)
+            let status = WidgetStatus.apiError(
+                lastKnown: last?.container,
+                logLines: (last?.logLines ?? []).map { LogLine(content: $0) }
+            )
+            return timeline(status, connectionId: connection.id, endpointId: endpoint.Id)
+        }
     }
 
-    /**
-     * Gets stored connections from UserDefaults
-     * Retrieves saved Pourtainer connections from shared app group storage
-     * 
-     * @return Array of Connection objects, or empty array if none found
-     */
-    private func getConnections() -> [Connection] {
-        guard let sharedDefaults = UserDefaults(suiteName: appGroupName),
-              let rawExistingConnections = sharedDefaults.data(forKey: connectionsKey) else {
+    /// Logs are optional: a container without readable logs still renders.
+    private func fetchLogLines(connection: Connection, endpoint: Endpoint, containerId: String) async -> [LogLine] {
+        guard let logs = try? await fetchLogs(connection: connection, endpoint: endpoint, containerId: containerId) else {
             return []
         }
 
-        return (try? JSONDecoder().decode([Connection].self, from: rawExistingConnections)) ?? []
-    }
+        let lines = logs.components(separatedBy: "\n").filter { !$0.isEmpty }
 
-    /**
-     * Checks if the app has any containers stored
-     * Determines whether containers are available based on widget state
-     * 
-     * @return Boolean indicating if containers are available
-     */
-    private func hasContainers() -> Bool {
-        guard let sharedDefaults = UserDefaults(suiteName: appGroupName) else {
-            return false
+        return lines.suffix(10).map { line in
+            LogLine(content: line.count > 150 ? String(line.prefix(150)) + "..." : line)
         }
-
-        let state = WidgetIntentState(rawValue: sharedDefaults.integer(forKey: widgetStateKey))
-      
-        return state == .hasContainers
     }
 }
 
 /**
  * Main widget definition for container monitoring
- * Configures the widget appearance and behavior
- * Entry point for the widget's lifecycle and rendering
  */
 struct ContainerWidget: Widget {
     let kind: String = "ContainerWidget"
-	
-    /**
-     * Gets the current widget state from UserDefaults
-     * @return The current WidgetIntentState or nil if not set
-     */
-    private func getWidgetState() -> WidgetIntentState? {
-      guard let sharedDefaults = UserDefaults(suiteName: appGroupName) else {
-          return nil
-      }
-      
-      return WidgetIntentState(rawValue: sharedDefaults.integer(forKey: widgetStateKey))
-    }
-    
+
     private var backgroundColor: Color {
         if #available(iOS 26.0, *) {
-          return Color.clear
+            return Color.clear
         } else {
-          return Color("$background")
+            return Color("$background")
         }
     }
 
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { widget in
-            // Switch on the widget state to display the appropriate view
-            switch (widget.hasConnections, widget.hasContainers, self.getWidgetState(), widget.selectedContainer, widget.isSubscribed) {
-            // Case: No connections - user needs to sign in
-            case (false, _, _, _, _):
-                EntryView(
-                    title: "Unauthorized", 
-                    description: "Sign in with Pourtainer app"
-                )
-                .containerBackground(backgroundColor, for: .widget)
-                
-            // Case: No containers available
-            case (true, false, _, _, _), (true, true, .noContainers, nil, _):
-                EntryView(
-                    title: "No containers", 
-                    description: "Add your first Container to show it here."
-                )
-                .containerBackground(backgroundColor, for: .widget)
-                
-            // Case: Containers available but not selected in widget config
-            case (true, true, .hasContainers, nil, _):
-                EntryView(
-                    title: "Container not found", 
-                    description: "Please select another Container."
-                )
-                .containerBackground(backgroundColor, for: .widget)
-                
-            // Case: API error
-            case (true, true, .apiFailed, nil, _):
-                EntryView(
-                    title: "Api error", 
-                    description: "We couldn't fetch data from the API."
-                )
-                .containerBackground(backgroundColor, for: .widget)
-                
-            // Case: Loading or unknown state
-            case (true, true, .loading, nil, _), (true, true, .none, nil, _):
-                EntryView(
-                    title: "Loading...", 
-                    description: "We're getting your Container details."
-                )
-                .containerBackground(backgroundColor, for: .widget)
-                
-				
-			// Case: Not subscribed
-            case (true, true, _, _, false):
-                EntryView(
-                    title: "Subscription missing", 
-                    description: "Tap here to enable"
-                )
-                .containerBackground(backgroundColor, for: .widget)
-				.widgetURL(URL(string: "pourtainer://?showPaywall=1"))
-			
-            // Case: Container successfully loaded - show container info
-            case (true, true, _, let container?, _):
+        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
+            switch entry.status {
+            case .unauthorized:
+                EntryView(title: "Unauthorized", description: "Sign in with Pourtainer app")
+                    .containerBackground(backgroundColor, for: .widget)
+
+            case .unsubscribed:
+                EntryView(title: "Subscription missing", description: "Tap here to enable")
+                    .containerBackground(backgroundColor, for: .widget)
+                    .widgetURL(URL(string: "pourtainer://?showPaywall=1"))
+
+            case .notConfigured:
+                EntryView(title: "Not configured", description: "Edit the widget to pick a Container.")
+                    .containerBackground(backgroundColor, for: .widget)
+
+            case .notFound:
+                EntryView(title: "Container not found", description: "Please select another Container.")
+                    .containerBackground(backgroundColor, for: .widget)
+
+            case .apiError(let lastKnown, let logLines):
+                if let container = lastKnown {
+                    WidgetEntryView(
+                        selectedContainer: container,
+                        logLines: logLines,
+                        connectionId: entry.connectionId,
+                        endpointId: entry.endpointId
+                    )
+                } else {
+                    EntryView(title: "Api error", description: "We couldn't reach the server.")
+                        .containerBackground(backgroundColor, for: .widget)
+                }
+
+            case .loaded(let container, let logLines):
                 WidgetEntryView(
                     selectedContainer: container,
-                    logLines: widget.logLines,
-                    connectionId: widget.connectionId,
-                    endpointId: widget.endpointId
+                    logLines: logLines,
+                    connectionId: entry.connectionId,
+                    endpointId: entry.endpointId
                 )
-//                .containerBackground(Color("$background"), for: .widget)
             }
         }
         .configurationDisplayName("Container")
@@ -295,95 +154,33 @@ struct ContainerWidget: Widget {
     }
 }
 
-/**
- * Preview provider for the widget in Xcode
- * Shows multiple states of the widget for design and testing
- * Demonstrates all possible widget states in the preview canvas
- */
 #Preview("Container Widget", as: .systemSmall) {
     ContainerWidget()
 } timeline: {
-    // Unauthorized state
-    WidgetEntry(
-        date: .now, 
-        hasConnections: false, 
-        hasContainers: false, 
-        selectedContainer: nil,
-        logLines: [],
-		isSubscribed: true,
-        connectionId: nil,
-        endpointId: nil
-    )
-    // Signed in but no containers
-    WidgetEntry(
-        date: .now, 
-        hasConnections: true, 
-        hasContainers: false, 
-        selectedContainer: nil,
-        logLines: [],
-		isSubscribed: true,
-        connectionId: nil,
-        endpointId: nil
-    )
-    // Has containers but none selected
-    WidgetEntry(
-        date: .now, 
-        hasConnections: true, 
-        hasContainers: true, 
-        selectedContainer: nil,
-        logLines: [],
-		isSubscribed: true,
-        connectionId: nil,
-        endpointId: nil
-    )
-    // Container running state
+    WidgetEntry(date: .now, status: .unauthorized, connectionId: nil, endpointId: nil)
+    WidgetEntry(date: .now, status: .unsubscribed, connectionId: nil, endpointId: nil)
+    WidgetEntry(date: .now, status: .notConfigured, connectionId: nil, endpointId: nil)
+    WidgetEntry(date: .now, status: .notFound, connectionId: nil, endpointId: nil)
+    WidgetEntry(date: .now, status: .apiError(lastKnown: nil, logLines: []), connectionId: nil, endpointId: nil)
     WidgetEntry(
         date: .now,
-        hasConnections: true,
-        hasContainers: true,
-        selectedContainer: Container(
-            Id: "1", 
-            Name: "Pourtainer", 
-            State: ContainerState(StartedAt: "", Status: "running")
+        status: .loaded(
+            Container(Id: "1", Name: "Pourtainer", State: ContainerState(StartedAt: "", Status: "running")),
+            [
+                LogLine(content: "Starting application..."),
+                LogLine(content: "Connected to database"),
+                LogLine(content: "Server listening on port 8080")
+            ]
         ),
-        logLines: [
-            LogLine(content: "Starting application..."),
-            LogLine(content: "Connected to database"),
-            LogLine(content: "Server listening on port 8080"),
-            LogLine(content: "Received first request"),
-            LogLine(content: "Processing data...")
-        ],
-		isSubscribed: true,
         connectionId: "preview-connection",
         endpointId: 1
     )
-    // Container exited state
     WidgetEntry(
         date: .now,
-        hasConnections: true,
-        hasContainers: true,
-        selectedContainer: Container(
-            Id: "1", 
-            Name: "Pourtainer", 
-            State: ContainerState(StartedAt: "", Status: "exited")
+        status: .loaded(
+            Container(Id: "1", Name: "Pourtainer", State: ContainerState(StartedAt: "", Status: "exited")),
+            [LogLine(content: "Process exited with code 0")]
         ),
-        logLines: [LogLine(content: "Process exited with code 0")],
-		isSubscribed: true,
-        connectionId: "preview-connection",
-        endpointId: 1
-    )
-    // Container unknown state
-    WidgetEntry(
-        date: .now,
-        hasConnections: true,
-        hasContainers: true,
-        selectedContainer: Container(
-            Id: "1", 
-            Name: "Pourtainer", 
-            State: ContainerState(StartedAt: "", Status: "unknown")
-        ),
-        logLines: [LogLine(content: "Status update pending...")],
-		isSubscribed: true,
         connectionId: "preview-connection",
         endpointId: 1
     )

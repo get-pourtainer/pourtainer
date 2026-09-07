@@ -1,4 +1,5 @@
 import type { components } from '@/lib/docker/schema'
+import { shellJoin, shellSplit } from './shell'
 
 // Extract types from schema instead of redeclaring them
 export type LoggingDriver = NonNullable<
@@ -7,18 +8,22 @@ export type LoggingDriver = NonNullable<
 export type RestartPolicy = NonNullable<components['schemas']['RestartPolicy']['Name']>
 export type ConsoleMode = 'interactive-tty' | 'tty' | 'interactive' | 'none'
 
+type Mount = NonNullable<components['schemas']['HostConfig']['Mounts']>[number]
+
 // UI-friendly form types
 export interface ContainerEditForm {
     basic: {
         name: string
         image: string
-        logging: LoggingDriver
+        // '' keeps the daemon's default logging driver
+        logging: LoggingDriver | ''
         restartPolicy: RestartPolicy
     }
     ports: PortMapping[]
     commands: {
-        command: string[]
-        entrypoint: string[]
+        // One line each, tokenised with shellSplit on save
+        command: string
+        entrypoint: string
         workingDir: string
         user: string
         console: ConsoleMode
@@ -31,6 +36,11 @@ export interface ContainerEditForm {
         containerConfig: Partial<components['schemas']['ContainerConfig']>
         hostConfig: Partial<components['schemas']['HostConfig']>
         networkingConfig: components['schemas']['NetworkingConfig']
+        // Kept so an unchanged driver keeps its options and an unchanged
+        // policy keeps its retry count
+        originalLogging: LoggingDriver | ''
+        logConfigOptions: Record<string, string>
+        maximumRetryCount: number
     }
 }
 
@@ -38,6 +48,8 @@ export interface PortMapping {
     hostPort: string
     containerPort: string
     protocol: 'tcp' | 'udp'
+    // Preserved from the inspect response; not edited in the UI
+    hostIp?: string
 }
 
 export interface KeyValuePair {
@@ -50,6 +62,11 @@ export interface VolumeMapping {
     hostPath: string
     type: 'volume' | 'bind'
     readOnly: boolean
+    // Original bind mode flags (e.g. "z", "rprivate") so they survive a save
+    mode?: string
+    // Index into HostConfig.Mounts when the row came from there (compose long
+    // syntax); such rows are written back to Mounts instead of Binds
+    mountIndex?: number
 }
 
 type ContainerInspectResponse = components['schemas']['ContainerInspectResponse']
@@ -58,39 +75,36 @@ type ContainerCreateRequest = components['schemas']['ContainerConfig'] & {
     NetworkingConfig: components['schemas']['NetworkingConfig']
 }
 
+const RESTART_POLICIES: RestartPolicy[] = ['always', 'on-failure', 'unless-stopped', 'no']
+
+function toConsoleMode(interactive: boolean, tty: boolean): ConsoleMode {
+    if (interactive && tty) return 'interactive-tty'
+    if (tty) return 'tty'
+    if (interactive) return 'interactive'
+    return 'none'
+}
+
+// Bind mode flags ("ro,z") without the access bit, which the form owns
+function modeFlags(mode: string | undefined): string[] {
+    return (mode || '').split(',').filter((flag) => flag && flag !== 'ro' && flag !== 'rw')
+}
+
 export function inspectResponseToEditForm(container: ContainerInspectResponse): ContainerEditForm {
-    // Fixed: Properly type the config and hostConfig with proper fallbacks
     const config = container.Config as components['schemas']['ContainerConfig'] | undefined
     const hostConfig = container.HostConfig as components['schemas']['HostConfig'] | undefined
 
-    // Fixed: Handle restart policy correctly - map all valid schema values
-    const restartPolicy: RestartPolicy =
-        hostConfig?.RestartPolicy?.Name === 'always'
-            ? 'always'
-            : hostConfig?.RestartPolicy?.Name === 'on-failure'
-              ? 'on-failure'
-              : hostConfig?.RestartPolicy?.Name === 'unless-stopped'
-                ? 'unless-stopped'
-                : hostConfig?.RestartPolicy?.Name === 'no'
-                  ? 'no'
-                  : '' // Default to empty string (None)
+    const policyName = hostConfig?.RestartPolicy?.Name
+    const restartPolicy: RestartPolicy = RESTART_POLICIES.includes(policyName as RestartPolicy)
+        ? (policyName as RestartPolicy)
+        : '' // Default to empty string (None)
 
-    // Convert console mode
-    const console: ConsoleMode =
-        config?.AttachStdin && config?.Tty
-            ? 'interactive-tty'
-            : config?.Tty
-              ? 'tty'
-              : config?.AttachStdin
-                ? 'interactive'
-                : 'none'
+    // Docker keeps interactivity of a detached container in OpenStdin, not AttachStdin
+    const console = toConsoleMode(!!config?.OpenStdin, !!config?.Tty)
 
-    // Fixed: Handle port bindings correctly
     const ports: PortMapping[] = []
     if (hostConfig?.PortBindings) {
         for (const [containerPortProto, bindings] of Object.entries(hostConfig.PortBindings)) {
             const [containerPort, protocol] = containerPortProto.split('/')
-            // Fixed: Handle the fact that bindings can be null and has correct PortBinding structure
             if (Array.isArray(bindings)) {
                 for (const binding of bindings) {
                     if (binding?.HostPort) {
@@ -98,6 +112,7 @@ export function inspectResponseToEditForm(container: ContainerInspectResponse): 
                             hostPort: binding.HostPort,
                             containerPort,
                             protocol: protocol as 'tcp' | 'udp',
+                            hostIp: binding.HostIp || undefined,
                         })
                     }
                 }
@@ -105,27 +120,41 @@ export function inspectResponseToEditForm(container: ContainerInspectResponse): 
         }
     }
 
-    // Convert environment variables
     const env: KeyValuePair[] = (config?.Env || []).map((envVar: string) => {
         const [key, ...valueParts] = envVar.split('=')
         return { key, value: valueParts.join('=') }
     })
 
-    // Convert labels - Fixed: Properly handle the Labels type
     const labels: KeyValuePair[] = Object.entries(config?.Labels || {}).map(([key, value]) => ({
         key,
-        value: String(value), // Fixed: Ensure value is a string
+        value: String(value),
     }))
 
-    // Convert volumes/mounts
-    const volumes: VolumeMapping[] = (container.Mounts || []).map((mount) => ({
-        containerPath: mount.Destination || '',
-        hostPath: mount.Type === 'volume' ? mount.Name || '' : mount.Source || '',
-        type: mount.Type === 'volume' ? 'volume' : mount.Type === 'bind' ? 'bind' : 'bind', // fallback for other types
-        readOnly: mount.RW === false,
-    }))
+    // Volumes come from the resolved Mounts list. Rows that originate from
+    // HostConfig.Mounts remember their index so they are written back there;
+    // everything else (Binds, or new rows) becomes a Binds entry on save.
+    const hostMounts = hostConfig?.Mounts || []
+    const volumes: VolumeMapping[] = (container.Mounts || [])
+        .filter((mount) => mount.Type === 'volume' || mount.Type === 'bind')
+        .map((mount) => {
+            const mountIndex = hostMounts.findIndex(
+                (hostMount) =>
+                    hostMount.Target === mount.Destination &&
+                    (hostMount.Type === mount.Type || hostMount.Type === undefined)
+            )
+            const flags = modeFlags(mount.Mode)
+            return {
+                containerPath: mount.Destination || '',
+                hostPath: mount.Type === 'volume' ? mount.Name || '' : mount.Source || '',
+                type: mount.Type === 'volume' ? 'volume' : 'bind',
+                readOnly: mount.RW === false,
+                // Docker reports a default "z" mode on named volumes; only bind
+                // mounts carry user-chosen flags worth writing back
+                mode: mount.Type === 'bind' && flags.length > 0 ? flags.join(',') : undefined,
+                mountIndex: mountIndex >= 0 ? mountIndex : undefined,
+            }
+        })
 
-    // Convert NetworkSettings to NetworkingConfig format
     const networkingConfig: components['schemas']['NetworkingConfig'] = {
         EndpointsConfig: container.NetworkSettings?.Networks || {},
     }
@@ -148,21 +177,23 @@ export function inspectResponseToEditForm(container: ContainerInspectResponse): 
         ...preservedContainerConfig
     } = config || {}
 
-    // Preserve unmapped HostConfig properties using destructuring
-    const { RestartPolicy, PortBindings, Binds, LogConfig, Memory, ...preservedHostConfig } =
+    // Preserve unmapped HostConfig properties (Memory and Mounts included)
+    const { RestartPolicy, PortBindings, Binds, LogConfig, ...preservedHostConfig } =
         hostConfig || {}
+
+    const originalLogging = (LogConfig?.Type as LoggingDriver | undefined) ?? ''
 
     return {
         basic: {
-            name: container.Name?.replace(/^\//, '') || '', // Remove leading slash
+            name: container.Name?.replace(/^\//, '') || '',
             image: config?.Image || '',
-            logging: (hostConfig?.LogConfig?.Type as LoggingDriver) || 'json-file',
+            logging: originalLogging,
             restartPolicy,
         },
         ports,
         commands: {
-            command: config?.Cmd || [],
-            entrypoint: config?.Entrypoint || [],
+            command: shellJoin(config?.Cmd || []),
+            entrypoint: shellJoin(config?.Entrypoint || []),
             workingDir: config?.WorkingDir || '',
             user: config?.User || '',
             console,
@@ -174,91 +205,117 @@ export function inspectResponseToEditForm(container: ContainerInspectResponse): 
             containerConfig: preservedContainerConfig || {},
             hostConfig: preservedHostConfig || {},
             networkingConfig,
+            originalLogging,
+            logConfigOptions: (LogConfig?.Config as Record<string, string> | undefined) ?? {},
+            maximumRetryCount: RestartPolicy?.MaximumRetryCount ?? 0,
         },
     }
 }
 
+function bindMode(volume: VolumeMapping): string {
+    const flags = [...(volume.mode ? volume.mode.split(',') : [])]
+    if (volume.readOnly) flags.unshift('ro')
+    return flags.length > 0 ? `:${flags.join(',')}` : ''
+}
+
 export function editFormToCreateRequest(form: ContainerEditForm): ContainerCreateRequest {
-    // Fixed: Handle restart policy correctly with proper types - use values directly
     const restartPolicy: components['schemas']['RestartPolicy'] = {
-        Name: form.basic.restartPolicy, // Use the value directly, no conversion needed
-        MaximumRetryCount: form.basic.restartPolicy === 'on-failure' ? 0 : undefined,
+        Name: form.basic.restartPolicy,
+        MaximumRetryCount:
+            form.basic.restartPolicy === 'on-failure' ? form.raw.maximumRetryCount : undefined,
     }
 
-    // Convert console settings
-    const attachStdin = form.commands.console.includes('interactive')
+    const interactive = form.commands.console.includes('interactive')
     const tty = form.commands.console.includes('tty')
 
-    // Fixed: Handle port bindings with correct PortBinding structure
+    // Several host ports may map to one container port; keep them all
     const portBindings: components['schemas']['PortMap'] = {}
     for (const port of form.ports) {
+        if (!port.hostPort.trim() || !port.containerPort.trim()) continue
         const key = `${port.containerPort}/${port.protocol}`
-        // Fixed: Use proper PortBinding structure
-        portBindings[key] = [
-            {
-                HostPort: port.hostPort,
-                HostIp: undefined, // Optional field, can be undefined
-            },
-        ]
+        const bindings = portBindings[key] ?? []
+        bindings.push({ HostPort: port.hostPort, HostIp: port.hostIp || undefined })
+        portBindings[key] = bindings
     }
 
-    // Convert environment variables
     const env = form.env
-        .filter(({ key }) => key.trim() !== '') // Filter out empty keys
+        .filter(({ key }) => key.trim() !== '')
         .map(({ key, value }) => `${key}=${value}`)
 
-    // Convert labels
     const labels: Record<string, string> = {}
     for (const { key, value } of form.labels.filter(({ key }) => key.trim() !== '')) {
         labels[key] = value
     }
 
-    // Convert volumes
-    const binds = form.volumes
-        .filter(
-            (vol) =>
-                vol.type === 'bind' && vol.containerPath.trim() !== '' && vol.hostPath.trim() !== ''
-        )
-        .map((vol) => `${vol.hostPath}:${vol.containerPath}${vol.readOnly ? ':ro' : ''}`)
+    const validVolumes = form.volumes.filter(
+        (volume) => volume.containerPath.trim() !== '' && volume.hostPath.trim() !== ''
+    )
+
+    // Rows that came from HostConfig.Mounts are written back there (deleted rows
+    // drop the entry); every other volume or bind row becomes a Binds string.
+    const mounts = (form.raw.hostConfig.Mounts || [])
+        .map((mount, index): Mount | null => {
+            if (mount.Type !== 'volume' && mount.Type !== 'bind') return mount
+            const row = validVolumes.find((volume) => volume.mountIndex === index)
+            if (!row) return null
+            return {
+                ...mount,
+                Type: row.type,
+                Source: row.hostPath,
+                Target: row.containerPath,
+                ReadOnly: row.readOnly,
+            }
+        })
+        .filter((mount): mount is Mount => mount !== null)
+
+    const binds = validVolumes
+        .filter((volume) => volume.mountIndex === undefined)
+        .map((volume) => `${volume.hostPath}:${volume.containerPath}${bindMode(volume)}`)
+
+    const command = shellSplit(form.commands.command)
+    const entrypoint = shellSplit(form.commands.entrypoint)
+
+    const logging = form.basic.logging
+    const logConfig = logging
+        ? {
+              Type: logging,
+              // Options only make sense for the driver they were set on
+              Config: logging === form.raw.originalLogging ? form.raw.logConfigOptions : {},
+          }
+        : undefined
 
     return {
         // Container Config - merge UI values with preserved raw data
         ...form.raw.containerConfig,
         Image: form.basic.image,
-        Cmd: form.commands.command.length > 0 ? form.commands.command : undefined,
-        Entrypoint: form.commands.entrypoint.length > 0 ? form.commands.entrypoint : undefined,
+        Cmd: command.length > 0 ? command : undefined,
+        Entrypoint: entrypoint.length > 0 ? entrypoint : undefined,
         WorkingDir: form.commands.workingDir || undefined,
         User: form.commands.user || undefined,
         Env: env.length > 0 ? env : undefined,
         Labels: Object.keys(labels).length > 0 ? labels : undefined,
-        AttachStdin: attachStdin,
+        AttachStdin: interactive,
         AttachStdout: true,
         AttachStderr: true,
         Tty: tty,
-        OpenStdin: attachStdin,
+        OpenStdin: interactive,
         StdinOnce: false,
         ArgsEscaped: null,
         NetworkDisabled: null,
         MacAddress: null,
         OnBuild: null,
 
-        // Fixed: HostConfig with required Memory field from Resources - merge UI values with preserved raw data
         HostConfig: {
             ...form.raw.hostConfig,
-            // Required field from Resources
+            // Memory is required by the schema; 0 is Docker's own "no limit"
             Memory: form.raw.hostConfig.Memory ?? 0,
-
-            // Fields from UI (these override any values in raw data)
             RestartPolicy: restartPolicy,
             PortBindings: Object.keys(portBindings).length > 0 ? portBindings : undefined,
             Binds: binds.length > 0 ? binds : undefined,
-            LogConfig: {
-                Type: form.basic.logging,
-                Config: {},
-            },
+            Mounts: mounts.length > 0 ? mounts : undefined,
+            LogConfig: logConfig,
         },
 
-        // Networking Config - use preserved raw data
         NetworkingConfig: form.raw.networkingConfig,
     }
 }

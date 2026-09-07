@@ -5,7 +5,23 @@ const {
     withProjectBuildGradle,
 } = require('@expo/config-plugins')
 const { mergeContents } = require('@expo/config-plugins/build/utils/generateCode')
+const fs = require('node:fs')
+const path = require('node:path')
 const withAndroidSourceFiles = require('./withAndroidSourceFiles')
+
+// The Compose compiler Gradle plugin must match the Kotlin Gradle plugin version,
+// which React Native pins in its version catalog.
+const getKotlinVersion = (projectRoot) => {
+    const catalogPath = path.join(
+        projectRoot,
+        'node_modules/react-native/gradle/libs.versions.toml'
+    )
+    const match = fs.readFileSync(catalogPath, 'utf8').match(/^kotlin\s*=\s*"([^"]+)"/m)
+    if (!match) {
+        throw new Error(`withAndroidWidget: could not read the Kotlin version from ${catalogPath}`)
+    }
+    return match[1]
+}
 
 const withModifiedAppBuildGradle = (config, opts) =>
     // implementation("androidx.glance:glance:${opts.versions.glance}")
@@ -72,10 +88,12 @@ const withRootKotlinComposeClasspath = (config, opts) =>
     withProjectBuildGradle(config, (config) => {
         let newFileContents = config.modResults.contents
 
+        const kotlinVersion = getKotlinVersion(config.modRequest.projectRoot)
+
         // Ensure the Kotlin Compose Gradle plugin is available on the buildscript classpath
         newFileContents = mergeContents({
             src: newFileContents,
-            newSrc: `    classpath('org.jetbrains.kotlin:compose-compiler-gradle-plugin:${opts.versions.kotlinExtension}')`,
+            newSrc: `    classpath('org.jetbrains.kotlin:compose-compiler-gradle-plugin:${kotlinVersion}')`,
             tag: 'KotlinComposeGradlePluginClasspath',
             anchor: /classpath\('org\.jetbrains\.kotlin:kotlin-gradle-plugin'\)/,
             offset: 1,
@@ -90,7 +108,9 @@ const withRootKotlinComposeClasspath = (config, opts) =>
 const withModifiedAndroidManifest = (config, opts) =>
     withAndroidManifest(config, (config) => {
         const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(config.modResults)
-        mainApplication.receiver = {
+        const receiverName = `.${opts.receiverName}`
+        const activityName = '.PourtainerAppWidgetConfigurationActivity'
+        const widgetReceiver = {
             $: {
                 'android:name': `.${opts.receiverName}`,
                 'android:exported': 'true',
@@ -126,9 +146,18 @@ const withModifiedAndroidManifest = (config, opts) =>
                 },
             ],
         }
+        // Append instead of assign: other plugins may register receivers too, and
+        // re-running prebuild without --clean must not duplicate entries
+        mainApplication.receiver = [
+            ...(mainApplication.receiver ?? []).filter((r) => r.$['android:name'] !== receiverName),
+            widgetReceiver,
+        ]
+        mainApplication.activity = (mainApplication.activity ?? []).filter(
+            (a) => a.$['android:name'] !== activityName
+        )
         mainApplication.activity.push({
             $: {
-                'android:name': `.PourtainerAppWidgetConfigurationActivity`,
+                'android:name': activityName,
                 'android:exported': 'true',
             },
             'intent-filter': [
@@ -151,7 +180,8 @@ const withAndroidWidget = (config, opts) => {
     config = withRootKotlinComposeClasspath(config, opts)
     config = withModifiedAppBuildGradle(config, opts)
     config = withModifiedAndroidManifest(config, opts)
-    config = withAndroidSourceFiles(config, { src: opts.src })
+    // Kotlin sources are written against this package and rewritten to android.package
+    config = withAndroidSourceFiles(config, { src: opts.src, distPlaceholder: 'com.pourtainer.mobile' })
 
     return config
 }

@@ -68,7 +68,7 @@ export default function ContainerLogsScreen() {
             await fetchLogs(id, {
                 timestamps: options.timestamps,
                 tail: options.tail,
-                since: sinceSeconds,
+                sinceSeconds,
             }),
         staleTime: 5000,
         refetchInterval: 5000,
@@ -162,24 +162,28 @@ export default function ContainerLogsScreen() {
         }))
     }, [])
 
-    const handleTailChange = useCallback((text: string) => {
-        setOptions((prev) => ({
-            ...prev,
-            tail: Number.parseInt(text) || 1000,
-        }))
-    }, [])
+    // The field keeps raw text so it can be cleared; the value is applied on submit
+    const [tailText, setTailText] = useState(String(options.tail))
+
+    const commitTail = useCallback(() => {
+        const parsed = Number.parseInt(tailText, 10)
+        const tail = Number.isFinite(parsed) && parsed > 0 ? parsed : 1000
+        setTailText(String(tail))
+        setOptions((prev) => (prev.tail === tail ? prev : { ...prev, tail }))
+    }, [tailText])
 
     const Placeholder = useMemo(() => {
         return buildPlaceholder({
             isLoading: logsQuery.isLoading,
             isError: logsQuery.isError,
-            hasData: !!logsQuery.data,
-            emptyLabel:
-                'An error has occurred, this container does not support reading logs using the API.',
+            // '' is a valid answer (nothing logged in the period) and must show the empty label
+            hasData: (logsQuery.data ?? '').length > 0,
+            emptyLabel: 'No log output for this period',
             errorLabel:
+                logsQuery.error?.message ||
                 'An error has occurred, this container does not support reading logs using the API.',
         })
-    }, [logsQuery.isLoading, logsQuery.isError, logsQuery.data])
+    }, [logsQuery.isLoading, logsQuery.isError, logsQuery.data, logsQuery.error])
 
     const logLines = useMemo(() => {
         return logsQuery.data ? logsQuery.data.split('\n') : []
@@ -214,8 +218,7 @@ export default function ContainerLogsScreen() {
             <View style={{ flex: 1 }}>
                 {/* Logs Area - Full height */}
                 <View style={{ flex: 1 }}>
-                    {/* Pleasing the compiler */}
-                    {Placeholder || !logsQuery.data ? (
+                    {Placeholder ? (
                         Placeholder
                     ) : (
                         <FlatList
@@ -270,8 +273,10 @@ export default function ContainerLogsScreen() {
                             <Text style={[styles.baseText, styles.controlLabel]}>Lines</Text>
                             <TextInput
                                 style={[styles.baseText, styles.controlText, styles.baseControl]}
-                                value={String(options.tail)}
-                                onChangeText={handleTailChange}
+                                value={tailText}
+                                onChangeText={setTailText}
+                                onEndEditing={commitTail}
+                                onSubmitEditing={commitTail}
                                 keyboardType="numeric"
                                 returnKeyType="done"
                                 submitBehavior="blurAndSubmit"

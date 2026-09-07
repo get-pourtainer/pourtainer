@@ -1,13 +1,15 @@
 // https://www.npmjs.com/package/openapi-typescript
 
-import type { paths } from '@/lib/portainer/schema'
+import { throwOnError } from '@/lib/portainer/errors'
+import type { paths } from '@/lib/portainer/paths'
 import { usePersistedStore } from '@/stores/persisted'
 import createClient from 'openapi-fetch'
 import ReactNativeBlobUtil from 'react-native-blob-util'
 
-const IGNORE_BODY_URLS: string[] = []
-
-export default function client({ connectionId }: { connectionId?: string } = {}) {
+export default function client({
+    connectionId,
+    accessDenied,
+}: { connectionId?: string; accessDenied?: string } = {}) {
     const currentConnection = connectionId
         ? usePersistedStore.getState().connections.find((c) => c.id === connectionId)
         : usePersistedStore.getState().currentConnection
@@ -60,22 +62,19 @@ export default function client({ connectionId }: { connectionId?: string } = {})
                 body ? body : undefined
             )
 
-            const skipPayload = IGNORE_BODY_URLS.some((url) => input.url.includes(url))
+            if (__DEV__) {
+                console.log(
+                    'Portainer client -',
+                    input.method,
+                    input.url,
+                    '->',
+                    req.respInfo.status
+                )
+            }
 
-            const isSuccessful = req.respInfo.status >= 200 && req.respInfo.status < 300
-
-            console.log('Portainer client - URL:', input.url)
-            console.log('Portainer client - Method:', input.method)
-            console.log('Portainer client - Status:', req.respInfo.status)
-            console.log('Portainer client - isSuccessful:', isSuccessful)
-            console.log('Portainer client - skipPayload:', skipPayload)
-            console.log('Portainer client - Raw data type:', typeof req.data)
-            console.log('Portainer client - Raw data length:', req.data?.length)
-            console.log('Portainer client - Raw data (full):', req.data)
-
-            const returnBody = isSuccessful && !skipPayload ? req.data : null
-
-            const res = new Response(returnBody, {
+            // The body is passed through on every status so the error
+            // middleware can read the server's {message, details}
+            const res = new Response(req.data, {
                 status: req.respInfo.status,
                 statusText: req.respInfo.state,
                 headers: req.respInfo.headers,
@@ -84,6 +83,10 @@ export default function client({ connectionId }: { connectionId?: string } = {})
             return res
         },
     })
+
+    // Rejects on any non-2xx response; a 403 on resource-controlled routes
+    // carries the caller's message
+    newClient.use(throwOnError({ accessDenied }))
 
     return newClient
 }

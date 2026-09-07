@@ -19,6 +19,12 @@ import {
 import WebSocketWithSelfSignedCert from 'react-native-websocket-self-signed'
 import stripAnsi from 'strip-ansi'
 
+const HTTP_SCHEME = /^http/i
+const CARRIAGE_RETURN = /\r/g
+const TRAILING_NEWLINE = /\n$/
+// A bare shell prompt such as "# ", "$ " or "root@abc:/# " (always ends in a space)
+const PROMPT_LINE = /^(?:\S+@\S+:\S*)?[#$] $/
+
 export default function ContainerTerminalScreen() {
     const currentConnection = usePersistedStore((state) => state.currentConnection)
 
@@ -31,6 +37,8 @@ export default function ContainerTerminalScreen() {
     const wsRef = useRef<WebSocketWithSelfSignedCert | null>(null)
     const scrollViewRef = useRef<ScrollView>(null)
     const [isConnected, setIsConnected] = useState(false)
+    // False once the screen loses focus, so a session that resolves late never opens a socket
+    const activeRef = useRef(true)
 
     const startSessionMutation = useMutation({
         mutationFn: async () => {
@@ -38,7 +46,7 @@ export default function ContainerTerminalScreen() {
             return result
         },
         onSuccess: (data) => {
-            console.log('Success starting terminal session', data)
+            if (!activeRef.current) return
             setIsConfigured(true)
             connectWebSocket(data.Id)
         },
@@ -53,7 +61,9 @@ export default function ContainerTerminalScreen() {
             wsRef.current.close()
         }
 
-        const fullUrl = `wss://${currentConnection!.baseUrl.replace('https://', '').replace('http://', '')}/api/websocket/exec?endpointId=${currentConnection!.currentEndpointId}&id=${sessionId}`
+        // ws:// for http:// servers, wss:// for https://
+        const wsBase = currentConnection!.baseUrl.replace(HTTP_SCHEME, 'ws')
+        const fullUrl = `${wsBase}/api/websocket/exec?endpointId=${encodeURIComponent(currentConnection!.currentEndpointId ?? '')}&id=${encodeURIComponent(sessionId)}`
         const ws = WebSocketWithSelfSignedCert.getInstance(fullUrl)
 
         ws.onOpen(() => {
@@ -66,28 +76,16 @@ export default function ContainerTerminalScreen() {
             if (!m) return
 
             const message = typeof m === 'string' ? m : m?.message
+            if (!message) return
 
-            if (message === '# ') return
-
-            let parsedMessage = stripAnsi(message).trim()
-
-            if (parsedMessage.endsWith('#')) {
-                parsedMessage = parsedMessage.slice(0, -1)
+            // Keep real output intact; only a trailing bare prompt is dropped
+            const lines = stripAnsi(message).replace(CARRIAGE_RETURN, '').split('\n')
+            if (lines.length > 0 && PROMPT_LINE.test(lines[lines.length - 1])) {
+                lines.pop()
             }
 
-            if (parsedMessage.endsWith('\n')) {
-                parsedMessage = parsedMessage.slice(0, -1)
-            }
-
-            if (parsedMessage.endsWith('\r')) {
-                parsedMessage = parsedMessage.slice(0, -1)
-            }
-
-            if (parsedMessage.endsWith('\n#')) {
-                parsedMessage = parsedMessage.slice(0, -2)
-            }
-
-            if (!parsedMessage) return
+            const parsedMessage = lines.join('\n').replace(TRAILING_NEWLINE, '')
+            if (!parsedMessage.trim()) return
 
             setOutput((prev) => [...prev, parsedMessage])
         })
@@ -130,8 +128,9 @@ export default function ContainerTerminalScreen() {
     // Handle cleanup when navigating away
     useFocusEffect(
         useCallback(() => {
+            activeRef.current = true
             return () => {
-                console.log('Cleaning up terminal session...')
+                activeRef.current = false
                 if (wsRef.current) {
                     wsRef.current.close()
                     wsRef.current = null
@@ -176,6 +175,17 @@ export default function ContainerTerminalScreen() {
 
                     {/* Command Input Area - Update styles */}
                     <View style={[styles.inputArea, { paddingBottom: 32 }]}>
+                        {!isConnected && (
+                            <TouchableOpacity
+                                onPress={() => startSessionMutation.mutate()}
+                                disabled={startSessionMutation.isPending}
+                                style={{ paddingVertical: 10, alignItems: 'center' }}
+                            >
+                                <Text style={{ color: COLORS.primary, fontWeight: '600' }}>
+                                    {startSessionMutation.isPending ? 'Reconnecting…' : 'Reconnect'}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
                         <Text style={styles.prompt}>$</Text>
                         <TextInput
                             style={styles.commandInput}
